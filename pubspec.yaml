@@ -1,6 +1,6 @@
 name: graphview
-description:  GraphView is used to display data in graph structures. It can display tree layout using BuchheimWalkerAlgorithm and Directed graph using FruchtermanReingoldAlgorithm. Useful for Family Tree, Hierarchy View, Flutter Widget Tree.Useful for Social network, Mind Map, Cluster, Graphs, Intercity Road Network,
-version: 0.1.0
+description:  GraphView is used to display data in graph structures. It can display Tree layout and Directed graph. Useful for Family Tree, Hierarchy View.
+version: 0.1.1
 homepage: https://github.com/nabil6391/graphview
 
 environment:
@@ -8,7 +8,7 @@ environment:
   flutter: ">=1.17.0 <2.0.0"
 
 dependencies:
-  pedantic: ^1.9.0
+  pedantic: ^1.9.2
   flutter:
     sdk: flutter
 

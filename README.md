@@ -1,5 +1,6 @@
 GraphView
 ===========
+[![pub package](https://img.shields.io/pub/v/graphview.svg)](https://pub.dev/packages/graphview)
 
 Flutter GraphView is used to display data in graph structures.
 
