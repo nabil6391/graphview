@@ -6,12 +6,12 @@ import 'package:graphview/Graph.dart';
 import 'package:graphview/GraphView.dart';
 import 'package:graphview/TreeEdgeRenderer.dart';
 
-class GraphViewPage extends StatefulWidget {
+class TreeViewPage extends StatefulWidget {
   @override
-  _GraphViewPageState createState() => _GraphViewPageState();
+  _TreeViewPageState createState() => _TreeViewPageState();
 }
 
-class _GraphViewPageState extends State<GraphViewPage> {
+class _TreeViewPageState extends State<TreeViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

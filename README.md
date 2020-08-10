@@ -8,6 +8,9 @@ Overview
 ========
 The library is designed to support different graph layouts and currently works excellent with small graphs.
 
+You can have a look at the flutter web implementation here:
+http://graphview.surge.sh/
+
 Layouts
 ======
 ### Tree

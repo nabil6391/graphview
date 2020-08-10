@@ -3,8 +3,8 @@ library graphview;
 import 'dart:math';
 import 'dart:ui';
 
-import 'EdgeRenderer.dart';
-import 'Graph.dart';
+import 'package:graphview/EdgeRenderer.dart';
+import 'package:graphview/Graph.dart';
 
 const double ARROW_DEGREES = 0.5;
 const double ARROW_LENGTH = 10;
@@ -39,14 +39,16 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
       var clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
-      var triangleCentroid =
-          drawTriangle(canvas, trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+      var triangleCentroid = drawTriangle(canvas, trianglePaint, clippedLine[0],
+          clippedLine[1], clippedLine[2], clippedLine[3]);
 
-      canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), paint);
+      canvas.drawLine(Offset(clippedLine[0], clippedLine[1]),
+          Offset(triangleCentroid[0], triangleCentroid[1]), paint);
     });
   }
 
-  List<double> drawTriangle(Canvas canvas, Paint paint,double x1, double y1,double x2,double y2) {
+  List<double> drawTriangle(
+      Canvas canvas, Paint paint, double x1, double y1, double x2, double y2) {
     var angle = (atan2(y2 - y1, x2 - x1) + pi);
     var x3 = (x2 + ARROW_LENGTH * cos((angle - ARROW_DEGREES)));
     var y3 = (y2 + ARROW_LENGTH * sin((angle - ARROW_DEGREES)));
@@ -66,7 +68,8 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     return triangleCentroid;
   }
 
-  List<double> clipLine(double startX,double startY,double stopX,double stopY, Node destination) {
+  List<double> clipLine(double startX, double startY, double stopX,
+      double stopY, Node destination) {
     var resultLine = List<double>(4);
     resultLine[0] = startX;
     resultLine[1] = startY;
@@ -105,5 +108,4 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
     return resultLine;
   }
-
 }

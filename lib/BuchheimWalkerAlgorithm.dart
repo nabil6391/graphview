@@ -50,7 +50,8 @@ class BuchheimWalkerAlgorithm extends Layout {
       // here, because it's already initialized with 0
       if (hasLeftSibling(graph, node)) {
         final leftSibling = getLeftSibling(graph, node);
-        nodeData.prelim = getPrelim(leftSibling) + getSpacing(graph, leftSibling, node);
+        nodeData.prelim =
+            getPrelim(leftSibling) + getSpacing(graph, leftSibling, node);
       }
     } else {
       final leftMost = getLeftMostChild(graph, node);
@@ -71,12 +72,14 @@ class BuchheimWalkerAlgorithm extends Layout {
       double midPoint = 0.5 *
           ((getPrelim(leftMost) +
                   getPrelim(rightMost) +
-                  (this.isVertical() ? rightMost.width : rightMost.height).toDouble()) -
+                  (this.isVertical() ? rightMost.width : rightMost.height)
+                      .toDouble()) -
               (this.isVertical() ? node.width : node.height));
 
       if (hasLeftSibling(graph, node)) {
         final leftSibling = getLeftSibling(graph, node);
-        nodeData.prelim = getPrelim(leftSibling) + getSpacing(graph, leftSibling, node);
+        nodeData.prelim =
+            getPrelim(leftSibling) + getSpacing(graph, leftSibling, node);
         nodeData.modifier = nodeData.prelim - midPoint;
       } else {
         nodeData.prelim = midPoint;
@@ -91,7 +94,8 @@ class BuchheimWalkerAlgorithm extends Layout {
 
     node.position = Offset(
         (nodeData.prelim + modifier),
-        (depth * (vertical ? this.minNodeHeight : this.minNodeWidth) + depth * this.configuration.levelSeparation)
+        (depth * (vertical ? this.minNodeHeight : this.minNodeWidth) +
+                depth * this.configuration.levelSeparation)
             .ceilToDouble());
 
     graph.successorsOf(node).forEach((w) {
@@ -160,7 +164,8 @@ class BuchheimWalkerAlgorithm extends Layout {
             (this.getPrelim(nextLeft) + sip) +
             this.getSpacing(graph, nextRight, node);
         if (shift > 0) {
-          this.moveSubtree(this.ancestor(graph, nextRight, node, ancestor), node, shift);
+          this.moveSubtree(
+              this.ancestor(graph, nextRight, node, ancestor), node, shift);
           sip += shift;
           sop += shift;
         }
@@ -221,17 +226,22 @@ class BuchheimWalkerAlgorithm extends Layout {
 
   Node ancestor(Graph graph, Node vim, Node node, Node defaultAncestor) {
     BuchheimWalkerNodeData vipNodeData = this.getNodeData(vim);
-    return graph.predecessorsOf(vipNodeData.ancestor)[0] == graph.predecessorsOf(node)[0]
+    return graph.predecessorsOf(vipNodeData.ancestor)[0] ==
+            graph.predecessorsOf(node)[0]
         ? vipNodeData.ancestor
         : defaultAncestor;
   }
 
   Node nextRight(Graph graph, Node node) {
-    return graph.hasSuccessor(node) ? this.getRightMostChild(graph, node) : this.getNodeData(node).thread;
+    return graph.hasSuccessor(node)
+        ? this.getRightMostChild(graph, node)
+        : this.getNodeData(node).thread;
   }
 
   Node nextLeft(Graph graph, Node node) {
-    return graph.hasSuccessor(node) ? this.getLeftMostChild(graph, node) : this.getNodeData(node).thread;
+    return graph.hasSuccessor(node)
+        ? this.getLeftMostChild(graph, node)
+        : this.getNodeData(node).thread;
   }
 
   num getSpacing(Graph graph, Node leftNode, Node rightNode) {
@@ -440,13 +450,15 @@ class BuchheimWalkerAlgorithm extends Layout {
         var10000 = Offset(node.x - offset.dx, node.y + globalPadding);
         break;
       case 2:
-        var10000 = Offset(node.x - offset.dx, offset.dy - node.y - globalPadding);
+        var10000 =
+            Offset(node.x - offset.dx, offset.dy - node.y - globalPadding);
         break;
       case 3:
         var10000 = Offset(node.y + globalPadding, node.x - offset.dx);
         break;
       case 4:
-        var10000 = Offset(offset.dy - node.y - globalPadding, node.x - offset.dx);
+        var10000 =
+            Offset(offset.dy - node.y - globalPadding, node.x - offset.dx);
         break;
     }
 
@@ -458,7 +470,8 @@ class BuchheimWalkerAlgorithm extends Layout {
     if (descending) {
       nodes.reversed;
     }
-    nodes.sort((data1, data2) => compare(getNodeData(data1).depth, getNodeData(data2).depth));
+    nodes.sort((data1, data2) =>
+        compare(getNodeData(data1).depth, getNodeData(data2).depth));
 
     return nodes;
   }
