@@ -1,9 +1,8 @@
 GraphView
 ===========
-[![pub package](https://img.shields.io/pub/v/graphview.svg)](https://pub.dev/packages/graphview)
+Get it from [![pub package](https://img.shields.io/pub/v/graphview.svg)](https://pub.dev/packages/graphview)
 
-Flutter GraphView is used to display data in graph structures.
-
+Flutter GraphView is used to display data in graph structures. It can display Tree layout and Directed graph.
 
 Overview
 ========
@@ -210,7 +209,7 @@ Examples
 ![alt Example](image/TopDownTree.png "Tree Example")
 
 #### Rooted Tree (Bottom to Top)
-![alt Example](image/BottomTop.png "Tree Example")
+![alt Example](image/BottomTopTree.png "Tree Example")
 
 #### Rooted Tree (Left to Right)
 ![alt Example](image/LeftRightTree.png "Tree Example")
