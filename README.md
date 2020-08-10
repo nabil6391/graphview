@@ -6,156 +6,250 @@ Flutter GraphView is used to display data in graph structures.
 
 Overview
 ========
-The library is designed to support different graph layouts and currently works with small graphs only.
+The library is designed to support different graph layouts and currently works excellent with small graphs.
 
-
-Download
-========
-
-```groovy
-dependencies {
-    implementation 'de.blox:graphview:0.7.0'
-}
-```
 Layouts
 ======
 ### Tree
-Uses Walker's algorithm with Buchheim's runtime improvements (`BuchheimWalkerAlgorithm` class). Supports different orientations. All you have to do is using the `BuchheimWalkerConfiguration.Builder.setOrientation(int)` with either `ORIENTATION_LEFT_RIGHT`, `ORIENTATION_RIGHT_LEFT`, `ORIENTATION_TOP_BOTTOM` and
+Uses Walker's algorithm with Buchheim's runtime improvements (`BuchheimWalkerAlgorithm` class). Supports different orientations. All you have to do is using the `BuchheimWalkerConfiguration.Builder.orientation` with either `ORIENTATION_LEFT_RIGHT`, `ORIENTATION_RIGHT_LEFT`, `ORIENTATION_TOP_BOTTOM` and
 `ORIENTATION_BOTTOM_TOP` (default). Furthermore parameters like sibling-, level-, subtree separation can be set.
+
+Useful for: Family Tree, Hierarchy View, Flutter Widget Tree, 
 ### Directed graph
 Directed graph drawing by simulating attraction/repulsion forces. For this the algorithm by Fruchterman and Reingold (`FruchtermanReingoldAlgorithm` class) was implemented.
-### Layered graph
-Algorithm from Sugiyama et al. for drawing multilayer graphs, taking advantage of the hierarchical structure of the graph (`SugiyamaAlgorithm` class). You can also set the parameters for node and level separation using the `SugiyamaConfiguration.Builder`.
+
+Useful for: Social network, Mind Map, Cluster, Graphs, Intercity Road Network,
 
 Usage
 ======
-Using GraphView is not much different than using RecyclerView.
-Add GraphView to your layout file.
-```xml
-<com.otaliastudios.zoom.ZoomLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    app:hasClickableChildren="true">
 
-    <de.blox.graphview.GraphView
-        android:id="@+id/graph"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:lineColor="@android:color/holo_blue_dark"
-        app:lineThickness="2dp"
-        app:useMaxSize="true" />
-</com.otaliastudios.zoom.ZoomLayout>
-```
+Currently GraphView must be used together with a Zoom Engine like [InteractiveViewer](https://api.flutter.dev/flutter/widgets/InteractiveViewer-class.html). To change the zoom values just use the different attributes described in the InteractiveViewer class.
 
-Currently GraphView must be used together with a Zoom Engine like [ZoomLayout](https://github.com/natario1/ZoomLayout). To change the zoom values just use the different attributes described in the ZoomLayout project site.
+To create a graph, we need to instantiate the `Graph` class. Then we need to pass the layout and also optional the edge renderer.
 
-Then define the node layout, e.g. ```node.xml```. You can make the node Layout as complex as you want.
-```xml
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/text"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content" />
-```
+```dart
+void main() {
+  runApp(MyApp());
+}
 
-To create a graph, we need to instantiate the `Graph` class. Next bind your graph to GraphView, for that you must extend from the `GraphView.Adapter` class.
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        home: GraphViewPage(),
+      );
+}
 
-```java
-public class GraphActivity extends AppCompatActivity {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        GraphView graphView = findViewById(R.id.graph);
+class GraphViewPage extends StatefulWidget {
+  @override
+  _GraphViewPageState createState() => _GraphViewPageState();
+}
 
-        // example tree
-        final Graph graph = new Graph();
-        final Node node1 = new Node("Parent");
-        final Node node2 = new Node("Child 1");
-        final Node node3 = new Node("Child 2");
+class _GraphViewPageState extends State<GraphViewPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Column(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Wrap(
+              children: [
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.siblingSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Sibling Sepration"),
+                    onChanged: (text) {
+                      builder.siblingSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.levelSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Level Seperation"),
+                    onChanged: (text) {
+                      builder.levelSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.subtreeSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Subtree separation"),
+                    onChanged: (text) {
+                      builder.subtreeSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.orientation.toString(),
+                    decoration: InputDecoration(labelText: "Orientation"),
+                    onChanged: (text) {
+                      builder.orientation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    final Node node12 = Node(getNodeText());
+                    var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                    print(edge);
+                    graph.addEdge(edge, node12);
+                    setState(() {});
+                  },
+                  child: Text("Add"),
+                )
+              ],
+            ),
+            Expanded(
+              child: InteractiveViewer(
+                  constrained: false,
+                  scaleEnabled: false,
+                  boundaryMargin: EdgeInsets.all(100),
+                  minScale: 0.01,
+                  maxScale: 5.6,
+                  child: GraphView(
+                    graph: graph,
+                    algorithm: BuchheimWalkerAlgorithm(builder),
+                    renderer: TreeEdgeRenderer(builder),
+                  )),
+            ),
+          ],
+        )
+    );
+  }
 
-        graph.addEdge(node1, node2);
-        graph.addEdge(node1, node3);
+  Random r = Random();
 
-        // you can set the graph via the constructor or use the adapter.setGraph(Graph) method
-        GraphAdapter adapter = new GraphAdapter<GraphView.ViewHolder>(graph) {
+  int n = 1;
 
-            @NonNull
-            @Override
-            public GraphView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-                final View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.node, parent, false);
-                return new SimpleViewHolder(view);
-            }
+  Widget getNodeText() {
+    return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+          ],
+        ),
+        child: Text("Node ${n++}"));
+  }
 
-            @Override
-            public void onBindViewHolder(GraphView.ViewHolder viewHolder, Object data, int position) {
-                ((SimpleViewHolder) viewHolder).textView.setText(data.toString());
-            }
-        };
-        graphView.setAdapter(adapter);
+  final Graph graph = Graph();
+  BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
 
-        // set the algorithm here
-        final BuchheimWalkerConfiguration configuration = new BuchheimWalkerConfiguration.Builder()
-                .setSiblingSeparation(100)
-                .setLevelSeparation(300)
-                .setSubtreeSeparation(300)
-                .setOrientation(BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM)
-                .build();
-        graphView.setLayout(new BuchheimWalkerAlgorithm(configuration));
-    }
+  @override
+  void initState() {
+    final Node node1 = Node(getNodeText());
+    final Node node2 = Node(getNodeText());
+    final Node node3 = Node(getNodeText());
+    final Node node4 = Node(getNodeText());
+    final Node node5 = Node(getNodeText());
+    final Node node6 = Node(getNodeText());
+    final Node node8 = Node(getNodeText());
+    final Node node7 = Node(getNodeText());
+    final Node node9 = Node(getNodeText());
+    final Node node10 = Node(getNodeText());
+    final Node node11 = Node(getNodeText());
+    final Node node12 = Node(getNodeText());
+
+    graph.addEdge(node1, node2);
+    graph.addEdge(node1, node3);
+    graph.addEdge(node1, node4);
+    graph.addEdge(node2, node5);
+    graph.addEdge(node2, node6);
+    graph.addEdge(node6, node7);
+    graph.addEdge(node6, node8);
+    graph.addEdge(node4, node9);
+    graph.addEdge(node4, node10);
+    graph.addEdge(node4, node11);
+    graph.addEdge(node11, node12);
+
+    builder
+      ..siblingSeparation = (100)
+      ..levelSeparation = (150)
+      ..subtreeSeparation = (150)
+      ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
+  }
 }
 ```
+### Using any widget inside the Node
+You can use any widget inside the node:
 
-Your ViewHolder class should extend from `GraphView.ViewHolder`:
-```java
-class SimpleViewHolder extends GraphView.ViewHolder {
-    TextView textView;
+```dart
+Node node = Node(getNodeText);
 
-    SimpleViewHolder(View itemView) {
-        super(itemView);
-        textView = itemView.findViewById(R.id.text);
-    }
-}
+getNodeText() {
+    return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+          ],
+        ),
+        child: Text("Node ${n++}"));
+  }
 ```
-
-Customization
-=============
-
-To use the custom attributes you have to add the namespace first: ```
-    xmlns:app="http://schemas.android.com/apk/res-auto"```
-
-| Attribute        | Format    | Example                        | Explanation|
-|------------------|-----------|--------------------------------|------------|
-| lineThickness   | Dimension | 10dp                           | Set how thick the connection lines should be
-| lineColor       | Color     | "@android:color/holo_red_dark" | Set the color of the connection lines
-| useMaxSize      | Boolean   | true                           | Use the same size for each node
-
-Each of the attributes has a corresponding setter in the GraphView class, if you want to use it programmatically.
-
 Examples
 ========
 #### Rooted Tree
-![alt Example](image/Tree.png "Tree Example")
+![alt Example](image/TopDownTree.png "Tree Example")
+
+#### Rooted Tree (Bottom to Top)
+![alt Example](image/BottomTop.png "Tree Example")
+
+#### Rooted Tree (Left to Right)
+![alt Example](image/LeftRightTree.png "Tree Example")
+
+#### Rooted Tree (Right to Left)
+![alt Example](image/RightLeftTree.png "Tree Example")
 
 #### Directed Graph
 ![alt Example](image/Graph.png "Graph Example")
 
-#### Layered Graph
-![alt Example](image/LayeredGraph.png "Layered Graph Example")
+Inspirations
+========
+This library is basically a dart representation of the excellent Android Library [GraphView](https://github.com/Team-Blox/GraphView) by Team-Blox
+
+I would like to thank them for open sourcing their code for which reason I was able to port their code to dart and use for flutter.
+
+Future Works
+========
+[] Add nodeOnTap
+[] Add Layered Graph (PRs are welcome)
+[] Use a builder pattern to draw items on demand.
 
 License
 =======
 
-    Copyright 2020 Team-Blox
+MIT License
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Copyright (c) 2020 Nabil Mosharraf
 
-       http://www.apache.org/licenses/LICENSE-2.0
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

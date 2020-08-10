@@ -1,7 +1,6 @@
 name: graphview
 description:  GraphView is used to display data in graph structures.
 version: 0.1.0
-author:
 homepage: https://github.com/nabil6391/graphview
 
 environment:

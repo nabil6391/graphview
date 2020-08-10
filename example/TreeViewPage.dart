@@ -6,18 +6,6 @@ import 'package:graphview/Graph.dart';
 import 'package:graphview/GraphView.dart';
 import 'package:graphview/TreeEdgeRenderer.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-        home: GraphViewPage(),
-      );
-}
-
-
 class GraphViewPage extends StatefulWidget {
   @override
   _GraphViewPageState createState() => _GraphViewPageState();
@@ -103,9 +91,6 @@ class _GraphViewPageState extends State<GraphViewPage> {
             ),
           ],
         )
-//        TreeView(
-//          data: data,
-//        ),
     );
   }
 
@@ -114,18 +99,15 @@ class _GraphViewPageState extends State<GraphViewPage> {
   int n = 1;
 
   Widget getNodeText() {
-    return GestureDetector(
-        onTap: () {
-        },
-        child: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(color: Colors.green, spreadRadius: 3),
-              ],
-            ),
-            child: Text("Node ${n++}")));
+    return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+          ],
+        ),
+        child: Text("Node ${n++}"));
   }
 
   final Graph graph = Graph();

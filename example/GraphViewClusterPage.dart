@@ -49,7 +49,15 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   Random r = Random();
 
   Widget getNodeText() {
-    return Container(color: Colors.green, child: Text("Node ${n++}"));
+    return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+          ],
+        ),
+        child: Text("Node ${n++}"));
   }
 
   final Graph graph = Graph();
