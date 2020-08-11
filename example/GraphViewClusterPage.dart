@@ -2,11 +2,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:graphview/ArrowEdgeRenderer.dart';
-import 'package:graphview/FruchtermanReingoldAlgorithm.dart';
-import 'package:graphview/Graph.dart';
 import 'package:graphview/GraphView.dart';
-import 'package:graphview/Layout.dart';
 
 class GraphClusterViewPage extends StatefulWidget {
   @override

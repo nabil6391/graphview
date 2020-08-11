@@ -1,10 +1,4 @@
-library graphview;
-
-import 'dart:math';
-import 'dart:ui';
-
-import 'Graph.dart';
-import 'Layout.dart';
+part of graphview;
 
 const int DEFAULT_ITERATIONS = 1000;
 const int SEED = 401678;
@@ -27,8 +21,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
   void randomize(List<Node> nodes) {
     nodes.forEach((node) {
       disps[node] = Offset.zero;
-      node.position =
-          Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
+      node.position = Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
     });
   }
 
@@ -39,8 +32,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
   void limitMaximumDisplacement(List<Node> nodes) {
     nodes.forEach((node) {
       var dispLength = max(EPSILON, getDisp(node).distance.toDouble());
-      node.position =
-          (node.position + (getDisp(node) / dispLength) * (min(dispLength, t)));
+      node.position = (node.position + (getDisp(node) / dispLength) * (min(dispLength, t)));
     });
   }
 
@@ -50,14 +42,8 @@ class FruchtermanReingoldAlgorithm extends Layout {
       Node u = edge.destination;
       Offset delta = v.position - (u.position);
       var deltaLength = max(EPSILON, delta.distance.toDouble());
-      setDisp(
-          v,
-          getDisp(v) -
-              (delta / (deltaLength) * (forceAttraction(deltaLength))));
-      setDisp(
-          u,
-          getDisp(u) +
-              (delta / (deltaLength) * (forceAttraction(deltaLength))));
+      setDisp(v, getDisp(v) - (delta / (deltaLength) * (forceAttraction(deltaLength))));
+      setDisp(u, getDisp(u) + (delta / (deltaLength) * (forceAttraction(deltaLength))));
     });
   }
 
@@ -67,10 +53,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
         if (u != v) {
           Offset delta = v.position - (u.position);
           var deltaLength = max(EPSILON, delta.distance.toDouble());
-          setDisp(
-              v,
-              getDisp(v) +
-                  (delta / (deltaLength) * (forceRepulsion(deltaLength))));
+          setDisp(v, getDisp(v) + (delta / (deltaLength) * (forceRepulsion(deltaLength))));
         }
       });
     });
@@ -194,8 +177,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
     nodeClusters.removeWhere((element) => element.size() == 1);
   }
 
-  void followEdges(
-      Graph graph, NodeCluster cluster, Node node, List nodesVisited) {
+  void followEdges(Graph graph, NodeCluster cluster, Node node, List nodesVisited) {
     graph.successorsOf(node).forEach((successor) {
       if (!nodesVisited.contains(successor)) {
         nodesVisited.add(successor);
@@ -216,8 +198,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
   }
 
   NodeCluster findClusterOf(List<NodeCluster> clusters, Node node) {
-    return clusters.firstWhere((element) => element.contains(node),
-        orElse: () => null);
+    return clusters.firstWhere((element) => element.contains(node), orElse: () => null);
   }
 
   double findBiggestSize(Graph graph) {
@@ -283,13 +264,9 @@ class NodeCluster {
     nodes.add(node);
 
     if (nodes.length == 1) {
-      rect = Rect.fromLTRB(
-          node.x, node.y, node.x + node.width, node.y + node.height);
+      rect = Rect.fromLTRB(node.x, node.y, node.x + node.width, node.y + node.height);
     } else {
-      rect = Rect.fromLTRB(
-          min(rect.left, node.x),
-          min(rect.top, node.y),
-          max(rect.right, node.x + node.width),
+      rect = Rect.fromLTRB(min(rect.left, node.x), min(rect.top, node.y), max(rect.right, node.x + node.width),
           max(rect.bottom, node.y + node.height));
     }
   }

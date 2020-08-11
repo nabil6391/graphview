@@ -1,12 +1,19 @@
 library graphview;
 
+import 'dart:collection';
+import 'dart:math';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import 'ArrowEdgeRenderer.dart';
-import 'EdgeRenderer.dart';
-import 'Graph.dart';
-import 'Layout.dart';
+part 'ArrowEdgeRenderer.dart';
+part 'BuchheimWalkerAlgorithm.dart';
+part 'EdgeRenderer.dart';
+part 'FruchtermanReingoldAlgorithm.dart';
+part 'Graph.dart';
+part 'Layout.dart';
+part 'TreeEdgeRenderer.dart';
 
 typedef PressCallback = Function(Node node, Widget item);
 
@@ -15,11 +22,7 @@ class GraphView extends MultiChildRenderObjectWidget {
   Layout algorithm;
   EdgeRenderer renderer;
 
-  GraphView(
-      {Key key,
-      @required this.graph,
-      @required this.algorithm,
-      EdgeRenderer renderer})
+  GraphView({Key key, @required this.graph, @required this.algorithm, EdgeRenderer renderer})
       : assert(graph != null),
         assert(algorithm != null),
         renderer = renderer ?? ArrowEdgeRenderer(),
@@ -42,8 +45,7 @@ class GraphView extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, RenderCustomLayoutBox renderObject) {
+  void updateRenderObject(BuildContext context, RenderCustomLayoutBox renderObject) {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
@@ -52,9 +54,7 @@ class GraphView extends MultiChildRenderObjectWidget {
 }
 
 class RenderCustomLayoutBox extends RenderBox
-    with
-        ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
+    with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   Graph _graph;
   Layout _algorithm;
   EdgeRenderer _renderer;
@@ -112,8 +112,7 @@ class RenderCustomLayoutBox extends RenderBox
     while (child != null) {
       final NodeBoxData node = child.parentData as NodeBoxData;
 
-      child.layout(BoxConstraints.loose(constraints.biggest),
-          parentUsesSize: true);
+      child.layout(BoxConstraints.loose(constraints.biggest), parentUsesSize: true);
       graph.getNodeAtPosition(position).size = child.size;
 
       child = node.nextSibling;

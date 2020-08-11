@@ -1,8 +1,4 @@
-library graphview;
-
-import 'dart:core';
-
-import 'package:flutter/cupertino.dart';
+part of graphview;
 
 class Graph {
   List<Node> _nodes = [];
@@ -36,8 +32,7 @@ class Graph {
 
     _nodes.remove(node);
 
-    _edges
-        .removeWhere((edge) => edge.source == node || edge.destination == node);
+    _edges.removeWhere((edge) => edge.source == node || edge.destination == node);
 
     notifyGraphObserver();
   }
@@ -68,35 +63,26 @@ class Graph {
   void removeEdges(List<Edge> edge) => _edges.forEach((it) => removeEdge(it));
 
   void removeEdgeFromPredecessor(Node predecessor, Node current) {
-    _edges.removeWhere(
-        (edge) => edge.source == predecessor && edge.destination == current);
+    _edges.removeWhere((edge) => edge.source == predecessor && edge.destination == current);
   }
 
   bool hasNodes() => _nodes.isNotEmpty;
 
   Edge getEdgeBetween(Node source, Node destination) =>
-      _edges.firstWhere((element) =>
-          element.source == source && element.destination == destination);
+      _edges.firstWhere((element) => element.source == source && element.destination == destination);
 
-  bool hasSuccessor(Node node) =>
-      _edges.any((element) => element.source == node);
+  bool hasSuccessor(Node node) => _edges.any((element) => element.source == node);
 
-  List<Node> successorsOf(Node node) => _edges
-      .where((element) => element.source == node)
-      .map((e) => e.destination)
-      .toList();
+  List<Node> successorsOf(Node node) =>
+      _edges.where((element) => element.source == node).map((e) => e.destination).toList();
 
-  bool hasPredecessor(Node node) =>
-      _edges.any((element) => element.destination == node);
+  bool hasPredecessor(Node node) => _edges.any((element) => element.destination == node);
 
-  List<Node> predecessorsOf(Node node) => _edges
-      .where((element) => element.destination == node)
-      .map((edge) => edge.source)
-      .toList();
+  List<Node> predecessorsOf(Node node) =>
+      _edges.where((element) => element.destination == node).map((edge) => edge.source).toList();
 
   bool contains({Node node, Edge edge}) =>
-      node != null && _nodes.contains(node) ||
-      edge != null && _edges.contains(edge);
+      node != null && _nodes.contains(node) || edge != null && _edges.contains(edge);
 
 //  bool contains(Edge edge) => _edges.contains(edge);
 
@@ -115,14 +101,11 @@ class Graph {
     return _nodes[position];
   }
 
-  Node getNodeAtPositionUsingData(Widget data) =>
-      _nodes.firstWhere((element) => element.data == data);
+  Node getNodeAtPositionUsingData(Widget data) => _nodes.firstWhere((element) => element.data == data);
 
-  List<Edge> getOutEdges(Node node) =>
-      _edges.where((element) => element.source == node).toList();
+  List<Edge> getOutEdges(Node node) => _edges.where((element) => element.source == node).toList();
 
-  List<Edge> getInEdges(Node node) =>
-      _edges.where((element) => element.destination == node).toList();
+  List<Edge> getInEdges(Node node) => _edges.where((element) => element.destination == node).toList();
 
   void notifyGraphObserver() => graphObserver.forEach((element) {
         element.notifyGraphInvalidated();

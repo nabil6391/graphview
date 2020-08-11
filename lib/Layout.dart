@@ -1,8 +1,4 @@
-library graphview;
-
-import 'dart:ui';
-
-import 'Graph.dart';
+part of graphview;
 
 abstract class Layout {
   /// Executes the algorithm.

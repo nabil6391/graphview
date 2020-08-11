@@ -1,10 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:graphview/BuchheimWalkerAlgorithm.dart';
-import 'package:graphview/Graph.dart';
 import 'package:graphview/GraphView.dart';
-import 'package:graphview/TreeEdgeRenderer.dart';
 
 class TreeViewPage extends StatefulWidget {
   @override
@@ -24,7 +21,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.siblingSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Sibling Sepration"),
+                    decoration: InputDecoration(labelText: "Sibling Separation"),
                     onChanged: (text) {
                       builder.siblingSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -35,7 +32,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.levelSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Level Seperation"),
+                    decoration: InputDecoration(labelText: "Level Separation"),
                     onChanged: (text) {
                       builder.levelSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
