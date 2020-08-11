@@ -231,9 +231,13 @@ I would like to thank them for open sourcing their code for which reason I was a
 
 Future Works
 ========
-[] Add nodeOnTap
-[] Add Layered Graph (PRs are welcome)
-[] Use a builder pattern to draw items on demand.
+
+- [] Add nodeOnTap
+- [] Add Layered Graph (PRs are welcome)
+- [] Use a builder pattern to draw items on demand.
+- [] Animations
+- [] Dynamic Node Position update for directed graph
+
 
 License
 =======

@@ -1,6 +1,6 @@
 name: graphview
 description:  GraphView is used to display data in graph structures. It can display Tree layout and Directed graph. Useful for Family Tree, Hierarchy View.
-version: 0.1.1
+version: 0.1.2
 homepage: https://github.com/nabil6391/graphview
 
 environment:
