@@ -4,6 +4,9 @@ Get it from [![pub package](https://img.shields.io/pub/v/graphview.svg)](https:/
 
 Flutter GraphView is used to display data in graph structures. It can display Tree layout and Directed graph.
 
+![alt Example](https://media.giphy.com/media/eNuoOOcbvWlRmJjkDZ/giphy.gif "GraphView")
+![alt Example](https://media.giphy.com/media/jQ7fdMc5HmyQRoikaK/giphy.gif "Tree")
+
 Overview
 ========
 The library is designed to support different graph layouts and currently works excellent with small graphs.
@@ -14,7 +17,7 @@ http://graphview.surge.sh/
 Layouts
 ======
 ### Tree
-Uses Walker's algorithm with Buchheim's runtime improvements (`BuchheimWalkerAlgorithm` class). Supports different orientations. All you have to do is using the `BuchheimWalkerConfiguration.Builder.orientation` with either `ORIENTATION_LEFT_RIGHT`, `ORIENTATION_RIGHT_LEFT`, `ORIENTATION_TOP_BOTTOM` and
+Uses Walker's algorithm with Buchheim's runtime improvements (`BuchheimWalkerAlgorithm` class). Supports different orientations. All you have to do is using the `BuchheimWalkerConfiguration.orientation` with either `ORIENTATION_LEFT_RIGHT`, `ORIENTATION_RIGHT_LEFT`, `ORIENTATION_TOP_BOTTOM` and
 `ORIENTATION_BOTTOM_TOP` (default). Furthermore parameters like sibling-, level-, subtree separation can be set.
 
 Useful for: Family Tree, Hierarchy View, Flutter Widget Tree, 
