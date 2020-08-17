@@ -1,8 +1,8 @@
 part of graphview;
 
 class Graph {
-  List<Node> _nodes = [];
-  List<Edge> _edges = [];
+  final List<Node> _nodes = [];
+  final List<Edge> _edges = [];
   List<GraphObserver> graphObserver = [];
 
   List<Node> get nodes => _nodes; //  List<Node> nodes = _nodes;
@@ -56,11 +56,11 @@ class Graph {
     }
   }
 
-  void addEdges(List<Edge> edge) => _edges.forEach((it) => addEdgeS(it));
+  void addEdges(List<Edge> edges) => edges.forEach((it) => addEdgeS(it));
 
   void removeEdge(Edge edge) => _edges.remove(edge);
 
-  void removeEdges(List<Edge> edge) => _edges.forEach((it) => removeEdge(it));
+  void removeEdges(List<Edge> edges) => edges.forEach((it) => removeEdge(it));
 
   void removeEdgeFromPredecessor(Node predecessor, Node current) {
     _edges.removeWhere((edge) => edge.source == predecessor && edge.destination == current);
@@ -138,6 +138,14 @@ class Node {
     _position = value;
   }
 
+  set y(double value) {
+    _position = Offset(_position.dx, value);
+  }
+
+  set x(double value) {
+    _position = Offset(value, _position.dy);
+  }
+
   Size get size => _size;
 
   set size(Size value) {
@@ -145,26 +153,40 @@ class Node {
   }
 
   @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Node && _position == other._position && data == other.data && _size == other._size;
+
+  @override
+  int get hashCode => key.hashCode ^ data.hashCode;
+
+  @override
   String toString() {
     return 'Node{_position: $_position, data: $data, _size: $_size}';
   }
-
-//  void setSize(width: Int, height: Int) {
-//  this.width = width
-//  this.height = height
-//  }
-//
-//  void setPosition(double x, double y) {
-//  this.x = x
-//  this.y = y
-//  }
 }
 
 class Edge {
   Node source;
   Node destination;
 
-  Edge(this.source, this.destination);
+  Key key;
+
+  Edge(this.source, this.destination, {this.key}) {
+    key = key ?? ValueKey(hashCode);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Edge &&
+          runtimeType == other.runtimeType &&
+          source == other.source &&
+          destination == other.destination &&
+          key == other.key;
+
+  @override
+  int get hashCode => source.hashCode ^ destination.hashCode;
 }
 
 abstract class GraphObserver {
