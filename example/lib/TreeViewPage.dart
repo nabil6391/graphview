@@ -95,8 +95,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
   int n = 1;
 
   Widget getNodeText() {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
+    return InkWell(
       onTap: () {
         print('clicked');
       },

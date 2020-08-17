@@ -7,25 +7,27 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-part 'ArrowEdgeRenderer.dart';
-part 'BuchheimWalkerAlgorithm.dart';
-part 'EdgeRenderer.dart';
-part 'FruchtermanReingoldAlgorithm.dart';
 part 'Graph.dart';
 part 'Layout.dart';
-part 'TreeEdgeRenderer.dart';
-
-typedef PressCallback = Function(Node node, Widget item);
+part 'edgerenderer/ArrowEdgeRenderer.dart';
+part 'edgerenderer/EdgeRenderer.dart';
+part 'edgerenderer/TreeEdgeRenderer.dart';
+part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
+part 'layered/SugiyamaAlgorithm.dart';
+part 'layered/SugiyamaConfiguration.dart';
+part 'layered/SugiyamaEdgeData.dart';
+part 'layered/SugiyamaEdgeRenderer.dart';
+part 'layered/SugiyamaNodeData.dart';
+part 'tree/BuchheimWalkerAlgorithm.dart';
 
 class GraphView extends MultiChildRenderObjectWidget {
   Graph graph;
   Layout algorithm;
-  EdgeRenderer renderer;
+  Paint paint;
 
-  GraphView({Key key, @required this.graph, @required this.algorithm, EdgeRenderer renderer})
+  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint})
       : assert(graph != null),
         assert(algorithm != null),
-        renderer = renderer ?? ArrowEdgeRenderer(),
         super(key: key, children: _extractChildren(graph));
 
   // Traverses the InlineSpan tree and depth-first collects the list of
@@ -41,7 +43,7 @@ class GraphView extends MultiChildRenderObjectWidget {
 
   @override
   RenderCustomLayoutBox createRenderObject(BuildContext context) {
-    return RenderCustomLayoutBox(graph, algorithm, renderer);
+    return RenderCustomLayoutBox(graph, algorithm, paint);
   }
 
   @override
@@ -49,7 +51,7 @@ class GraphView extends MultiChildRenderObjectWidget {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
-      ..renderer = renderer;
+      ..customPaint = paint;
   }
 }
 
@@ -57,25 +59,29 @@ class RenderCustomLayoutBox extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   Graph _graph;
   Layout _algorithm;
-  EdgeRenderer _renderer;
-
-  EdgeRenderer get renderer => _renderer;
-
-  set renderer(EdgeRenderer value) {
-    _renderer = value;
-    markNeedsLayout();
-  }
+  Paint _paint;
 
   RenderCustomLayoutBox(
     Graph graph,
     Layout algorithm,
-    EdgeRenderer renderer, {
+    Paint paint, {
     List<RenderBox> children,
   }) {
     _algorithm = algorithm;
     _graph = graph;
-    _renderer = renderer;
+    _paint = paint ?? Paint()
+      ..color = Colors.black
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
     addAll(children);
+  }
+
+  Paint get customPaint => _paint;
+
+  set customPaint(Paint value) {
+    _paint = value;
+    markNeedsPaint();
   }
 
   Graph get graph => _graph;
@@ -107,10 +113,10 @@ class RenderCustomLayoutBox extends RenderBox
       return;
     }
 
-    RenderBox child = firstChild;
-    int position = 0;
+    var child = firstChild;
+    var position = 0;
     while (child != null) {
-      final NodeBoxData node = child.parentData as NodeBoxData;
+      final node = child.parentData as NodeBoxData;
 
       child.layout(BoxConstraints.loose(constraints.biggest), parentUsesSize: true);
       graph.getNodeAtPosition(position).size = child.size;
@@ -124,7 +130,7 @@ class RenderCustomLayoutBox extends RenderBox
     child = firstChild;
     position = 0;
     while (child != null) {
-      final NodeBoxData node = child.parentData as NodeBoxData;
+      final node = child.parentData as NodeBoxData;
 
       node.offset = graph.getNodeAtPosition(position).position;
 
@@ -135,20 +141,27 @@ class RenderCustomLayoutBox extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    var paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt;
-
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
 
-    _renderer.render(context.canvas, graph, paint);
+    algorithm.renderer.render(context.canvas, graph, customPaint);
 
     context.canvas.restore();
 
     defaultPaint(context, offset);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
+    return defaultHitTestChildren(result, position: position);
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<Graph>('graph', graph));
+    properties.add(DiagnosticsProperty<Layout>('algorithm', algorithm));
+    properties.add(DiagnosticsProperty<Paint>('paint', customPaint));
   }
 }
 

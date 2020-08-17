@@ -60,6 +60,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
               child: GraphView(
                 graph: graph,
                 algorithm: SugiyamaAlgorithm(builder),
+                paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.stroke,
               )),
         ),
       ],
@@ -148,7 +149,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     graph.addEdge(node22, node23);
 
     builder
-      ..nodeSeparation = (100)
-      ..levelSeparation = (100);
+      ..nodeSeparation = (15)
+      ..levelSeparation = (15);
   }
 }
