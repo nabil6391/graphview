@@ -1,3 +1,4 @@
+import 'package:example/LayerGraphView.dart';
 import 'package:flutter/material.dart';
 
 import 'GraphViewClusterPage.dart';
@@ -50,6 +51,19 @@ class Home extends StatelessWidget {
               ),
               child: Text(
                 "Graph Cluster View (FruchtermanReingold)",
+                style: TextStyle(color: Theme.of(context).primaryColor),
+              )),
+          FlatButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => Scaffold(
+                      appBar: AppBar(),
+                      body: LayeredGraphViewPage(),
+                    )),
+              ),
+              child: Text(
+                "Layered View (FruchtermanReingold)",
                 style: TextStyle(color: Theme.of(context).primaryColor),
               )),
         ]),

@@ -32,7 +32,6 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
                   child: GraphView(
                     graph: graph,
                     algorithm: builder,
-                    renderer: ArrowEdgeRenderer(),
                   )),
             ),
           ],
@@ -77,6 +76,6 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     graph.addEdge(g, c);
     graph.addEdge(h, g);
 
-    builder = FruchtermanReingoldAlgorithm(1000);
+    builder = FruchtermanReingoldAlgorithm(iterations: 1000);
   }
 }

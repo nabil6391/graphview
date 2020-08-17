@@ -82,8 +82,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   maxScale: 5.6,
                   child: GraphView(
                     graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(builder),
-                    renderer: TreeEdgeRenderer(builder),
+                    algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
                   )),
             ),
           ],
@@ -96,15 +95,21 @@ class _TreeViewPageState extends State<TreeViewPage> {
   int n = 1;
 
   Widget getNodeText() {
-    return Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: [
-            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
-          ],
-        ),
-        child: Text("Node ${n++}"));
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        print('clicked');
+      },
+      child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: [
+              BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+            ],
+          ),
+          child: Text("Node ${n++}")),
+    );
   }
 
   final Graph graph = Graph();
