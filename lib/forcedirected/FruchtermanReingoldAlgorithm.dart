@@ -1,8 +1,7 @@
 part of graphview;
 
 const int DEFAULT_ITERATIONS = 1000;
-const int SEED = 401678;
-const int CLUSTER_PADDING = 100;
+const int CLUSTER_PADDING = 15;
 const double EPSILON = 4.94065645841247E-324;
 
 class FruchtermanReingoldAlgorithm extends Layout {
@@ -12,14 +11,14 @@ class FruchtermanReingoldAlgorithm extends Layout {
   double height;
   double k;
   double t;
-  double attraction_k;
-  double repulsion_k;
-  int iterations;
+  double attractionK;
+  double repulsionK;
+  int iterations = DEFAULT_ITERATIONS;
 
   EdgeRenderer renderer;
 
-  FruchtermanReingoldAlgorithm({this.iterations = DEFAULT_ITERATIONS, EdgeRenderer renderer}){
-    this.renderer = renderer ?? ArrowEdgeRenderer();
+  FruchtermanReingoldAlgorithm({this.iterations = DEFAULT_ITERATIONS, this.renderer}) {
+    renderer = renderer ?? ArrowEdgeRenderer();
   }
 
   void randomize(List<Node> nodes) {
@@ -30,7 +29,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
   }
 
   void cool(int currentIteration) {
-    this.t *= 1.0 - currentIteration / this.iterations;
+    t *= 1.0 - currentIteration / iterations;
   }
 
   void limitMaximumDisplacement(List<Node> nodes) {
@@ -64,11 +63,11 @@ class FruchtermanReingoldAlgorithm extends Layout {
   }
 
   double forceAttraction(double x) {
-    return x * x / this.attraction_k;
+    return x * x / attractionK;
   }
 
   double forceRepulsion(double x) {
-    return repulsion_k * this.repulsion_k / x;
+    return repulsionK * repulsionK / x;
   }
 
   Offset getDisp(Node node) {
@@ -76,7 +75,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
   }
 
   void setDisp(Node node, Offset disp) {
-    this.disps[node] = disp;
+    disps[node] = disp;
   }
 
   Size run(Graph graph, double shiftX, double shiftY) {
@@ -90,12 +89,12 @@ class FruchtermanReingoldAlgorithm extends Layout {
     t = (0.1 * sqrt((width / 2 * height / 2).toDouble()));
     k = (0.75 * sqrt((width * height / nodes.length).toDouble()));
 
-    attraction_k = 0.75 * k;
-    repulsion_k = 0.75 * k;
+    attractionK = 0.75 * k;
+    repulsionK = 0.75 * k;
 
     randomize(nodes);
 
-    for (int i = 0; i < iterations; i++) {
+    for (var i = 0; i < iterations; i++) {
       calculateRepulsion(nodes);
 
       calculateAttraction(edges);
@@ -152,11 +151,11 @@ class FruchtermanReingoldAlgorithm extends Layout {
   void positionCluster(List<NodeCluster> nodeClusters) {
     combineSingleNodeCluster(nodeClusters);
 
-    NodeCluster cluster = nodeClusters[0];
+    var cluster = nodeClusters[0];
 // move first cluster to 0,0
     cluster.offset(-cluster.rect.left, -cluster.rect.top);
 
-    for (int i = 1; i < nodeClusters.length; i++) {
+    for (var i = 1; i < nodeClusters.length; i++) {
       var nextCluster = nodeClusters[i];
       var xDiff = nextCluster.rect.left - cluster.rect.right - CLUSTER_PADDING;
       var yDiff = nextCluster.rect.top - cluster.rect.top;
@@ -242,9 +241,6 @@ class FruchtermanReingoldAlgorithm extends Layout {
 
     return Size(right - left, bottom - top);
   }
-
-  @override
-  get configuration => throw UnimplementedError();
 }
 
 class NodeCluster {
@@ -253,15 +249,15 @@ class NodeCluster {
   Rect rect;
 
   List<Node> getNodes() {
-    return this.nodes;
+    return nodes;
   }
 
   Rect getRect() {
-    return this.rect;
+    return rect;
   }
 
-  void setRect(Rect var1) {
-    this.rect = var1;
+  void setRect(Rect rect) {
+    rect = rect;
   }
 
   void add(Node node) {
@@ -276,11 +272,11 @@ class NodeCluster {
   }
 
   bool contains(Node node) {
-    return this.nodes.contains(node);
+    return nodes.contains(node);
   }
 
   int size() {
-    return this.nodes.length;
+    return nodes.length;
   }
 
   void concat(NodeCluster cluster) {
@@ -299,8 +295,8 @@ class NodeCluster {
   }
 
   NodeCluster() {
-    this.nodes = [];
-    this.rect = Rect.zero;
+    nodes = [];
+    rect = Rect.zero;
   }
 }
 

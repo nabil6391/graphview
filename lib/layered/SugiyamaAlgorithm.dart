@@ -447,13 +447,13 @@ class SugiyamaAlgorithm extends Layout {
 
     // get the average median of each coordinate
     graph.nodes.forEach((n) {
-     var values = List.filled(4, 0.0);
+      var values = List.filled(4, 0.0);
       for (var i = 0; i < 4; i++) {
         values[i] = x[i][n];
       }
       values.sort();
-     var average = (values[1] + values[2]) / 2;
-     coordinates[n] = average;
+      var average = (values[1] + values[2]) / 2;
+      coordinates[n] = average;
 
 //     coordinates[n] = x.map((m) => m[n]).reduce((a, b) => a + b) / x.length;
     });
@@ -796,7 +796,6 @@ class SugiyamaAlgorithm extends Layout {
         }
       }
     }
-
   }
 
   void restoreCycle() {

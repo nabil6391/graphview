@@ -120,7 +120,9 @@ class Node {
   @required
   Widget data;
 
-  Node(this.data, {this.key});
+  Node(this.data, {this.key}) {
+    key = key ?? ValueKey(hashCode);
+  }
 
   Size _size = Size(0, 0);
 

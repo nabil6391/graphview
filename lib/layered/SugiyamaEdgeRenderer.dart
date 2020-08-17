@@ -43,7 +43,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         path.reset();
         path.moveTo(bendPoints[0], bendPoints[1]);
 
-        for (var i = 3; i < size - 2; i=i+2) {
+        for (var i = 3; i < size - 2; i = i + 2) {
           path.lineTo(bendPoints[i - 1], bendPoints[i]);
         }
 
