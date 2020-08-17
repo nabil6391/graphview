@@ -2,10 +2,11 @@ GraphView
 ===========
 Get it from [![pub package](https://img.shields.io/pub/v/graphview.svg)](https://pub.dev/packages/graphview)
 
-Flutter GraphView is used to display data in graph structures. It can display Tree layout and Directed graph.
+Flutter GraphView is used to display data in graph structures. It can display Tree layout, Directed and Layered graph. Useful for Family Tree, Hierarchy View.
 
 ![alt Example](https://media.giphy.com/media/eNuoOOcbvWlRmJjkDZ/giphy.gif "GraphView")
 ![alt Example](https://media.giphy.com/media/jQ7fdMc5HmyQRoikaK/giphy.gif "Tree")
+![alt Example](image/LayeredGraph.png "Layered Graph Example")
 
 Overview
 ========
@@ -25,6 +26,11 @@ Useful for: Family Tree, Hierarchy View, Flutter Widget Tree,
 Directed graph drawing by simulating attraction/repulsion forces. For this the algorithm by Fruchterman and Reingold (`FruchtermanReingoldAlgorithm` class) was implemented.
 
 Useful for: Social network, Mind Map, Cluster, Graphs, Intercity Road Network,
+
+### Layered graph
+Algorithm from Sugiyama et al. for drawing multilayer graphs, taking advantage of the hierarchical structure of the graph (SugiyamaAlgorithm class). You can also set the parameters for node and level separation using the SugiyamaConfiguration.
+
+Useful for: Hierarchical Graph which it can have weird edges/multiple paths
 
 Usage
 ======
@@ -126,7 +132,6 @@ class _GraphViewPageState extends State<GraphViewPage> {
                   child: GraphView(
                     graph: graph,
                     algorithm: BuchheimWalkerAlgorithm(builder),
-                    renderer: TreeEdgeRenderer(builder),
                   )),
             ),
           ],
@@ -206,6 +211,20 @@ getNodeText() {
         child: Text("Node ${n++}"));
   }
 ```
+
+### Using Paint to color and line thickness
+You can use any widget inside the node:
+
+```dart
+
+getGraphView() {
+        return GraphView(
+                graph: graph,
+                algorithm: SugiyamaAlgorithm(builder),
+                paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.stroke,
+              );
+}
+```
 Examples
 ========
 #### Rooted Tree
@@ -221,7 +240,10 @@ Examples
 ![alt Example](image/RightLeftTree.png "Tree Example")
 
 #### Directed Graph
-![alt Example](image/Graph.png "Graph Example")
+![alt Example](image/Graph.png "Directed Graph Example")
+
+#### Layered Graph
+![alt Example](image/LayeredGraph.png "Layered Graph Example")
 
 Inspirations
 ========
@@ -233,7 +255,7 @@ Future Works
 ========
 
 - [] Add nodeOnTap
-- [] Add Layered Graph (PRs are welcome)
+- [x] Add Layered Graph
 - [] Use a builder pattern to draw items on demand.
 - [] Animations
 - [] Dynamic Node Position update for directed graph

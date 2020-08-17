@@ -63,7 +63,7 @@ class Home extends StatelessWidget {
                     )),
               ),
               child: Text(
-                "Layered View (FruchtermanReingold)",
+                "Layered View (Sugiyama)",
                 style: TextStyle(color: Theme.of(context).primaryColor),
               )),
         ]),

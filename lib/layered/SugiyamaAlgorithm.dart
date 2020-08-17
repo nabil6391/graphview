@@ -26,8 +26,8 @@ class SugiyamaAlgorithm extends Layout {
     initSugiyamaData();
     cycleRemoval();
     layerAssignment();
-    nodeOrdering();
-    coordinateAssignment();
+    nodeOrdering(); //expensive operation
+    coordinateAssignment(); //expensive operation
     shiftCoordinates(shiftX, shiftY);
     final graphSize = calculateGraphSize(this.graph);
     denormalize();
@@ -285,17 +285,17 @@ class SugiyamaAlgorithm extends Layout {
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
   int crossingb(List<Node> northernNodes, Node n1, Node n2) {
-    var crossinga = 0;
+    var crossing = 0;
     final parentNodesN1 = graph.edges.where((element) => element.destination == n1).map((e) => e.source).toList();
     final parentNodesN2 = graph.edges.where((element) => element.destination == n2).map((e) => e.source).toList();
     parentNodesN2.forEach((pn2) {
       final indexOfPn2 = northernNodes.indexOf(pn2);
       parentNodesN1.where((it) => indexOfPn2 < northernNodes.indexOf(it)).forEach((element) {
-        crossinga++;
+        crossing++;
       });
     });
 
-    return crossinga;
+    return crossing;
   }
 
   int crossing(List<List<Node>> layers) {
@@ -446,16 +446,14 @@ class SugiyamaAlgorithm extends Layout {
     }
 
     // get the average median of each coordinate
+    var values = List.filled(4, 0.0);
     graph.nodes.forEach((n) {
-      var values = List.filled(4, 0.0);
       for (var i = 0; i < 4; i++) {
         values[i] = x[i][n];
       }
       values.sort();
       var average = (values[1] + values[2]) / 2;
       coordinates[n] = average;
-
-//     coordinates[n] = x.map((m) => m[n]).reduce((a, b) => a + b) / x.length;
     });
 
 // get the minimum coordinate value;
