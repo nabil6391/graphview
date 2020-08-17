@@ -16,7 +16,11 @@ class FruchtermanReingoldAlgorithm extends Layout {
   double repulsion_k;
   int iterations;
 
-  FruchtermanReingoldAlgorithm([this.iterations = DEFAULT_ITERATIONS]);
+  EdgeRenderer renderer;
+
+  FruchtermanReingoldAlgorithm({this.iterations = DEFAULT_ITERATIONS, EdgeRenderer renderer}){
+    this.renderer = renderer ?? ArrowEdgeRenderer();
+  }
 
   void randomize(List<Node> nodes) {
     nodes.forEach((node) {
