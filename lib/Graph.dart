@@ -47,8 +47,16 @@ class Graph {
   }
 
   void addEdgeS(Edge edge) {
-    addNode(edge.source);
-    addNode(edge.destination);
+    if (_nodes.contains(edge.source)) {
+      edge.source = _nodes.firstWhere((element) => element == edge.source);
+    } else {
+      _nodes.add(edge.source);
+    }
+    if (_nodes.contains(edge.destination)) {
+      edge.destination = _nodes.firstWhere((element) => element == edge.destination);
+    } else {
+      _nodes.add(edge.destination);
+    }
 
     if (!_edges.contains(edge)) {
       _edges.add(edge);
