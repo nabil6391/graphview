@@ -120,9 +120,7 @@ class Node {
   @required
   Widget data;
 
-  Node(this.data, {this.key}) {
-    key = key ?? ValueKey(hashCode);
-  }
+  Node(this.data, {this.key});
 
   Size _size = Size(0, 0);
 
@@ -157,10 +155,10 @@ class Node {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Node && _position == other._position && data == other.data && _size == other._size;
+      other is Node && hashCode == other.hashCode;
 
   @override
-  int get hashCode => key.hashCode ^ data.hashCode;
+  int get hashCode => key?.hashCode ?? data.hashCode;
 
   @override
   String toString() {
@@ -174,21 +172,15 @@ class Edge {
 
   Key key;
 
-  Edge(this.source, this.destination, {this.key}) {
-    key = key ?? ValueKey(hashCode);
-  }
+  Edge(this.source, this.destination, {this.key});
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Edge &&
-          runtimeType == other.runtimeType &&
-          source == other.source &&
-          destination == other.destination &&
-          key == other.key;
+      other is Edge && hashCode == other.hashCode;
 
   @override
-  int get hashCode => source.hashCode ^ destination.hashCode;
+  int get hashCode => key?.hashCode ?? source.hashCode ^ destination.hashCode;
 }
 
 abstract class GraphObserver {
