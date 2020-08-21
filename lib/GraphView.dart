@@ -69,18 +69,18 @@ class RenderCustomLayoutBox extends RenderBox
   }) {
     _algorithm = algorithm;
     _graph = graph;
-    _paint = paint ?? Paint()
-      ..color = Colors.black
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt;
+    customPaint = paint;
     addAll(children);
   }
 
   Paint get customPaint => _paint;
 
   set customPaint(Paint value) {
-    _paint = value;
+    _paint = value ?? Paint()
+      ..color = Colors.black
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;;
     markNeedsPaint();
   }
 
