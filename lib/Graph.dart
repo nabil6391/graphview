@@ -109,7 +109,9 @@ class Graph {
     return _nodes[position];
   }
 
-  Node getNodeAtPositionUsingData(Widget data) => _nodes.firstWhere((element) => element.data == data);
+  Node getNodeAtUsingData(Widget data) => _nodes.firstWhere((element) => element.data == data);
+
+  Node getNodeUsingKey(Key key) => _nodes.firstWhere((element) => element.key == key);
 
   List<Edge> getOutEdges(Node node) => _edges.where((element) => element.source == node).toList();
 
@@ -121,7 +123,6 @@ class Graph {
 }
 
 class Node {
-  Offset _position = Offset(0, 0);
 
   Key key;
 
@@ -130,34 +131,24 @@ class Node {
 
   Node(this.data, {this.key});
 
-  Size _size = Size(0, 0);
+  Size size = Size(0, 0);
 
-  double get height => _size.height;
+  Offset position = Offset(0, 0);
 
-  double get width => _size.width;
+  double get height => size.height;
 
-  double get x => _position.dx;
+  double get width => size.width;
 
-  double get y => _position.dy;
+  double get x => position.dx;
 
-  Offset get position => _position;
-
-  set position(Offset value) {
-    _position = value;
-  }
+  double get y => position.dy;
 
   set y(double value) {
-    _position = Offset(_position.dx, value);
+    position = Offset(position.dx, value);
   }
 
   set x(double value) {
-    _position = Offset(value, _position.dy);
-  }
-
-  Size get size => _size;
-
-  set size(Size value) {
-    _size = value;
+    position = Offset(value, position.dy);
   }
 
   @override
@@ -170,7 +161,7 @@ class Node {
 
   @override
   String toString() {
-    return 'Node{_position: $_position, data: $data, _size: $_size}';
+    return 'Node{position: $position, data: $data, _size: $size}';
   }
 }
 
