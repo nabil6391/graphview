@@ -1,3 +1,8 @@
+## 0.5.1
+
+- Fix a bug where the paint was not applied after setstate.
+- Proper Key validation to match Nodes and Edges
+
 ## 0.5.0
 
 - Minor Breaking change. We now pass edge renderers as part of Layout
