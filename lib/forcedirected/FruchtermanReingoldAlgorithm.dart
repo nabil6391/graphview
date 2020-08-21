@@ -2,15 +2,15 @@ part of graphview;
 
 const int DEFAULT_ITERATIONS = 1000;
 const int CLUSTER_PADDING = 15;
-const double EPSILON = 4.94065645841247E-324;
+const double EPSILON = 0.0001;
 
 class FruchtermanReingoldAlgorithm extends Layout {
-  Map<Node, Offset> disps = Map();
+  Map<Node, Offset> disps = {};
   Random rand = Random();
   double width;
   double height;
   double k;
-  double t;
+  double tick;
   double attractionK;
   double repulsionK;
   int iterations = DEFAULT_ITERATIONS;
@@ -23,30 +23,33 @@ class FruchtermanReingoldAlgorithm extends Layout {
 
   void randomize(List<Node> nodes) {
     nodes.forEach((node) {
-      disps[node] = Offset.zero;
-      node.position = Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
+      if (node.position.distance == 0.0) {
+        disps[node] = Offset.zero;
+        node.position = Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
+      }
     });
   }
 
   void cool(int currentIteration) {
-    t *= 1.0 - currentIteration / iterations;
+    tick *= 1.0 - currentIteration / iterations;
   }
 
   void limitMaximumDisplacement(List<Node> nodes) {
     nodes.forEach((node) {
-      var dispLength = max(EPSILON, getDisp(node).distance.toDouble());
-      node.position = (node.position + (getDisp(node) / dispLength) * (min(dispLength, t)));
+      var dispLength = max(EPSILON, getDisp(node).distance);
+      node.position = node.position + getDisp(node) / dispLength * min(dispLength, tick);
     });
   }
 
   void calculateAttraction(List<Edge> edges) {
     edges.forEach((edge) {
-      Node v = edge.source;
-      Node u = edge.destination;
-      Offset delta = v.position - (u.position);
-      var deltaLength = max(EPSILON, delta.distance.toDouble());
-      setDisp(v, getDisp(v) - (delta / (deltaLength) * (forceAttraction(deltaLength))));
-      setDisp(u, getDisp(u) + (delta / (deltaLength) * (forceAttraction(deltaLength))));
+      var source = edge.source;
+      var destination = edge.destination;
+      var delta = source.position - destination.position;
+      var deltaLength = max(EPSILON, delta.distance);
+      var offsetDisp = delta / deltaLength * forceAttraction(deltaLength);
+      setDisp(source, getDisp(source) - offsetDisp);
+      setDisp(destination, getDisp(destination) + offsetDisp);
     });
   }
 
@@ -54,9 +57,9 @@ class FruchtermanReingoldAlgorithm extends Layout {
     nodes.forEach((v) {
       nodes.forEach((u) {
         if (u != v) {
-          Offset delta = v.position - (u.position);
-          var deltaLength = max(EPSILON, delta.distance.toDouble());
-          setDisp(v, getDisp(v) + (delta / (deltaLength) * (forceRepulsion(deltaLength))));
+          var delta = v.position - u.position;
+          var deltaLength = max(EPSILON, delta.distance);
+          setDisp(v, getDisp(v) + (delta / deltaLength * forceRepulsion(deltaLength)));
         }
       });
     });
@@ -86,8 +89,8 @@ class FruchtermanReingoldAlgorithm extends Layout {
     var nodes = graph.nodes;
     var edges = graph.edges;
 
-    t = (0.1 * sqrt((width / 2 * height / 2).toDouble()));
-    k = (0.75 * sqrt((width * height / nodes.length).toDouble()));
+    tick = 0.1 * sqrt(width / 2 * height / 2);
+    k = 0.75 * sqrt(width * height / nodes.length);
 
     attractionK = 0.75 * k;
     repulsionK = 0.75 * k;
@@ -125,8 +128,8 @@ class FruchtermanReingoldAlgorithm extends Layout {
     var offset = getOffset(graph);
     var x = offset.dx;
     var y = offset.dy;
-    List<Node> nodesVisited = [];
-    List<NodeCluster> nodeClusters = [];
+    var nodesVisited = <Node>[];
+    var nodeClusters = <NodeCluster>[];
     graph.nodes.forEach((node) {
       node.position = Offset(node.x - x, node.y - y);
     });
@@ -152,7 +155,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
     combineSingleNodeCluster(nodeClusters);
 
     var cluster = nodeClusters[0];
-// move first cluster to 0,0
+    // move first cluster to 0,0
     cluster.offset(-cluster.rect.left, -cluster.rect.top);
 
     for (var i = 1; i < nodeClusters.length; i++) {
@@ -221,7 +224,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
   }
 
   bool done() {
-    return t < 1.0 / max(height, width);
+    return tick < 1.0 / max(height, width);
   }
 
   void drawEdges(Canvas canvas, Graph graph, Paint linePaint) {}
@@ -229,8 +232,8 @@ class FruchtermanReingoldAlgorithm extends Layout {
   Size calculateGraphSize(Graph graph) {
     var left = double.infinity;
     var top = double.infinity;
-    var right = -double.infinity;
-    var bottom = -double.infinity;
+    var right = double.negativeInfinity;
+    var bottom = double.negativeInfinity;
 
     graph.nodes.forEach((node) {
       left = min(left, node.x);
