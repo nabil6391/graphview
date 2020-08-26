@@ -466,6 +466,9 @@ class BuchheimWalkerAlgorithm extends Layout {
     maxNodeWidth = double.negativeInfinity;
     maxNodeHeight = double.negativeInfinity;
   }
+
+  @override
+  void setFocusedNode(Node node) {}
 }
 
 class BuchheimWalkerNodeData {

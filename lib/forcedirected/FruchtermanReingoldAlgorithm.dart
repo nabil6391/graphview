@@ -4,7 +4,7 @@ const int DEFAULT_ITERATIONS = 1000;
 const int CLUSTER_PADDING = 15;
 const double EPSILON = 0.0001;
 
-class FruchtermanReingoldAlgorithm extends Layout {
+class FruchtermanReingoldAlgorithm implements Layout {
   Map<Node, Offset> disps = {};
   Random rand = Random();
   double width;
@@ -21,10 +21,10 @@ class FruchtermanReingoldAlgorithm extends Layout {
     renderer = renderer ?? ArrowEdgeRenderer();
   }
 
-  void randomize(List<Node> nodes) {
+  void init(List<Node> nodes) {
     nodes.forEach((node) {
+      disps[node] = Offset.zero;
       if (node.position.distance == 0.0) {
-        disps[node] = Offset.zero;
         node.position = Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
       }
     });
@@ -36,8 +36,12 @@ class FruchtermanReingoldAlgorithm extends Layout {
 
   void limitMaximumDisplacement(List<Node> nodes) {
     nodes.forEach((node) {
-      var dispLength = max(EPSILON, getDisp(node).distance);
-      node.position = node.position + getDisp(node) / dispLength * min(dispLength, tick);
+      if (node != focusedNode) {
+        var dispLength = max(EPSILON, getDisp(node).distance);
+        node.position = node.position + getDisp(node) / dispLength * min(dispLength, tick);
+      } else {
+        setDisp(node, Offset.zero);
+      }
     });
   }
 
@@ -81,6 +85,8 @@ class FruchtermanReingoldAlgorithm extends Layout {
     disps[node] = disp;
   }
 
+  var focusedNode;
+
   Size run(Graph graph, double shiftX, double shiftY) {
     var size = findBiggestSize(graph) * graph.nodeCount();
     width = size;
@@ -95,7 +101,7 @@ class FruchtermanReingoldAlgorithm extends Layout {
     attractionK = 0.75 * k;
     repulsionK = 0.75 * k;
 
-    randomize(nodes);
+    init(nodes);
 
     for (var i = 0; i < iterations; i++) {
       calculateRepulsion(nodes);
@@ -111,7 +117,9 @@ class FruchtermanReingoldAlgorithm extends Layout {
       }
     }
 
-    positionNodes(graph);
+    if (focusedNode == null) {
+      positionNodes(graph);
+    }
 
     shiftCoordinates(graph, shiftX, shiftY);
 
@@ -243,6 +251,11 @@ class FruchtermanReingoldAlgorithm extends Layout {
     });
 
     return Size(right - left, bottom - top);
+  }
+
+  @override
+  void setFocusedNode(Node node) {
+    focusedNode = node;
   }
 }
 
