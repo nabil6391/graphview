@@ -8,4 +8,6 @@ abstract class Layout {
   /// @param shiftX Shifts the x-coordinate origin
   /// @return The size of the graph
   Size run(Graph graph, double shiftX, double shiftY);
+
+  void setFocusedNode(Node node);
 }

@@ -39,8 +39,8 @@ class Graph {
 
   void removeNodes(List<Node> nodes) => nodes.forEach((it) => removeNode(it));
 
-  Edge addEdge(Node source, Node destination) {
-    final edge = Edge(source, destination);
+  Edge addEdge(Node source, Node destination, {Paint paint}) {
+    final edge = Edge(source, destination, paint: paint);
     addEdgeS(edge);
 
     return edge;
@@ -123,7 +123,6 @@ class Graph {
 }
 
 class Node {
-
   Key key;
 
   @required
@@ -152,9 +151,7 @@ class Node {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Node && hashCode == other.hashCode;
+  bool operator ==(Object other) => identical(this, other) || other is Node && hashCode == other.hashCode;
 
   @override
   int get hashCode => key?.hashCode ?? data.hashCode;
@@ -170,13 +167,12 @@ class Edge {
   Node destination;
 
   Key key;
+  Paint paint;
 
-  Edge(this.source, this.destination, {this.key});
+  Edge(this.source, this.destination, {this.key, this.paint});
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Edge && hashCode == other.hashCode;
+  bool operator ==(Object other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
 
   @override
   int get hashCode => key?.hashCode ?? source.hashCode ^ destination.hashCode;

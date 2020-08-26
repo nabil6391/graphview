@@ -21,9 +21,9 @@ part 'layered/SugiyamaNodeData.dart';
 part 'tree/BuchheimWalkerAlgorithm.dart';
 
 class GraphView extends MultiChildRenderObjectWidget {
-  Graph graph;
-  Layout algorithm;
-  Paint paint;
+  final Graph graph;
+  final Layout algorithm;
+  final Paint paint;
 
   GraphView({Key key, @required this.graph, @required this.algorithm, this.paint})
       : assert(graph != null),
@@ -80,7 +80,7 @@ class RenderCustomLayoutBox extends RenderBox
       ..color = Colors.black
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt;;
+      ..strokeCap = StrokeCap.butt;
     markNeedsPaint();
   }
 

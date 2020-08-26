@@ -16,7 +16,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       var source = edge.source;
       var destination = edge.destination;
 
-      Offset sourceOffset = source.position;
+      var sourceOffset = source.position;
 
       var x1 = sourceOffset.dx;
       var y1 = sourceOffset.dy;
@@ -33,10 +33,18 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
       var clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
-      var triangleCentroid =
-          drawTriangle(canvas, trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+      Paint edgePaint;
+      if (edge.paint != null) {
+        edgePaint = Paint()
+          ..color = edge.paint.color ?? paint.color
+          ..style = PaintingStyle.fill;
+      }
 
-      canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), paint);
+      var triangleCentroid = drawTriangle(
+          canvas, edgePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+
+      canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]),
+          edge.paint ?? paint);
     });
   }
 
