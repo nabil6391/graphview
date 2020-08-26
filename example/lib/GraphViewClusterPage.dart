@@ -15,20 +15,13 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     return Scaffold(
         body: Column(
           children: [
-            RaisedButton(
-              onPressed: () {
-                final node12 = Node(getNodeText());
-                graph.addEdge(graph.getNodeAtPosition(r.nextInt(graph.nodeCount())), node12);
-                setState(() {});
-              },
-              child: Text('Add'),
-            ),
+
             Expanded(
               child: InteractiveViewer(
                   constrained: false,
                   boundaryMargin: EdgeInsets.all(8),
-                  minScale: 0.01,
-                  maxScale: 5.6,
+                  minScale: 0.001,
+                  maxScale: 100,
                   child: GraphView(
                     graph: graph,
                     algorithm: builder,
@@ -38,19 +31,46 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
         ));
   }
 
-  int n = 1;
+  int n = 8;
   Random r = Random();
 
-  Widget getNodeText() {
-    return Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: [
-            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
-          ],
-        ),
-        child: Text("Node ${n++}"));
+  Widget getNodeText(int i) {
+    return GestureDetector(
+      onLongPressStart: (details){
+        var x = details.globalPosition.dx;
+        var y = details.globalPosition.dy;
+        Offset(x,y);
+      },
+
+      onPanStart: (details){
+        var x = details.globalPosition.dx;
+        var y = details.globalPosition.dy;
+        setState(() {
+          builder.setFocusedNode(graph.getNodeAtPosition(i-1));
+          graph.getNodeAtPosition(i-1).position = Offset(x,y);
+        });
+      },
+      onPanUpdate: (details) {
+        var x = details.globalPosition.dx;
+        var y = details.globalPosition.dy;
+        setState(() {
+          builder.setFocusedNode(graph.getNodeAtPosition(i-1));
+          graph.getNodeAtPosition(i-1).position = Offset(x,y);
+        });
+      },
+      onPanEnd: (details){
+        builder.setFocusedNode(null);
+      },
+      child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: [
+              BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+            ],
+          ),
+          child: Text("Node $i")),
+    );
   }
 
   final Graph graph = Graph();
@@ -58,16 +78,16 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
 
   @override
   void initState() {
-    final a =  Node(getNodeText());
-    final b =  Node(getNodeText());
-    final c =  Node(getNodeText());
-    final d =  Node(getNodeText());
-    final e =  Node(getNodeText());
-    final f =  Node(getNodeText());
-    final g =  Node(getNodeText());
-    final h =  Node(getNodeText());
+    final a =  Node(getNodeText(1));
+    final b =  Node(getNodeText(2));
+    final c =  Node(getNodeText(3));
+    final d =  Node(getNodeText(4));
+    final e =  Node(getNodeText(5));
+    final f =  Node(getNodeText(6));
+    final g =  Node(getNodeText(7));
+    final h =  Node(getNodeText(8));
 
-    graph.addEdge(a, b);
+    graph.addEdge(a, b, paint: Paint()..color = Colors.red);
     graph.addEdge(a, c);
     graph.addEdge(a, d);
     graph.addEdge(c, e);
