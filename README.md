@@ -4,7 +4,7 @@ Get it from [![pub package](https://img.shields.io/pub/v/graphview.svg)](https:/
 
 Flutter GraphView is used to display data in graph structures. It can display Tree layout, Directed and Layered graph. Useful for Family Tree, Hierarchy View.
 
-![alt Example](https://media.giphy.com/media/eNuoOOcbvWlRmJjkDZ/giphy.gif "GraphView")
+![alt Example](https://media.giphy.com/media/Wsd5Uwm72UBZKXb77s/giphy.gif "Force Directed Graph")
 ![alt Example](https://media.giphy.com/media/jQ7fdMc5HmyQRoikaK/giphy.gif "Tree")
 ![alt Example](image/LayeredGraph.png "Layered Graph Example")
 
@@ -213,7 +213,7 @@ getNodeText() {
 ```
 
 ### Using Paint to color and line thickness
-You can use any widget inside the node:
+You can specify the edge color and thickness by using a custom paint
 
 ```dart
 
@@ -224,6 +224,29 @@ getGraphView() {
                 paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.stroke,
               );
 }
+```
+
+### Color Edges individually 
+Add an additional parameter paint. Applicable for ArrowEdgeRenderer for now.
+
+```dart
+var a = Node();
+var b = Node();
+ graph.addEdge(a, b, paint: Paint()..color = Colors.red);
+```
+
+### Add focused Node
+You can focus on a specific node. This will allow scrolling to that node in the future, but for now , using it we can drag a node with realtime updates in force directed graph
+
+```dart
+ onPanUpdate: (details) {
+        var x = details.globalPosition.dx;
+        var y = details.globalPosition.dy;
+        setState(() {
+          builder.setFocusedNode(graph.getNodeAtPosition(i));
+          graph.getNodeAtPosition(i).position = Offset(x,y);
+        });
+      },
 ```
 Examples
 ========
@@ -241,6 +264,7 @@ Examples
 
 #### Directed Graph
 ![alt Example](image/Graph.png "Directed Graph Example")
+![alt Example](https://media.giphy.com/media/eNuoOOcbvWlRmJjkDZ/giphy.gif "Force Directed Graph")
 
 #### Layered Graph
 ![alt Example](image/LayeredGraph.png "Layered Graph Example")
