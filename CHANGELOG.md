@@ -1,3 +1,8 @@
+## 0.6.0
+
+- Add coloring to individual edges. Applicable for ArrowEdgeRenderer
+- Add example for focused node for Force Directed Graph. It also showcases dynamic update
+
 ## 0.5.1
 
 - Fix a bug where the paint was not applied after setstate.
