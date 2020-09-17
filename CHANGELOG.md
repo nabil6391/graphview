@@ -1,3 +1,9 @@
+## 0.6.1
+
+- Fix coloring not happening for the whole graphview
+- Fix coloring for sugiyama and tree edge render
+- Use interactive viewer correctly to make the view constrained
+
 ## 0.6.0
 
 - Add coloring to individual edges. Applicable for ArrowEdgeRenderer
