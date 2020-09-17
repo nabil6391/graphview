@@ -76,9 +76,10 @@ class RenderCustomLayoutBox extends RenderBox
   Paint get edgePaint => _paint;
 
   set edgePaint(Paint value) {
-    _paint = value ?? (Paint()
-      ..color = Colors.black
-      ..strokeWidth = 3)
+    _paint = value ??
+        (Paint()
+          ..color = Colors.black
+          ..strokeWidth = 3)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.butt;
     markNeedsPaint();

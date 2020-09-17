@@ -1,4 +1,3 @@
-
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -14,19 +13,22 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: Column(
-          children: [
-            InteractiveViewer(
-                constrained: true,
-                boundaryMargin: EdgeInsets.all(8),
-                minScale: 0.001,
-                maxScale: 100,
-                child: GraphView(
-                  graph: graph,
-                  algorithm: builder,
-                  paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.fill,
-                )),
-          ],
-        ));
+      children: [
+        InteractiveViewer(
+            constrained: true,
+            boundaryMargin: EdgeInsets.all(8),
+            minScale: 0.001,
+            maxScale: 100,
+            child: GraphView(
+              graph: graph,
+              algorithm: builder,
+              paint: Paint()
+                ..color = Colors.green
+                ..strokeWidth = 1
+                ..style = PaintingStyle.fill,
+            )),
+      ],
+    ));
   }
 
   int n = 8;
@@ -34,29 +36,28 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
 
   Widget getNodeText(int i) {
     return GestureDetector(
-      onLongPressStart: (details){
+      onLongPressStart: (details) {
         var x = details.globalPosition.dx;
         var y = details.globalPosition.dy;
-        Offset(x,y);
+        Offset(x, y);
       },
-
-      onPanStart: (details){
+      onPanStart: (details) {
         var x = details.globalPosition.dx;
         var y = details.globalPosition.dy;
         setState(() {
-          builder.setFocusedNode(graph.getNodeAtPosition(i-1));
-          graph.getNodeAtPosition(i-1).position = Offset(x,y);
+          builder.setFocusedNode(graph.getNodeAtPosition(i - 1));
+          graph.getNodeAtPosition(i - 1).position = Offset(x, y);
         });
       },
       onPanUpdate: (details) {
         var x = details.globalPosition.dx;
         var y = details.globalPosition.dy;
         setState(() {
-          builder.setFocusedNode(graph.getNodeAtPosition(i-1));
-          graph.getNodeAtPosition(i-1).position = Offset(x,y);
+          builder.setFocusedNode(graph.getNodeAtPosition(i - 1));
+          graph.getNodeAtPosition(i - 1).position = Offset(x, y);
         });
       },
-      onPanEnd: (details){
+      onPanEnd: (details) {
         builder.setFocusedNode(null);
       },
       child: Container(
@@ -76,14 +77,14 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
 
   @override
   void initState() {
-    final a =  Node(getNodeText(1));
-    final b =  Node(getNodeText(2));
-    final c =  Node(getNodeText(3));
-    final d =  Node(getNodeText(4));
-    final e =  Node(getNodeText(5));
-    final f =  Node(getNodeText(6));
-    final g =  Node(getNodeText(7));
-    final h =  Node(getNodeText(8));
+    final a = Node(getNodeText(1));
+    final b = Node(getNodeText(2));
+    final c = Node(getNodeText(3));
+    final d = Node(getNodeText(4));
+    final e = Node(getNodeText(5));
+    final f = Node(getNodeText(6));
+    final g = Node(getNodeText(7));
+    final h = Node(getNodeText(8));
 
     graph.addEdge(a, b, paint: Paint()..color = Colors.red);
     graph.addEdge(a, c);

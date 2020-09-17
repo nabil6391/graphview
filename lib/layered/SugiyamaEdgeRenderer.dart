@@ -34,7 +34,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       }
 
       var p = edge.paint ?? paint
-      ..style = PaintingStyle.stroke;
+        ..style = PaintingStyle.stroke;
 
       if (edgeData.containsKey(edge) && edgeData[edge].bendPoints.isNotEmpty) {
         // draw bend points
@@ -48,8 +48,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
               bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
         }
 
-        final triangleCentroid =
-            drawTriangle(canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+        final triangleCentroid = drawTriangle(
+            canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
 
         path.reset();
         path.moveTo(bendPoints[0], bendPoints[1]);
@@ -68,11 +68,10 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
         clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
-        final triangleCentroid =
-            drawTriangle(canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+        final triangleCentroid = drawTriangle(
+            canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
 
-        canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]),
-            p);
+        canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), p);
       }
     });
   }

@@ -14,9 +14,8 @@ class TreeEdgeRenderer extends EdgeRenderer {
     graph.nodes.forEach((node) {
       var children = graph.successorsOf(node);
 
-     var edges = graph.getInEdges(node);
-      var p = (edges.isNotEmpty ? edges[0].paint ?? paint : paint)
-        ..style = PaintingStyle.stroke;
+      var edges = graph.getInEdges(node);
+      var p = (edges.isNotEmpty ? edges[0].paint ?? paint : paint)..style = PaintingStyle.stroke;
 
       children.forEach((child) {
         linePath.reset();
