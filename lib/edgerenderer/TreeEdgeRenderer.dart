@@ -14,6 +14,10 @@ class TreeEdgeRenderer extends EdgeRenderer {
     graph.nodes.forEach((node) {
       var children = graph.successorsOf(node);
 
+     var edges = graph.getInEdges(node);
+      var p = (edges.isNotEmpty ? edges[0].paint ?? paint : paint)
+        ..style = PaintingStyle.stroke;
+
       children.forEach((child) {
         linePath.reset();
         switch (configuration.orientation) {
@@ -57,7 +61,8 @@ class TreeEdgeRenderer extends EdgeRenderer {
             linePath.moveTo(child.x + child.width + levelSeparationHalf, node.y + node.height / 2);
             linePath.lineTo(node.x + node.width, node.y + node.height / 2);
         }
-        canvas.drawPath(linePath, paint);
+
+        canvas.drawPath(linePath, p);
       });
     });
   }

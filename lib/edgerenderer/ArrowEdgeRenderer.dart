@@ -33,15 +33,15 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
       var clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
-      Paint edgePaint;
+      Paint edgeTrianglePaint;
       if (edge.paint != null) {
-        edgePaint = Paint()
+        edgeTrianglePaint = Paint()
           ..color = edge.paint.color ?? paint.color
           ..style = PaintingStyle.fill;
       }
 
       var triangleCentroid = drawTriangle(
-          canvas, edgePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+          canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
 
       canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]),
           edge.paint ?? paint);
