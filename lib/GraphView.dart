@@ -51,7 +51,7 @@ class GraphView extends MultiChildRenderObjectWidget {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
-      ..customPaint = paint;
+      ..edgePaint = paint;
   }
 }
 
@@ -69,16 +69,16 @@ class RenderCustomLayoutBox extends RenderBox
   }) {
     _algorithm = algorithm;
     _graph = graph;
-    customPaint = paint;
+    edgePaint = paint;
     addAll(children);
   }
 
-  Paint get customPaint => _paint;
+  Paint get edgePaint => _paint;
 
-  set customPaint(Paint value) {
-    _paint = value ?? Paint()
+  set edgePaint(Paint value) {
+    _paint = value ?? (Paint()
       ..color = Colors.black
-      ..strokeWidth = 3
+      ..strokeWidth = 3)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.butt;
     markNeedsPaint();
@@ -144,7 +144,7 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
 
-    algorithm.renderer.render(context.canvas, graph, customPaint);
+    algorithm.renderer.render(context.canvas, graph, edgePaint);
 
     context.canvas.restore();
 
@@ -161,7 +161,7 @@ class RenderCustomLayoutBox extends RenderBox
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Graph>('graph', graph));
     properties.add(DiagnosticsProperty<Layout>('algorithm', algorithm));
-    properties.add(DiagnosticsProperty<Paint>('paint', customPaint));
+    properties.add(DiagnosticsProperty<Paint>('paint', edgePaint));
   }
 }
 
