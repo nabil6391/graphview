@@ -73,18 +73,16 @@ class _TreeViewPageState extends State<TreeViewPage> {
                 )
               ],
             ),
-            Expanded(
-              child: InteractiveViewer(
-                  constrained: false,
-                  scaleEnabled: false,
-                  boundaryMargin: EdgeInsets.all(100),
-                  minScale: 0.01,
-                  maxScale: 5.6,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
-                  )),
-            ),
+            InteractiveViewer(
+                constrained: true,
+                boundaryMargin: EdgeInsets.all(100),
+                minScale: 0.01,
+                maxScale: 5.6,
+                child: GraphView(
+                  graph: graph,
+                  algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                  paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.stroke,
+                )),
           ],
         )
     );
@@ -129,7 +127,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
     final Node node11 = Node(getNodeText());
     final Node node12 = Node(getNodeText());
 
-    graph.addEdge(node1, node2);
+    graph.addEdge(node1, node2, paint: Paint()..color = Colors.red);
     graph.addEdge(node1, node3);
     graph.addEdge(node1, node4);
     graph.addEdge(node2, node5);

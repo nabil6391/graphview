@@ -15,18 +15,16 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     return Scaffold(
         body: Column(
           children: [
-
-            Expanded(
-              child: InteractiveViewer(
-                  constrained: false,
-                  boundaryMargin: EdgeInsets.all(8),
-                  minScale: 0.001,
-                  maxScale: 100,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: builder,
-                  )),
-            ),
+            InteractiveViewer(
+                constrained: true,
+                boundaryMargin: EdgeInsets.all(8),
+                minScale: 0.001,
+                maxScale: 100,
+                child: GraphView(
+                  graph: graph,
+                  algorithm: builder,
+                  paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.fill,
+                )),
           ],
         ));
   }

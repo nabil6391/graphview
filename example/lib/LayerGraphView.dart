@@ -51,18 +51,16 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
             )
           ],
         ),
-        Expanded(
-          child: InteractiveViewer(
-              constrained: false,
-              boundaryMargin: EdgeInsets.all(100),
-              minScale: 0.01,
-              maxScale: 5.6,
-              child: GraphView(
-                graph: graph,
-                algorithm: SugiyamaAlgorithm(builder),
-                paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.stroke,
-              )),
-        ),
+        InteractiveViewer(
+            constrained: true,
+            boundaryMargin: EdgeInsets.all(100),
+            minScale: 0.0001,
+            maxScale: 10.6,
+            child: GraphView(
+              graph: graph,
+              algorithm: SugiyamaAlgorithm(builder),
+              paint: Paint()..color = Colors.green..strokeWidth = 1..style = PaintingStyle.stroke,
+            )),
       ],
     ));
   }
@@ -113,7 +111,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     final Node node22 = Node(getNodeText());
     final Node node23 = Node(getNodeText());
 
-    graph.addEdge(node1, node13);
+    graph.addEdge(node1, node13, paint: Paint()..color = Colors.red);
     graph.addEdge(node1, node21);
     graph.addEdge(node1, node4);
     graph.addEdge(node1, node3);
