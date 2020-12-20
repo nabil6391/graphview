@@ -126,18 +126,19 @@ class _GraphViewPageState extends State<GraphViewPage> {
                 )
               ],
             ),
-            Expanded(
-              child: InteractiveViewer(
-                  constrained: false,
-                  scaleEnabled: false,
-                  boundaryMargin: EdgeInsets.all(100),
-                  minScale: 0.01,
-                  maxScale: 5.6,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(builder),
-                  )),
-            ),
+            InteractiveViewer(
+                        constrained: true,
+                        boundaryMargin: EdgeInsets.all(100),
+                        minScale: 0.01,
+                        maxScale: 5.6,
+                        child: GraphView(
+                          graph: graph,
+                          algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                          paint: Paint()
+                            ..color = Colors.green
+                            ..strokeWidth = 1
+                            ..style = PaintingStyle.stroke,
+            )),
           ],
         )
     );
