@@ -14,10 +14,9 @@ class TreeEdgeRenderer extends EdgeRenderer {
     graph.nodes.forEach((node) {
       var children = graph.successorsOf(node);
 
-      var edges = graph.getInEdges(node);
-      var p = (edges.isNotEmpty ? edges[0].paint ?? paint : paint)..style = PaintingStyle.stroke;
-
       children.forEach((child) {
+        var edge = graph.getEdgeBetween(node, child);
+        var edgePaint = (edge?.paint ?? paint)..style = PaintingStyle.stroke;
         linePath.reset();
         switch (configuration.orientation) {
           case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
@@ -61,7 +60,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
             linePath.lineTo(node.x + node.width, node.y + node.height / 2);
         }
 
-        canvas.drawPath(linePath, p);
+        canvas.drawPath(linePath, edgePaint);
       });
     });
   }
