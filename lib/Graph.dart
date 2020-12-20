@@ -77,7 +77,7 @@ class Graph {
   bool hasNodes() => _nodes.isNotEmpty;
 
   Edge getEdgeBetween(Node source, Node destination) =>
-      _edges.firstWhere((element) => element.source == source && element.destination == destination);
+      _edges.firstWhere((element) => element.source == source && element.destination == destination, orElse: ()=> null);
 
   bool hasSuccessor(Node node) => _edges.any((element) => element.source == node);
 
