@@ -5,7 +5,7 @@ const int CLUSTER_PADDING = 15;
 const double EPSILON = 0.0001;
 
 class FruchtermanReingoldAlgorithm implements Layout {
-  Map<Node, Offset> disps = {};
+  Map<Node, Offset> displacement = {};
   Random rand = Random();
   double width;
   double height;
@@ -23,7 +23,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
   void init(List<Node> nodes) {
     nodes.forEach((node) {
-      disps[node] = Offset.zero;
+      displacement[node] = Offset.zero;
       if (node.position.distance == 0.0) {
         node.position = Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
       }
@@ -37,10 +37,10 @@ class FruchtermanReingoldAlgorithm implements Layout {
   void limitMaximumDisplacement(List<Node> nodes) {
     nodes.forEach((node) {
       if (node != focusedNode) {
-        var dispLength = max(EPSILON, getDisp(node).distance);
-        node.position = node.position + getDisp(node) / dispLength * min(dispLength, tick);
+        var dispLength = max(EPSILON, displacement[node].distance);
+        node.position += displacement[node] / dispLength * min(dispLength, tick);
       } else {
-        setDisp(node, Offset.zero);
+        displacement[node] = Offset.zero;
       }
     });
   }
@@ -52,8 +52,8 @@ class FruchtermanReingoldAlgorithm implements Layout {
       var delta = source.position - destination.position;
       var deltaLength = max(EPSILON, delta.distance);
       var offsetDisp = delta / deltaLength * forceAttraction(deltaLength);
-      setDisp(source, getDisp(source) - offsetDisp);
-      setDisp(destination, getDisp(destination) + offsetDisp);
+      displacement[source] = (displacement[source] - offsetDisp);
+      displacement[destination] = (displacement[destination] + offsetDisp);
     });
   }
 
@@ -63,7 +63,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
         if (u != v) {
           var delta = v.position - u.position;
           var deltaLength = max(EPSILON, delta.distance);
-          setDisp(v, getDisp(v) + (delta / deltaLength * forceRepulsion(deltaLength)));
+          displacement[v] = (displacement[v] + (delta / deltaLength * forceRepulsion(deltaLength)));
         }
       });
     });
@@ -75,14 +75,6 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
   double forceRepulsion(double x) {
     return repulsionK * repulsionK / x;
-  }
-
-  Offset getDisp(Node node) {
-    return disps[node];
-  }
-
-  void setDisp(Node node, Offset disp) {
-    disps[node] = disp;
   }
 
   var focusedNode;
