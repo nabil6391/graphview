@@ -9,8 +9,13 @@ class BuchheimWalkerAlgorithm extends Layout {
   BuchheimWalkerConfiguration configuration;
 
   bool isVertical() {
-    var orientation = configuration.getOrientation();
+    var orientation = configuration.orientation;
     return orientation == 1 || orientation == 2;
+  }
+
+  bool needReverseOrder() {
+    var orientation = configuration.orientation;
+    return orientation == 2 || orientation == 4;
   }
 
   int compare(int x, int y) {
@@ -62,9 +67,7 @@ class BuchheimWalkerAlgorithm extends Layout {
       executeShifts(graph, node);
 
       double midPoint = 0.5 *
-          ((getPrelim(leftMost) +
-                  getPrelim(rightMost) +
-                  (isVertical() ? rightMost.width : rightMost.height).toDouble()) -
+          ((getPrelim(leftMost) + getPrelim(rightMost) + (isVertical() ? rightMost.width : rightMost.height).toDouble()) -
               (isVertical() ? node.width : node.height));
 
       if (hasLeftSibling(graph, node)) {
@@ -276,7 +279,7 @@ class BuchheimWalkerAlgorithm extends Layout {
     } else {
       var parent = graph.predecessorsOf(node)[0];
       var children = graph.successorsOf(parent);
-      int nodeIndex = children.indexOf(node);
+      var nodeIndex = children.indexOf(node);
       return children[nodeIndex + 1];
     }
   }
@@ -316,12 +319,10 @@ class BuchheimWalkerAlgorithm extends Layout {
     double globalPadding = 0;
     double localPadding = 0;
     Offset offset = getOffset(graph);
-    int orientation = configuration.getOrientation();
-    bool needReverseOrder = orientation == 2 || orientation == 4;
-    List<Node> nodes = sortByLevel(graph, needReverseOrder);
+    List<Node> nodes = sortByLevel(graph, needReverseOrder());
     int firstLevel = getNodeData(nodes[0]).depth;
     Size localMaxSize = findMaxSize(filterByLevel(nodes, firstLevel));
-    int currentLevel = needReverseOrder ? firstLevel : 0;
+    int currentLevel = needReverseOrder() ? firstLevel : 0;
 
     nodes.forEach((node) {
       final depth = getNodeData(node).depth;
@@ -350,11 +351,10 @@ class BuchheimWalkerAlgorithm extends Layout {
             localPadding = max(localPadding, diff);
           }
           break;
-
         case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
           if (height < localMaxSize.height) {
             double diff = localMaxSize.height - height;
-            node.position = (node.position - (Offset(0, diff)));
+            node.position = (node.position - Offset(0, diff));
             localPadding = max(localPadding, diff);
           }
           break;
@@ -367,7 +367,7 @@ class BuchheimWalkerAlgorithm extends Layout {
         case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
           if (width < localMaxSize.width) {
             double diff = localMaxSize.width - width;
-            node.position = (node.position - (Offset(0, diff)));
+            node.position = (node.position - Offset(0, diff));
             localPadding = max(localPadding, diff);
           }
       }
@@ -422,23 +422,23 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   Offset getPosition(Node node, double globalPadding, Offset offset) {
-    Offset var10000;
-    switch (configuration.getOrientation()) {
+    Offset offset;
+    switch (configuration.orientation) {
       case 1:
-        var10000 = Offset(node.x - offset.dx, node.y + globalPadding);
+        offset = Offset(node.x - offset.dx, node.y + globalPadding);
         break;
       case 2:
-        var10000 = Offset(node.x - offset.dx, offset.dy - node.y - globalPadding);
+        offset = Offset(node.x - offset.dx, offset.dy - node.y - globalPadding);
         break;
       case 3:
-        var10000 = Offset(node.y + globalPadding, node.x - offset.dx);
+        offset = Offset(node.y + globalPadding, node.x - offset.dx);
         break;
       case 4:
-        var10000 = Offset(offset.dy - node.y - globalPadding, node.x - offset.dx);
+        offset = Offset(offset.dy - node.y - globalPadding, node.x - offset.dx);
         break;
     }
 
-    return var10000;
+    return offset;
   }
 
   List<Node> sortByLevel(Graph graph, bool descending) {
