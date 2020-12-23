@@ -735,19 +735,12 @@ class SugiyamaAlgorithm extends Layout {
     // assign y-coordinates
     var yPos = 0.0;
 
-    var i = 0;
-    while (true) {
+    for (var i = 0; i < k; i++) {
       var level = layers[i];
-      level.asMap().forEach((j, value) {
-        level[j].y = yPos;
+      level.forEach((element) {
+        element.y = yPos;
       });
-
-      if (i == k - 1) {
-        break;
-      }
-
       yPos += (configuration.levelSeparation + 0.5 * (height[i] + height[i + 1]));
-      ++i;
     }
   }
 
