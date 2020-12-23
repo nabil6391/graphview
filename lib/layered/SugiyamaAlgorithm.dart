@@ -148,7 +148,6 @@ class SugiyamaAlgorithm extends Layout {
           edgeData[dummyEdge2] = SugiyamaEdgeData();
           graph.removeEdge(edge);
 //                    iterator.remove();
-
         }
       }
     }
@@ -351,14 +350,15 @@ class SugiyamaAlgorithm extends Layout {
 
     // calc the layout for down/up and leftToRight/rightToLeft;
     for (var downward = 0; downward <= 1; downward++) {
-      final type1Conflicts = markType1Conflicts(downward == 0);
+      var isDownward = downward == 0;
+      final type1Conflicts = markType1Conflicts(isDownward);
       for (var leftToRight = 0; leftToRight <= 1; leftToRight++) {
         final k = 2 * downward + leftToRight;
-        verticalAlignment(root[k], align[k], type1Conflicts, downward == 0, leftToRight == 0);
+        var isLeftToRight = leftToRight == 0;
+        verticalAlignment(root[k], align[k], type1Conflicts, isDownward, isLeftToRight);
 
         computeBlockWidths(root[k], blockWidth[k]);
-        horizontalCompactation(
-            align[k], root[k], sink[k], shift[k], blockWidth[k], x[k], leftToRight == 0, downward == 0);
+        horizontalCompactation(align[k], root[k], sink[k], shift[k], blockWidth[k], x[k], isLeftToRight, isDownward);
       }
     }
 
@@ -371,9 +371,8 @@ class SugiyamaAlgorithm extends Layout {
     var smallestWidthLayout = 0;
     final minArray = List.filled(4, 0.0);
     final maxArray = List.filled(4, 0.0);
-    // get the layout with smallest width and set minimum and maximum value;
-    // for each direction;
 
+    // get the layout with smallest width and set minimum and maximum value for each direction;
     for (var i = 0; i < 4; i++) {
       minArray[i] = double.infinity;
       maxArray[i] = 0;
@@ -396,36 +395,30 @@ class SugiyamaAlgorithm extends Layout {
       }
     }
 
-    // align the layouts to the one with smallest width;
-    for (var it = 0; it < 4; it++) {
-      if (it != smallestWidthLayout) {
-        // align the left to right layouts to the left border of the;
-        // smallest layout;
-        if (it == 0 || it == 1) {
-          final diff = minArray[it] - minArray[smallestWidthLayout];
-          for (var n in x[it].keys) {
-            if (diff > 0) {
-              x[it][n] = x[it][n] - diff;
-            } else {
-              x[it][n] = x[it][n] + diff;
-            }
-          }
-          // align the right to left layouts to the right border of;
-          // the smallest layout;
+    // align the layouts to the one with smallest width
+    for (var layout = 0; layout < 4; layout++) {
+      if (layout != smallestWidthLayout) {
+        // align the left to right layouts to the left border of the smallest layout
+        var diff = 0.0;
+        if (layout < 2) {
+          diff = minArray[layout] - minArray[smallestWidthLayout];
         } else {
-          final diff = maxArray[it] - maxArray[smallestWidthLayout];
-          x[it].keys.forEach((n) {
-            if (diff > 0) {
-              x[it][n] = x[it][n] - diff;
-            } else {
-              x[it][n] = x[it][n] + diff;
-            }
+          // align the right to left layouts to the right border of the smallest layout
+          diff = maxArray[layout] - maxArray[smallestWidthLayout];
+        }
+        if (diff > 0) {
+          x[layout].keys.forEach((n) {
+            x[layout][n] = x[layout][n] - diff;
+          });
+        } else {
+          x[layout].keys.forEach((n) {
+            x[layout][n] = x[layout][n] + diff;
           });
         }
       }
     }
 
-    // get the minimum coordinate value;
+    // get the minimum coordinate value
     var minValue = double.infinity;
 
     x.forEach((element) {
@@ -435,15 +428,6 @@ class SugiyamaAlgorithm extends Layout {
         }
       });
     });
-
-    // set left border to 0
-    if (minValue != 0) {
-      x.forEach((element) {
-        element.forEach((n, value) {
-          element[n] = element[n] - minValue;
-        });
-      });
-    }
 
     // get the average median of each coordinate
     var values = List.filled(4, 0.0);
@@ -456,10 +440,10 @@ class SugiyamaAlgorithm extends Layout {
       coordinates[n] = average;
     });
 
-// get the minimum coordinate value;
+    // get the minimum coordinate value
     minValue = coordinates.values.reduce(min) ?? double.infinity;
 
-    // set left border to 0;
+    // set left border to 0
     if (minValue != 0) {
       coordinates.keys.forEach((n) {
         coordinates[n] = coordinates[n] - minValue;
@@ -723,8 +707,7 @@ class SugiyamaAlgorithm extends Layout {
 
     for (var i = 0; i < k; i++) {
       var level = layers[i];
-      level.asMap().forEach((j, value) {
-        var node = level[j];
+      level.forEach((node) {
         var h = nodeData[node].isDummy ? 0 : node.height;
         if (h > height[i]) {
           height[i] = h.toInt();
@@ -737,8 +720,8 @@ class SugiyamaAlgorithm extends Layout {
 
     for (var i = 0; i < k; i++) {
       var level = layers[i];
-      level.forEach((element) {
-        element.y = yPos;
+      level.forEach((node) {
+        node.y = yPos;
       });
       yPos += (configuration.levelSeparation + 0.5 * (height[i] + height[i + 1]));
     }
