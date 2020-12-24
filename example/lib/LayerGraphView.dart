@@ -39,6 +39,17 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                 },
               ),
             ),
+            Container(
+              width: 100,
+              child: TextFormField(
+                initialValue: builder.orientation.toString(),
+                decoration: InputDecoration(labelText: "Orientation"),
+                onChanged: (text) {
+                  builder.orientation = int.tryParse(text) ?? 100;
+                  this.setState(() {});
+                },
+              ),
+            ),
             RaisedButton(
               onPressed: () {
                 final Node node12 = Node(getNodeText());
@@ -51,19 +62,21 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
             )
           ],
         ),
-        InteractiveViewer(
-            constrained: true,
-            boundaryMargin: EdgeInsets.all(100),
-            minScale: 0.0001,
-            maxScale: 10.6,
-            child: GraphView(
-              graph: graph,
-              algorithm: SugiyamaAlgorithm(builder),
-              paint: Paint()
-                ..color = Colors.green
-                ..strokeWidth = 1
-                ..style = PaintingStyle.stroke,
-            )),
+        Expanded(
+          child: InteractiveViewer(
+              constrained: false,
+              boundaryMargin: EdgeInsets.all(100),
+              minScale: 0.0001,
+              maxScale: 10.6,
+              child: GraphView(
+                graph: graph,
+                algorithm: SugiyamaAlgorithm(builder),
+                paint: Paint()
+                  ..color = Colors.green
+                  ..strokeWidth = 1
+                  ..style = PaintingStyle.stroke,
+              )),
+        ),
       ],
     ));
   }
@@ -151,6 +164,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
 
     builder
       ..nodeSeparation = (15)
-      ..levelSeparation = (15);
+      ..levelSeparation = (15)
+      ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
   }
 }
