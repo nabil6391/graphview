@@ -312,18 +312,20 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   void positionNodes(Graph graph) {
+    var doesNeedReverseOrder  = needReverseOrder();
+
+    var offset = getOffset(graph, doesNeedReverseOrder);
+    var nodes = sortByLevel(graph, doesNeedReverseOrder);
+    var firstLevel = getNodeData(nodes.first).depth;
+    var localMaxSize = findMaxSize(filterByLevel(nodes, firstLevel));
+    var currentLevel = doesNeedReverseOrder ? firstLevel : 0;
+
     double globalPadding = 0;
     double localPadding = 0;
-    Offset offset = getOffset(graph);
-    List<Node> nodes = sortByLevel(graph, needReverseOrder());
-    int firstLevel = getNodeData(nodes[0]).depth;
-    Size localMaxSize = findMaxSize(filterByLevel(nodes, firstLevel));
-    int currentLevel = needReverseOrder() ? firstLevel : 0;
-
     nodes.forEach((node) {
       final depth = getNodeData(node).depth;
       if (depth != currentLevel) {
-        if (needReverseOrder()) {
+        if (doesNeedReverseOrder) {
           globalPadding -= localPadding;
         } else {
           globalPadding += localPadding;
@@ -386,16 +388,16 @@ class BuchheimWalkerAlgorithm extends Layout {
     return Size(width, height);
   }
 
-  Offset getOffset(Graph graph) {
+  Offset getOffset(Graph graph, bool needReverseOrder) {
     var offsetX = double.infinity;
     var offsetY = double.infinity;
 
-    if (needReverseOrder()) {
+    if (needReverseOrder) {
       offsetY = double.minPositive;
     }
 
     graph.nodes.forEach((node) {
-      if (needReverseOrder()) {
+      if (needReverseOrder) {
         offsetX = min(offsetX, node.x);
         offsetY = max(offsetY, node.y);
       } else {
