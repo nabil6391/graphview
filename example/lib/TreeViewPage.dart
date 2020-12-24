@@ -129,16 +129,16 @@ class _TreeViewPageState extends State<TreeViewPage> {
     final Node node11 = Node(getNodeText());
     final Node node12 = Node(getNodeText());
 
-    graph.addEdge(node1, node2, paint: Paint()..color = Colors.red);
-    graph.addEdge(node1, node3);
-    graph.addEdge(node1, node4);
+    graph.addEdge(node1, node2);
+    graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);
+    graph.addEdge(node1, node4, paint: Paint()..color = Colors.blue);
     graph.addEdge(node2, node5);
     graph.addEdge(node2, node6);
-    graph.addEdge(node6, node7);
-    graph.addEdge(node6, node8);
+    graph.addEdge(node6, node7, paint: Paint()..color = Colors.red);
+    graph.addEdge(node6, node8, paint: Paint()..color = Colors.red);
     graph.addEdge(node4, node9);
-    graph.addEdge(node4, node10);
-    graph.addEdge(node4, node11);
+    graph.addEdge(node4, node10, paint: Paint()..color = Colors.black);
+    graph.addEdge(node4, node11, paint: Paint()..color = Colors.red);
     graph.addEdge(node11, node12);
 
     builder
