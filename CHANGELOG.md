@@ -1,3 +1,8 @@
+## 0.6.5
+
+- Fix edge coloring not picked up by TreeEdgeRenderer (#15)
+- Added Orientation Support in Sugiyama Configuration (#6)
+
 ## 0.6.1
 
 - Fix coloring not happening for the whole graphview
