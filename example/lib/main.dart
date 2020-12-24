@@ -1,8 +1,11 @@
 import 'package:example/LayerGraphView.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'GraphViewClusterPage.dart';
 import 'TreeViewPage.dart';
+import 'graph_change_notifier.dart';
+import 'graph_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -12,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Home(),
+      home:  Home()
     );
   }
 }
@@ -66,6 +69,85 @@ class Home extends StatelessWidget {
                 "Layered View (Sugiyama)",
                 style: TextStyle(color: Theme.of(context).primaryColor),
               )),
+          Center(
+            child: MaterialButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider<GraphChangeNotifier>(
+                          create: (_) => GraphChangeNotifier(),
+                          builder: (context, child) {
+                            Provider.of<GraphChangeNotifier>(context, listen: false).graphType = 'tree';
+                            return GraphScreen();
+                          }),
+                    ));
+              },
+              color: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Text(
+                "Tree Graph",
+                style: TextStyle(fontSize: 30),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 50,
+          ),
+          Center(
+            child: MaterialButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider<GraphChangeNotifier>(
+                          create: (_) => GraphChangeNotifier(),
+                          builder: (context, child) {
+                            Provider.of<GraphChangeNotifier>(context, listen: false).graphType = 'square';
+
+                            return GraphScreen();
+                          }),
+                    ));
+              },
+              color: Colors.blueAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Text(
+                "Square Grid",
+                style: TextStyle(fontSize: 30),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 50,
+          ),
+          Center(
+            child: MaterialButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider<GraphChangeNotifier>(
+                          create: (_) => GraphChangeNotifier(),
+                          builder: (context, child) {
+                            Provider.of<GraphChangeNotifier>(context, listen: false).graphType = 'triangle';
+                            return GraphScreen();
+                          }),
+                    ));
+              },
+              color: Colors.green,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Text(
+                "Triangle Grid",
+                style: TextStyle(fontSize: 30),
+              ),
+            ),
+          ),
         ]),
       ),
     );

@@ -21,6 +21,29 @@ class FruchtermanReingoldAlgorithm implements Layout {
     renderer = renderer ?? ArrowEdgeRenderer();
   }
 
+  // void step() {
+  //   displacement = {};
+  //   for (Node node in graph.nodes) {
+  //     displacement[node] = Offset.zero;
+  //   }
+  //   calculateRepulsion();
+  //   calculateAttraction();
+  //   moveNodes();
+  // }
+  //
+  // void moveNodes() {
+  //   for (Node node in graph.nodes) {
+  //     Offset newPosition = node.position += displacement[node];
+  //     double newDX = newPosition.dx;
+  //     double newDY = newPosition.dy;
+  //     newDX = max(0, newDX);
+  //     newDY = max(0, newDY);
+  //     newDX = min(graphWidth - 40, newDX);
+  //     newDY = min(graphHeight - 40 - AppBar().preferredSize.height, newDY);
+  //     node.position = Offset(newDX, newDY);
+  //   }
+  // }
+
   void init(List<Node> nodes) {
     nodes.forEach((node) {
       displacement[node] = Offset.zero;
