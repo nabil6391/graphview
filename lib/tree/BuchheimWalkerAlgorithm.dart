@@ -10,12 +10,14 @@ class BuchheimWalkerAlgorithm extends Layout {
 
   bool isVertical() {
     var orientation = configuration.orientation;
-    return orientation == 1 || orientation == 2;
+    return orientation == BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM ||
+        orientation == BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP;
   }
 
   bool needReverseOrder() {
     var orientation = configuration.orientation;
-    return orientation == 2 || orientation == 4;
+    return orientation == BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP ||
+        orientation == BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT;
   }
 
   int compare(int x, int y) {
@@ -321,14 +323,10 @@ class BuchheimWalkerAlgorithm extends Layout {
     nodes.forEach((node) {
       final depth = getNodeData(node).depth;
       if (depth != currentLevel) {
-        switch (configuration.orientation) {
-          case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
-          case BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT:
-            globalPadding += localPadding;
-            break;
-          case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
-          case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
-            globalPadding -= localPadding;
+        if (needReverseOrder()) {
+          globalPadding -= localPadding;
+        } else {
+          globalPadding += localPadding;
         }
         localPadding = 0;
         currentLevel = depth;
@@ -392,23 +390,17 @@ class BuchheimWalkerAlgorithm extends Layout {
     var offsetX = double.infinity;
     var offsetY = double.infinity;
 
-    switch (configuration.orientation) {
-      case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
-      case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
-        offsetY = double.minPositive;
+    if (needReverseOrder()) {
+      offsetY = double.minPositive;
     }
 
     graph.nodes.forEach((node) {
-      switch (configuration.orientation) {
-        case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
-        case BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT:
-          offsetX = min(offsetX, node.x);
-          offsetY = min(offsetY, node.y);
-          break;
-        case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
-        case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
-          offsetX = min(offsetX, node.x);
-          offsetY = max(offsetY, node.y);
+      if (needReverseOrder()) {
+        offsetX = min(offsetX, node.x);
+        offsetY = max(offsetY, node.y);
+      } else {
+        offsetX = min(offsetX, node.x);
+        offsetY = min(offsetY, node.y);
       }
     });
 
