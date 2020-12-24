@@ -410,23 +410,23 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   Offset getPosition(Node node, double globalPadding, Offset offset) {
-    Offset offset;
+    Offset finalOffset;
     switch (configuration.orientation) {
       case 1:
-        offset = Offset(node.x - offset.dx, node.y + globalPadding);
+        finalOffset = Offset(node.x - offset.dx, node.y + globalPadding);
         break;
       case 2:
-        offset = Offset(node.x - offset.dx, offset.dy - node.y - globalPadding);
+        finalOffset = Offset(node.x - offset.dx, offset.dy - node.y - globalPadding);
         break;
       case 3:
-        offset = Offset(node.y + globalPadding, node.x - offset.dx);
+        finalOffset = Offset(node.y + globalPadding, node.x - offset.dx);
         break;
       case 4:
-        offset = Offset(offset.dy - node.y - globalPadding, node.x - offset.dx);
+        finalOffset = Offset(offset.dy - node.y - globalPadding, node.x - offset.dx);
         break;
     }
 
-    return offset;
+    return finalOffset;
   }
 
   List<Node> sortByLevel(Graph graph, bool descending) {
