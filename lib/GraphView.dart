@@ -11,7 +11,6 @@ part 'Graph.dart';
 part 'Layout.dart';
 part 'edgerenderer/ArrowEdgeRenderer.dart';
 part 'edgerenderer/EdgeRenderer.dart';
-part 'edgerenderer/TreeEdgeRenderer.dart';
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
 part 'layered/SugiyamaAlgorithm.dart';
 part 'layered/SugiyamaConfiguration.dart';
@@ -19,6 +18,9 @@ part 'layered/SugiyamaEdgeData.dart';
 part 'layered/SugiyamaEdgeRenderer.dart';
 part 'layered/SugiyamaNodeData.dart';
 part 'tree/BuchheimWalkerAlgorithm.dart';
+part 'tree/BuchheimWalkerConfiguration.dart';
+part 'tree/BuchheimWalkerNodeData.dart';
+part 'tree/TreeEdgeRenderer.dart';
 
 class GraphView extends MultiChildRenderObjectWidget {
   final Graph graph;

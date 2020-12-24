@@ -226,20 +226,14 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   num getSpacing(Graph graph, Node leftNode, Node rightNode) {
-    int separation = configuration.getSubtreeSeparation();
+    var separation = configuration.getSubtreeSeparation();
     if (isSibling(graph, leftNode, rightNode)) {
       separation = configuration.getSiblingSeparation();
     }
 
-    bool vertical = isVertical();
-    num var10001;
-    if (vertical) {
-      var10001 = leftNode.width;
-    } else {
-      var10001 = leftNode.height;
-    }
+    num length = isVertical() ? leftNode.width : leftNode.height;
 
-    return separation + var10001;
+    return separation + length;
   }
 
   bool isSibling(Graph graph, Node leftNode, Node rightNode) {
@@ -471,44 +465,3 @@ class BuchheimWalkerAlgorithm extends Layout {
   void setFocusedNode(Node node) {}
 }
 
-class BuchheimWalkerNodeData {
-  Node ancestor;
-  Node thread;
-  int number = 0;
-  int depth = 0;
-  double prelim = 0.toDouble();
-  double modifier = 0.toDouble();
-  double shift = 0.toDouble();
-  double change = 0.toDouble();
-}
-
-class BuchheimWalkerConfiguration {
-  int siblingSeparation = DEFAULT_SIBLING_SEPARATION;
-  int levelSeparation = DEFAULT_LEVEL_SEPARATION;
-  int subtreeSeparation = DEFAULT_SUBTREE_SEPARATION;
-  int orientation = DEFAULT_ORIENTATION;
-  static const ORIENTATION_TOP_BOTTOM = 1;
-  static const ORIENTATION_BOTTOM_TOP = 2;
-  static const ORIENTATION_LEFT_RIGHT = 3;
-  static const ORIENTATION_RIGHT_LEFT = 4;
-  static const DEFAULT_SIBLING_SEPARATION = 100;
-  static const DEFAULT_SUBTREE_SEPARATION = 100;
-  static const DEFAULT_LEVEL_SEPARATION = 100;
-  static const DEFAULT_ORIENTATION = 1;
-
-  int getSiblingSeparation() {
-    return siblingSeparation;
-  }
-
-  int getLevelSeparation() {
-    return levelSeparation;
-  }
-
-  int getSubtreeSeparation() {
-    return subtreeSeparation;
-  }
-
-  int getOrientation() {
-    return orientation;
-  }
-}
