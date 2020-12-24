@@ -20,6 +20,16 @@ class BuchheimWalkerAlgorithm extends Layout {
         orientation == BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT;
   }
 
+  Size run(Graph graph, double shiftX, double shiftY) {
+    mNodeData.clear();
+    var firstNode = graph.getNodeAtPosition(0);
+    firstWalk(graph, firstNode, 0, 0);
+    secondWalk(graph, firstNode, 0.0);
+    positionNodes(graph);
+    shiftCoordinates(graph, shiftX, shiftY);
+    return calculateGraphSize(graph);
+  }
+
   int compare(int x, int y) {
     return x < y ? -1 : (x == y ? 0 : 1);
   }
@@ -68,9 +78,10 @@ class BuchheimWalkerAlgorithm extends Layout {
 
       executeShifts(graph, node);
 
+      bool vertical = isVertical();
       double midPoint = 0.5 *
-          ((getPrelim(leftMost) + getPrelim(rightMost) + (isVertical() ? rightMost.width : rightMost.height).toDouble()) -
-              (isVertical() ? node.width : node.height));
+          ((getPrelim(leftMost) + getPrelim(rightMost) + (vertical ? rightMost.width : rightMost.height)) -
+              (vertical ? node.width : node.height));
 
       if (hasLeftSibling(graph, node)) {
         final leftSibling = getLeftSibling(graph, node);
@@ -98,8 +109,8 @@ class BuchheimWalkerAlgorithm extends Layout {
   Size calculateGraphSize(Graph graph) {
     var left = double.infinity;
     var top = double.infinity;
-    var right = -double.infinity;
-    var bottom = -double.infinity;
+    var right = double.negativeInfinity;
+    var bottom = double.negativeInfinity;
 
     graph.nodes.forEach((node) {
       left = min(left, node.x);
@@ -301,15 +312,6 @@ class BuchheimWalkerAlgorithm extends Layout {
     return children.isEmpty ? null : children[children.length - 1];
   }
 
-  Size run(Graph graph, double shiftX, double shiftY) {
-    mNodeData.clear();
-    var firstNode = graph.getNodeAtPosition(0);
-    firstWalk(graph, firstNode, 0, 0);
-    secondWalk(graph, firstNode, 0.0);
-    positionNodes(graph);
-    shiftCoordinates(graph, shiftX, shiftY);
-    return calculateGraphSize(graph);
-  }
 
   void positionNodes(Graph graph) {
     var doesNeedReverseOrder  = needReverseOrder();
