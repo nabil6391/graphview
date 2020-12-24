@@ -20,6 +20,18 @@ class SugiyamaAlgorithm extends Layout {
 
   Widget get dummyText => Text("Dummy ${nodeCount++}");
 
+  bool isVertical() {
+    var orientation = configuration.orientation;
+    return orientation == SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM ||
+        orientation == SugiyamaConfiguration.ORIENTATION_BOTTOM_TOP;
+  }
+
+  bool needReverseOrder() {
+    var orientation = configuration.orientation;
+    return orientation == SugiyamaConfiguration.ORIENTATION_BOTTOM_TOP ||
+        orientation == SugiyamaConfiguration.ORIENTATION_RIGHT_LEFT;
+  }
+
   Size run(Graph graph, double shiftX, double shiftY) {
     this.graph = copyGraph(graph);
     reset();
@@ -316,6 +328,11 @@ class SugiyamaAlgorithm extends Layout {
   void coordinateAssignment() {
     assignX();
     assignY();
+    var offset = getOffset(graph, needReverseOrder());
+
+    graph.nodes.forEach((v) {
+      v.position = getPosition(v, offset);
+    });
   }
 
   void assignX() {
@@ -357,7 +374,10 @@ class SugiyamaAlgorithm extends Layout {
         var isLeftToRight = leftToRight == 0;
         verticalAlignment(root[k], align[k], type1Conflicts, isDownward, isLeftToRight);
 
-        computeBlockWidths(root[k], blockWidth[k]);
+        graph.nodes.forEach((v) {
+          final r = root[k][v];
+          blockWidth[k][r] = max(blockWidth[k][r], isVertical() ? v.width : v.height);
+        });
         horizontalCompactation(align[k], root[k], sink[k], shift[k], blockWidth[k], x[k], isLeftToRight, isDownward);
       }
     }
@@ -556,13 +576,6 @@ class SugiyamaAlgorithm extends Layout {
     }
   }
 
-  void computeBlockWidths(Map<Node, Node> root, Map<Node, double> blockWidth) {
-    graph.nodes.forEach((v) {
-      final r = root[v];
-      blockWidth[r] = max(blockWidth[r], v.width);
-    });
-  }
-
   void horizontalCompactation(Map<Node, Node> align, Map<Node, Node> root, Map<Node, Node> sink,
       Map<Node, double> shift, Map<Node, double> blockWidth, Map<Node, double> x, bool leftToRight, bool downward) {
     // calculate class relative coordinates for all roots;
@@ -708,7 +721,7 @@ class SugiyamaAlgorithm extends Layout {
     for (var i = 0; i < k; i++) {
       var level = layers[i];
       level.forEach((node) {
-        var h = nodeData[node].isDummy ? 0 : node.height;
+        var h = nodeData[node].isDummy ? 0 : isVertical() ? node.height : node.width;
         if (h > height[i]) {
           height[i] = h.toInt();
         }
@@ -717,7 +730,6 @@ class SugiyamaAlgorithm extends Layout {
 
     // assign y-coordinates
     var yPos = 0.0;
-
     for (var i = 0; i < k; i++) {
       var level = layers[i];
       level.forEach((node) {
@@ -786,6 +798,47 @@ class SugiyamaAlgorithm extends Layout {
         });
       }
     });
+  }
+
+  Offset getOffset(Graph graph, bool needReverseOrder) {
+    var offsetX = double.infinity;
+    var offsetY = double.infinity;
+
+    if (needReverseOrder) {
+      offsetY = double.minPositive;
+    }
+
+    graph.nodes.forEach((node) {
+      if (needReverseOrder) {
+        offsetX = min(offsetX, node.x);
+        offsetY = max(offsetY, node.y);
+      } else {
+        offsetX = min(offsetX, node.x);
+        offsetY = min(offsetY, node.y);
+      }
+    });
+
+    return Offset(offsetX, offsetY);
+  }
+
+  Offset getPosition(Node node, Offset offset) {
+    Offset finalOffset;
+    switch (configuration.orientation) {
+      case 1:
+        finalOffset = Offset(node.x - offset.dx, node.y);
+        break;
+      case 2:
+        finalOffset = Offset(node.x - offset.dx, offset.dy - node.y);
+        break;
+      case 3:
+        finalOffset = Offset(node.y, node.x - offset.dx);
+        break;
+      case 4:
+        finalOffset = Offset(offset.dy - node.y, node.x - offset.dx);
+        break;
+    }
+
+    return finalOffset;
   }
 
   @override
