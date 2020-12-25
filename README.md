@@ -32,7 +32,7 @@ Directed graph drawing by simulating attraction/repulsion forces. For this the a
 Useful for: Social network, Mind Map, Cluster, Graphs, Intercity Road Network,
 
 ### Layered graph
-Algorithm from Sugiyama et al. for drawing multilayer graphs, taking advantage of the hierarchical structure of the graph (SugiyamaAlgorithm class). You can also set the parameters for node and level separation using the SugiyamaConfiguration.
+Algorithm from Sugiyama et al. for drawing multilayer graphs, taking advantage of the hierarchical structure of the graph (SugiyamaAlgorithm class). You can also set the parameters for node and level separation using the SugiyamaConfiguration. Supports different orientations. All you have to do is using the `SugiyamaConfiguration.orientation` with either `ORIENTATION_LEFT_RIGHT`, `ORIENTATION_RIGHT_LEFT`, `ORIENTATION_TOP_BOTTOM` and `ORIENTATION_BOTTOM_TOP` (default).
 
 Useful for: Hierarchical Graph which it can have weird edges/multiple paths
 
@@ -179,22 +179,22 @@ class _GraphViewPageState extends State<GraphViewPage> {
     final Node node12 = Node(getNodeText());
 
     graph.addEdge(node1, node2);
-    graph.addEdge(node1, node3);
-    graph.addEdge(node1, node4);
+    graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);
+    graph.addEdge(node1, node4, paint: Paint()..color = Colors.blue);
     graph.addEdge(node2, node5);
     graph.addEdge(node2, node6);
-    graph.addEdge(node6, node7);
-    graph.addEdge(node6, node8);
+    graph.addEdge(node6, node7, paint: Paint()..color = Colors.red);
+    graph.addEdge(node6, node8, paint: Paint()..color = Colors.red);
     graph.addEdge(node4, node9);
-    graph.addEdge(node4, node10);
-    graph.addEdge(node4, node11);
+    graph.addEdge(node4, node10, paint: Paint()..color = Colors.black);
+    graph.addEdge(node4, node11, paint: Paint()..color = Colors.red);
     graph.addEdge(node11, node12);
 
     builder
       ..siblingSeparation = (100)
       ..levelSeparation = (150)
       ..subtreeSeparation = (150)
-      ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
+      ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM;
   }
 }
 ```
@@ -283,7 +283,7 @@ I would like to thank them for open sourcing their code for which reason I was a
 Future Works
 ========
 
-- [] Add nodeOnTap
+- [x] Add nodeOnTap
 - [x] Add Layered Graph
 - [] Use a builder pattern to draw items on demand.
 - [] Animations
