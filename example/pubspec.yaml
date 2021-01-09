@@ -24,7 +24,7 @@ dependencies:
   flutter:
     sdk: flutter
   graphview:
-    path: /Users/photobook/AndroidStudioProjects/graphview/
+    path: ../
 
 dev_dependencies:
   flutter_test:
