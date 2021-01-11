@@ -735,7 +735,9 @@ class SugiyamaAlgorithm extends Layout {
       level.forEach((node) {
         node.y = yPos;
       });
-      yPos += (configuration.levelSeparation + 0.5 * (height[i] + height[i + 1]));
+      if(i < k - 1) {
+        yPos += configuration.levelSeparation + 0.5 * (height[i] + height[i + 1]);
+      }
     }
   }
 
