@@ -120,6 +120,35 @@ class Graph {
   void notifyGraphObserver() => graphObserver.forEach((element) {
         element.notifyGraphInvalidated();
       });
+
+  static Graph lerp(Graph a, Graph b, double t) {
+    if (b == null) {
+      if (a == null) {
+        return null;
+      } else {
+        a.nodes.forEach((n) {
+          n.position = Offset.lerp(n.position, null, t);
+        });
+        return a;
+      }
+    } else {
+      if (a == null) {
+        b.nodes.forEach((n) {
+          n.position = Offset.lerp(null, n.position, t);
+        });
+        return b;
+      } else {
+        a.nodes.asMap().forEach((position, value) {
+          a.nodes[position].position = Offset.lerp(value.position, b.nodes[position].position, t);
+        });
+        return a;
+      }
+    }
+  }
+
+  List<Offset> getOffsets() {
+    return nodes.map((e) => Offset(e.position.dx, e.position.dy)).toList();
+  }
 }
 
 class Node {
@@ -160,6 +189,8 @@ class Node {
   String toString() {
     return 'Node{position: $position, data: $data, _size: $size}';
   }
+
+  Node.clone(Node randomObject) : this(randomObject.data);
 }
 
 class Edge {
