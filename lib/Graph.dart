@@ -13,10 +13,10 @@ class Graph {
   int nodeCount() => _nodes.length;
 
   void addNode(Node node) {
-    if (!_nodes.contains(node)) {
+    // if (!_nodes.contains(node)) {
       _nodes.add(node);
       notifyGraphObserver();
-    }
+    // }
   }
 
   void addNodes(List<Node> nodes) => nodes.forEach((it) => addNode(it));
@@ -149,6 +149,8 @@ class Graph {
   List<Offset> getOffsets() {
     return nodes.map((e) => Offset(e.position.dx, e.position.dy)).toList();
   }
+
+  // Graph.clone(Graph source) : this._edges = source.edges, this._nodes = source.nodes.map((e) => Node.clone(e).toList());
 }
 
 class Node {
@@ -190,7 +192,7 @@ class Node {
     return 'Node{position: $position, data: $data, _size: $size}';
   }
 
-  Node.clone(Node randomObject) : this(randomObject.data);
+  Node.clone(Node randomObject) : data = randomObject.data, this.position = randomObject.position, this.size = randomObject.size, key = UniqueKey();
 }
 
 class Edge {

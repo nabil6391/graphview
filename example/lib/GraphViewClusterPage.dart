@@ -45,7 +45,6 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
         var x = details.globalPosition.dx;
         var y = details.globalPosition.dy;
         setState(() {
-          builder.setFocusedNode(graph.getNodeAtPosition(i - 1));
           graph.getNodeAtPosition(i - 1).position = Offset(x, y);
         });
       },
@@ -53,12 +52,11 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
         var x = details.globalPosition.dx;
         var y = details.globalPosition.dy;
         setState(() {
-          builder.setFocusedNode(graph.getNodeAtPosition(i - 1));
+          // graph.getNodeAtPosition(index).position += details.delta;
           graph.getNodeAtPosition(i - 1).position = Offset(x, y);
         });
       },
       onPanEnd: (details) {
-        builder.setFocusedNode(null);
       },
       child: Container(
           padding: EdgeInsets.all(16),

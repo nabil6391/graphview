@@ -142,7 +142,6 @@ class RenderCustomLayoutBox extends RenderBox
   double _lastValue;
   Layout _algorithm;
   Paint _paint;
-
   AnimationController _controller;
   final GraphTween _graphTween = GraphTween();
   RenderAnimatedSizeState _state = RenderAnimatedSizeState.start;
@@ -159,7 +158,7 @@ class RenderCustomLayoutBox extends RenderBox
     edgePaint = paint;
     addAll(children);
 
-    _controller = AnimationController(duration: Duration(milliseconds: 2000), vsync: vsync)
+    _controller = AnimationController(duration: Duration(milliseconds: 500), vsync: vsync)
       ..addListener(() {
         if (_controller.value != _lastValue) {
           markNeedsLayout();
@@ -179,7 +178,7 @@ class RenderCustomLayoutBox extends RenderBox
     markNeedsPaint();
   }
 
-  Graph get graph => _graph;
+  // Graph get graph => _graph;
 
   set graph(Graph value) {
     _graph = value;
@@ -211,6 +210,8 @@ class RenderCustomLayoutBox extends RenderBox
     super.detach();
   }
 
+  Size sizea;
+
   @override
   void performLayout() {
     _lastValue = _controller.value;
@@ -226,18 +227,21 @@ class RenderCustomLayoutBox extends RenderBox
       final node = child.parentData as NodeBoxData;
 
       child.layout(BoxConstraints.loose(constraints.biggest), parentUsesSize: true);
-      graph.getNodeAtPosition(position).size = child.size;
+      _graph.getNodeAtPosition(position).size = child.size;
 
       child = node.nextSibling;
       position++;
     }
 
-    size = algorithm.run(graph, 10, 10);
-    var trans = _graphTween.transform(_lastValue) ?? graph.getOffsets();
-
+    // size = algorithm.run(graph, 10, 10);
+    if(sizea!=null) {
+      size = sizea;
+    }
     assert(_state != null);
     switch (_state) {
       case RenderAnimatedSizeState.start:
+        sizea = algorithm.run(_graph, 10, 10);
+        size = sizea;
         _layoutStart();
         break;
       case RenderAnimatedSizeState.stable:
@@ -251,8 +255,10 @@ class RenderCustomLayoutBox extends RenderBox
         break;
     }
 
-   child = firstChild;
-   position = 0;
+    var trans = _graphTween.transform(_lastValue) ?? _graph.getOffsets();
+
+    child = firstChild;
+    position = 0;
     while (child != null) {
       final node = child.parentData as NodeBoxData;
 
@@ -268,18 +274,19 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
 
+    var graph1 = Graph();;
 
-    var graph1 = Graph();
-    graph1.addNodes(graph.nodes);
-    graph1.addEdges(graph.edges);
+    var trans = _graphTween.transform(_lastValue) ?? _graph.getOffsets();
 
-    var trans = _graphTween.transform(_lastValue) ?? graph.getOffsets();
+    _graph.edges.forEach((element) {
+      graph1.addEdge(Node.clone(element.source), Node.clone(element.destination), paint: element.paint);
+    });
 
     graph1.nodes.asMap().forEach((key, value) {
-     value.position = trans[key];
+     // value.position = trans[key];
    });
 
-    algorithm.renderer.render(context.canvas, graph, edgePaint);
+    algorithm.renderer.render(context.canvas, graph1, edgePaint);
 
     context.canvas.restore();
 
@@ -294,7 +301,7 @@ class RenderCustomLayoutBox extends RenderBox
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Graph>('graph', graph));
+    properties.add(DiagnosticsProperty<Graph>('graph', _graph));
     properties.add(DiagnosticsProperty<Layout>('algorithm', algorithm));
     properties.add(DiagnosticsProperty<Paint>('paint', edgePaint));
   }
@@ -304,8 +311,8 @@ class RenderCustomLayoutBox extends RenderBox
   /// We have the initial size to animate from, but we do not have the target
   /// size to animate to, so we set both ends to child's size.
   void _layoutStart() {
-    _graphTween.begin = _graphTween.transform(_lastValue) ?? graph.getOffsets();
-    _graphTween.end = graph.getOffsets();
+    _graphTween.begin = _graphTween.transform(_lastValue) ?? _graph.getOffsets();
+    _graphTween.end = _graph.getOffsets();
 
     _state = RenderAnimatedSizeState.stable;
   }
@@ -316,15 +323,15 @@ class RenderCustomLayoutBox extends RenderBox
   /// If during animation the size of the child changes we restart the
   /// animation.
   void _layoutStable() {
-    if (!equal(_graphTween.end, graph.getOffsets())) {
+    if (!equal(_graphTween.end, _graph.getOffsets())) {
       _graphTween.begin = _graphTween.transform(_lastValue);
-      _graphTween.end = graph.getOffsets();
+      _graphTween.end = _graph.getOffsets();
 
       _restartAnimation();
       _state = RenderAnimatedSizeState.changed;
     } else if (_controller.value == _controller.upperBound) {
       // Animation finished. Reset target sizes.
-      _graphTween.begin = _graphTween.end = graph.getOffsets();
+      _graphTween.begin = _graphTween.end = _graph.getOffsets();
     } else if (!_controller.isAnimating) {
       _controller.forward(); // resume the animation after being detached
     }
@@ -337,9 +344,9 @@ class RenderCustomLayoutBox extends RenderBox
   /// changes again, we match the child's size, restart animation and go to
   /// unstable state.
   void _layoutChanged() {
-    if (!equal(_graphTween.end, graph.getOffsets())) {
+    if (!equal(_graphTween.end, _graph.getOffsets())) {
       // Child size changed again. Match the child's size and restart animation.
-      _graphTween.begin = _graphTween.end = graph.getOffsets();
+      _graphTween.begin = _graphTween.end = _graph.getOffsets();
       _restartAnimation();
       _state = RenderAnimatedSizeState.unstable;
     } else {
@@ -353,9 +360,9 @@ class RenderCustomLayoutBox extends RenderBox
   ///
   /// Continue tracking the child's size until is stabilizes.
   void _layoutUnstable() {
-    if (!equal(_graphTween.end, graph.getOffsets())) {
+    if (!equal(_graphTween.end, _graph.getOffsets())) {
       // Still unstable. Continue tracking the child.
-      _graphTween.begin = _graphTween.end = graph.getOffsets();
+      _graphTween.begin = _graphTween.end = _graph.getOffsets();
       _restartAnimation();
     } else {
       // Child size stabilized.

@@ -120,9 +120,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
     for (var i = 0; i < iterations; i++) {
       calculateRepulsion(nodes);
-
       calculateAttraction(edges);
-
       limitMaximumDisplacement(nodes);
 
       cool(i);
@@ -133,7 +131,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
     }
 
     if (focusedNode == null) {
-      positionNodes(graph);
+      // positionNodes(graph);
     }
 
     shiftCoordinates(graph, shiftX, shiftY);
@@ -270,7 +268,6 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
   @override
   void setFocusedNode(Node node) {
-    focusedNode = node;
   }
 }
 
