@@ -22,12 +22,25 @@ class BuchheimWalkerAlgorithm extends Layout {
 
   Size run(Graph graph, double shiftX, double shiftY) {
     mNodeData.clear();
-    var firstNode = graph.getNodeAtPosition(0);
+    var firstNode = getFirstNode(graph);
     firstWalk(graph, firstNode, 0, 0);
     secondWalk(graph, firstNode, 0.0);
+    checkUnconnectedNotes(graph);
     positionNodes(graph);
     shiftCoordinates(graph, shiftX, shiftY);
     return calculateGraphSize(graph);
+  }
+
+  Node getFirstNode(Graph graph) => graph.nodes.firstWhere((element) => !graph.hasPredecessor(element));
+
+  void checkUnconnectedNotes(Graph graph) {
+    graph.nodes.forEach((element) {
+      if(getNodeData(element) ==null) {
+        if(!kReleaseMode) {
+          print('$element is not connected to primary ancestor');
+        }
+      }
+    });
   }
 
   int compare(int x, int y) {
