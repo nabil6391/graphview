@@ -126,7 +126,7 @@ class _GraphViewPageState extends State<GraphViewPage> {
                 )
               ],
             ),
-            Expanded(
+             Expanded(
                       child: InteractiveViewer(
                           constrained: false,
                           boundaryMargin: EdgeInsets.all(100),

@@ -27,7 +27,8 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SafeArea(
+      child:Scaffold(
       body: Center(
         child: Column(children: [
           FlatButton(
@@ -148,7 +149,7 @@ class Home extends StatelessWidget {
               ),
             ),
           ),
-        ]),
+        ]),),
       ),
     );
   }

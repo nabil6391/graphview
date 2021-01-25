@@ -24,49 +24,51 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(children: [
-          FlatButton(
-              onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                              appBar: AppBar(),
-                              body: TreeViewPage(),
-                            )),
-                  ),
-              child: Text(
-                "Tree View (BuchheimWalker)",
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              )),
-          FlatButton(
-              onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                              appBar: AppBar(),
-                              body: GraphClusterViewPage(),
-                            )),
-                  ),
-              child: Text(
-                "Graph Cluster View (FruchtermanReingold)",
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              )),
-          FlatButton(
-              onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                              appBar: AppBar(),
-                              body: LayeredGraphViewPage(),
-                            )),
-                  ),
-              child: Text(
-                "Layered View (Sugiyama)",
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              )),
-        ]),
+    return SafeArea(
+      child: Scaffold(
+        body: Center(
+          child: Column(children: [
+            FlatButton(
+                onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(),
+                                body: TreeViewPage(),
+                              )),
+                    ),
+                child: Text(
+                  "Tree View (BuchheimWalker)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+            FlatButton(
+                onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(),
+                                body: GraphClusterViewPage(),
+                              )),
+                    ),
+                child: Text(
+                  "Graph Cluster View (FruchtermanReingold)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+            FlatButton(
+                onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(),
+                                body: LayeredGraphViewPage(),
+                              )),
+                    ),
+                child: Text(
+                  "Layered View (Sugiyama)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+          ]),
+        ),
       ),
     );
   }

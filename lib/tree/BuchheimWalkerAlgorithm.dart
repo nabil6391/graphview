@@ -22,12 +22,25 @@ class BuchheimWalkerAlgorithm extends Layout {
 
   Size run(Graph graph, double shiftX, double shiftY) {
     mNodeData.clear();
-    var firstNode = graph.getNodeAtPosition(0);
+    var firstNode = getFirstNode(graph);
     firstWalk(graph, firstNode, 0, 0);
     secondWalk(graph, firstNode, 0.0);
+    checkUnconnectedNotes(graph);
     positionNodes(graph);
     shiftCoordinates(graph, shiftX, shiftY);
     return calculateGraphSize(graph);
+  }
+
+  Node getFirstNode(Graph graph) => graph.nodes.firstWhere((element) => !graph.hasPredecessor(element));
+
+  void checkUnconnectedNotes(Graph graph) {
+    graph.nodes.forEach((element) {
+      if(getNodeData(element) ==null) {
+        if(!kReleaseMode) {
+          print('$element is not connected to primary ancestor');
+        }
+      }
+    });
   }
 
   int compare(int x, int y) {
@@ -144,7 +157,7 @@ class BuchheimWalkerAlgorithm extends Layout {
     if (hasLeftSibling(graph, node)) {
       Node leftSibling = getLeftSibling(graph, node);
       Node vop = node;
-      Node vom = getLeftMostChild(graph, graph.predecessorsOf(node)[0]);
+      Node vom = getLeftMostChild(graph, graph.predecessorsOf(node).first);
       double sip = getModifier(node);
 
       double sop = getModifier(node);
@@ -193,15 +206,15 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   void setAncestor(Node v, Node ancestor) {
-    getNodeData(v).ancestor = (ancestor);
+    getNodeData(v).ancestor = ancestor;
   }
 
   void setModifier(Node v, double modifier) {
-    getNodeData(v).modifier = (modifier);
+    getNodeData(v).modifier = modifier;
   }
 
   void setThread(Node v, Node thread) {
-    getNodeData(v).thread = (thread);
+    getNodeData(v).thread = thread;
   }
 
   double getPrelim(Node v) {
@@ -225,7 +238,7 @@ class BuchheimWalkerAlgorithm extends Layout {
 
   Node ancestor(Graph graph, Node vim, Node node, Node defaultAncestor) {
     BuchheimWalkerNodeData vipNodeData = getNodeData(vim);
-    return graph.predecessorsOf(vipNodeData.ancestor)[0] == graph.predecessorsOf(node)[0]
+    return graph.predecessorsOf(vipNodeData.ancestor).first == graph.predecessorsOf(node).first
         ? vipNodeData.ancestor
         : defaultAncestor;
   }
@@ -250,7 +263,7 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   bool isSibling(Graph graph, Node leftNode, Node rightNode) {
-    Node leftParent = graph.predecessorsOf(leftNode)[0];
+    Node leftParent = graph.predecessorsOf(leftNode).first;
     return graph.successorsOf(leftParent).contains(rightNode);
   }
 
@@ -262,7 +275,7 @@ class BuchheimWalkerAlgorithm extends Layout {
     if (!hasLeftSibling(graph, node)) {
       return null;
     } else {
-      Node parent = graph.predecessorsOf(node)[0];
+      Node parent = graph.predecessorsOf(node).first;
       List<Node> children = graph.successorsOf(parent);
       int nodeIndex = children.indexOf(node);
       return children[nodeIndex - 1];
@@ -274,7 +287,7 @@ class BuchheimWalkerAlgorithm extends Layout {
     if (parents.isEmpty) {
       return false;
     } else {
-      Node parent = parents[0];
+      Node parent = parents.first;
       int nodeIndex = graph.successorsOf(parent).indexOf(node);
       return nodeIndex > 0;
     }
@@ -284,7 +297,7 @@ class BuchheimWalkerAlgorithm extends Layout {
     if (!hasRightSibling(graph, node)) {
       return null;
     } else {
-      var parent = graph.predecessorsOf(node)[0];
+      var parent = graph.predecessorsOf(node).first;
       var children = graph.successorsOf(parent);
       var nodeIndex = children.indexOf(node);
       return children[nodeIndex + 1];
@@ -304,14 +317,13 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   Node getLeftMostChild(Graph graph, Node node) {
-    return graph.successorsOf(node)[0];
+    return graph.successorsOf(node).first;
   }
 
   Node getRightMostChild(Graph graph, Node node) {
     var children = graph.successorsOf(node);
     return children.isEmpty ? null : children[children.length - 1];
   }
-
 
   void positionNodes(Graph graph) {
     var doesNeedReverseOrder  = needReverseOrder();
@@ -325,7 +337,7 @@ class BuchheimWalkerAlgorithm extends Layout {
     double globalPadding = 0;
     double localPadding = 0;
     nodes.forEach((node) {
-      final depth = getNodeData(node).depth;
+      final depth = getNodeData(node)?.depth;
       if (depth != currentLevel) {
         if (doesNeedReverseOrder) {
           globalPadding -= localPadding;
@@ -436,13 +448,13 @@ class BuchheimWalkerAlgorithm extends Layout {
     if (descending) {
       nodes.reversed;
     }
-    nodes.sort((data1, data2) => compare(getNodeData(data1).depth, getNodeData(data2).depth));
+    nodes.sort((data1, data2) => compare(getNodeData(data1)?.depth ?? 0, getNodeData(data2)?.depth??0));
 
     return nodes;
   }
 
   List<Node> filterByLevel(List<Node> nodes, int level) {
-    return nodes.where((node) => getNodeData(node).depth == level).toList();
+    return nodes.where((node) => getNodeData(node)?.depth  == level).toList();
   }
 
   @override

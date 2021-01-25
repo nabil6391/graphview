@@ -1,3 +1,7 @@
+## 0.6.6
+
+- Fix Index out of range for Sugiyama Algorithm (#20)
+
 ## 0.6.5
 
 - Fix edge coloring not picked up by TreeEdgeRenderer (#15)
