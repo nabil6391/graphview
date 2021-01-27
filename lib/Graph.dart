@@ -150,6 +150,20 @@ class Graph {
     return nodes.map((e) => Offset(e.position.dx, e.position.dy)).toList();
   }
 
+  Graph clone() {
+    var _graph = Graph();
+    Map<Node, Node> hashmap = HashMap();
+    this.nodes.forEach((element) {
+      hashmap[element] = Node.clone(element);
+    });
+
+    this.edges.forEach((element) {
+      _graph.addEdge(hashmap[element.source], hashmap[element.destination], paint: element.paint);
+    });
+
+    return _graph;
+  }
+
   // Graph.clone(Graph source) : this._edges = source.edges, this._nodes = source.nodes.map((e) => Node.clone(e).toList());
 }
 

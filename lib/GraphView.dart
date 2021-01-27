@@ -275,19 +275,15 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
 
-    var graph1 = Graph();;
+    // var graph1 = _graph.clone();
+    //
+    // var trans = _graphTween.transform(_lastValue) ?? _graph.getOffsets();
+    //
+    // graph1.nodes.asMap().forEach((key, value) {
+    //   value.position = trans[key];
+    // });
 
-    var trans = _graphTween.transform(_lastValue) ?? _graph.getOffsets();
-
-    _graph.edges.forEach((element) {
-      graph1.addEdge(Node.clone(element.source), Node.clone(element.destination), paint: element.paint);
-    });
-
-    graph1.nodes.asMap().forEach((key, value) {
-     // value.position = trans[key];
-   });
-
-    algorithm.renderer.render(context.canvas, graph1, edgePaint);
+    algorithm.renderer.render(context.canvas, _graph, edgePaint);
 
     context.canvas.restore();
 
