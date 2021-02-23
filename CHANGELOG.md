@@ -1,3 +1,7 @@
+## 0.6.7
+
+- Fix rect value not being set in FruchtermanReingoldAlgorithm (#27)
+
 ## 0.6.6
 
 - Fix Index out of range for Sugiyama Algorithm (#20)
