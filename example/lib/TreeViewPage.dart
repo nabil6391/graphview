@@ -113,7 +113,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
     );
   }
 
-  final Graph graph = Graph();
+  final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
 
   @override
