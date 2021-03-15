@@ -7,25 +7,27 @@ const double EPSILON = 0.0001;
 class FruchtermanReingoldAlgorithm implements Layout {
   Map<Node, Offset> displacement = {};
   Random rand = Random();
-  double width;
-  double height;
-  double k;
-  double tick;
-  double attractionK;
-  double repulsionK;
+  late double width;
+  late double height;
+  late double k;
+  late double tick;
+  late double attractionK;
+  late double repulsionK;
   int iterations = DEFAULT_ITERATIONS;
 
-  EdgeRenderer renderer;
+  EdgeRenderer? renderer;
 
-  FruchtermanReingoldAlgorithm({this.iterations = DEFAULT_ITERATIONS, this.renderer}) {
+  FruchtermanReingoldAlgorithm(
+      {this.iterations = DEFAULT_ITERATIONS, this.renderer}) {
     renderer = renderer ?? ArrowEdgeRenderer();
   }
 
   void init(List<Node> nodes) {
     nodes.forEach((node) {
       displacement[node] = Offset.zero;
-      if (node.position.distance == 0.0) {
-        node.position = Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
+      if (node.position!.distance == 0.0) {
+        node.position =
+            Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
       }
     });
   }
@@ -37,8 +39,9 @@ class FruchtermanReingoldAlgorithm implements Layout {
   void limitMaximumDisplacement(List<Node> nodes) {
     nodes.forEach((node) {
       if (node != focusedNode) {
-        var dispLength = max(EPSILON, displacement[node].distance);
-        node.position += displacement[node] / dispLength * min(dispLength, tick);
+        var dispLength = max(EPSILON, displacement[node]!.distance);
+        node.position = node.position! +
+            displacement[node]! / dispLength * min(dispLength, tick);
       } else {
         displacement[node] = Offset.zero;
       }
@@ -49,11 +52,11 @@ class FruchtermanReingoldAlgorithm implements Layout {
     edges.forEach((edge) {
       var source = edge.source;
       var destination = edge.destination;
-      var delta = source.position - destination.position;
+      var delta = source.position! - destination.position!;
       var deltaLength = max(EPSILON, delta.distance);
       var offsetDisp = delta / deltaLength * forceAttraction(deltaLength);
-      displacement[source] = (displacement[source] - offsetDisp);
-      displacement[destination] = (displacement[destination] + offsetDisp);
+      displacement[source] = (displacement[source]! - offsetDisp);
+      displacement[destination] = (displacement[destination]! + offsetDisp);
     });
   }
 
@@ -61,9 +64,10 @@ class FruchtermanReingoldAlgorithm implements Layout {
     nodes.forEach((v) {
       nodes.forEach((u) {
         if (u != v) {
-          var delta = v.position - u.position;
+          var delta = v.position! - u.position!;
           var deltaLength = max(EPSILON, delta.distance);
-          displacement[v] = (displacement[v] + (delta / deltaLength * forceRepulsion(deltaLength)));
+          displacement[v] = (displacement[v]! +
+              (delta / deltaLength * forceRepulsion(deltaLength)));
         }
       });
     });
@@ -79,8 +83,8 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
   var focusedNode;
 
-  Size run(Graph graph, double shiftX, double shiftY) {
-    var size = findBiggestSize(graph) * graph.nodeCount();
+  Size run(Graph? graph, double shiftX, double shiftY) {
+    var size = findBiggestSize(graph!) * graph.nodeCount();
     width = size;
     height = size;
 
@@ -156,26 +160,27 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
     var cluster = nodeClusters[0];
     // move first cluster to 0,0
-    cluster.offset(-cluster.rect.left, -cluster.rect.top);
+    cluster.offset(-cluster.rect!.left, -cluster.rect!.top);
 
     for (var i = 1; i < nodeClusters.length; i++) {
       var nextCluster = nodeClusters[i];
-      var xDiff = nextCluster.rect.left - cluster.rect.right - CLUSTER_PADDING;
-      var yDiff = nextCluster.rect.top - cluster.rect.top;
+      var xDiff =
+          nextCluster.rect!.left - cluster.rect!.right - CLUSTER_PADDING;
+      var yDiff = nextCluster.rect!.top - cluster.rect!.top;
       nextCluster.offset(-xDiff, -yDiff);
       cluster = nextCluster;
     }
   }
 
   void combineSingleNodeCluster(List<NodeCluster> nodeClusters) {
-    NodeCluster firstSingleNodeCluster;
+    NodeCluster? firstSingleNodeCluster;
 
     nodeClusters.forEach((cluster) {
       if (cluster.size() == 1) {
         if (firstSingleNodeCluster == null) {
           firstSingleNodeCluster = cluster;
         } else {
-          firstSingleNodeCluster.concat(cluster);
+          firstSingleNodeCluster!.concat(cluster);
         }
       }
     });
@@ -183,7 +188,8 @@ class FruchtermanReingoldAlgorithm implements Layout {
     nodeClusters.removeWhere((element) => element.size() == 1);
   }
 
-  void followEdges(Graph graph, NodeCluster cluster, Node node, List nodesVisited) {
+  void followEdges(
+      Graph graph, NodeCluster cluster, Node node, List nodesVisited) {
     graph.successorsOf(node).forEach((successor) {
       if (!nodesVisited.contains(successor)) {
         nodesVisited.add(successor);
@@ -203,8 +209,8 @@ class FruchtermanReingoldAlgorithm implements Layout {
     });
   }
 
-  NodeCluster findClusterOf(List<NodeCluster> clusters, Node node) {
-    return clusters.firstWhere((element) => element.contains(node), orElse: () => null);
+  NodeCluster? findClusterOf(List<NodeCluster> clusters, Node node) {
+    return clusters.firstWhereOrNull((element) => element.contains(node));
   }
 
   double findBiggestSize(Graph graph) {
@@ -252,15 +258,15 @@ class FruchtermanReingoldAlgorithm implements Layout {
 }
 
 class NodeCluster {
-  List<Node> nodes;
+  List<Node>? nodes;
 
-  Rect rect;
+  Rect? rect;
 
-  List<Node> getNodes() {
+  List<Node>? getNodes() {
     return nodes;
   }
 
-  Rect getRect() {
+  Rect? getRect() {
     return rect;
   }
 
@@ -269,37 +275,41 @@ class NodeCluster {
   }
 
   void add(Node node) {
-    nodes.add(node);
+    nodes!.add(node);
 
-    if (nodes.length == 1) {
-      rect = Rect.fromLTRB(node.x, node.y, node.x + node.width, node.y + node.height);
+    if (nodes!.length == 1) {
+      rect = Rect.fromLTRB(
+          node.x, node.y, node.x + node.width, node.y + node.height);
     } else {
-      rect = Rect.fromLTRB(min(rect.left, node.x), min(rect.top, node.y), max(rect.right, node.x + node.width),
-          max(rect.bottom, node.y + node.height));
+      rect = Rect.fromLTRB(
+          min(rect!.left, node.x),
+          min(rect!.top, node.y),
+          max(rect!.right, node.x + node.width),
+          max(rect!.bottom, node.y + node.height));
     }
   }
 
   bool contains(Node node) {
-    return nodes.contains(node);
+    return nodes!.contains(node);
   }
 
   int size() {
-    return nodes.length;
+    return nodes!.length;
   }
 
   void concat(NodeCluster cluster) {
-    cluster.nodes.forEach((node) {
-      node.position = (Offset(rect.right + CLUSTER_PADDING, rect.top));
+    cluster.nodes!.forEach((node) {
+      node.position = (Offset(rect!.right + CLUSTER_PADDING, rect!.top));
       add(node);
     });
   }
 
   void offset(double xDiff, double yDiff) {
-    nodes.forEach((node) {
-      node.position = (node.position + Offset(xDiff, yDiff));
+    nodes!.forEach((node) {
+      node.position = (node.position! + Offset(xDiff, yDiff));
     });
 
-    rect.translate(xDiff, yDiff);
+    rect!.translate(xDiff, yDiff);
   }
 
   NodeCluster() {

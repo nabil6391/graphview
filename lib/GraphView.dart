@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 
 part 'Graph.dart';
 part 'Layout.dart';
@@ -26,9 +27,10 @@ part 'tree/TreeEdgeRenderer.dart';
 class GraphView extends MultiChildRenderObjectWidget {
   final Graph graph;
   final Layout algorithm;
-  final Paint paint;
+  final Paint? paint;
 
-  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint})
+  GraphView(
+      {Key? key, required this.graph, required this.algorithm, this.paint})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key, children: _extractChildren(graph));
@@ -50,7 +52,8 @@ class GraphView extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderCustomLayoutBox renderObject) {
+  void updateRenderObject(
+      BuildContext context, RenderCustomLayoutBox renderObject) {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
@@ -59,16 +62,18 @@ class GraphView extends MultiChildRenderObjectWidget {
 }
 
 class RenderCustomLayoutBox extends RenderBox
-    with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
-  Graph _graph;
-  Layout _algorithm;
-  Paint _paint;
+    with
+        ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
+  Graph? _graph;
+  Layout? _algorithm;
+  Paint? _paint;
 
   RenderCustomLayoutBox(
     Graph graph,
     Layout algorithm,
-    Paint paint, {
-    List<RenderBox> children,
+    Paint? paint, {
+    List<RenderBox>? children,
   }) {
     _algorithm = algorithm;
     _graph = graph;
@@ -76,9 +81,9 @@ class RenderCustomLayoutBox extends RenderBox
     addAll(children);
   }
 
-  Paint get edgePaint => _paint;
+  Paint? get edgePaint => _paint;
 
-  set edgePaint(Paint value) {
+  set edgePaint(Paint? value) {
     _paint = value ??
         (Paint()
           ..color = Colors.black
@@ -88,16 +93,16 @@ class RenderCustomLayoutBox extends RenderBox
     markNeedsPaint();
   }
 
-  Graph get graph => _graph;
+  Graph? get graph => _graph;
 
-  set graph(Graph value) {
+  set graph(Graph? value) {
     _graph = value;
     markNeedsLayout();
   }
 
-  Layout get algorithm => _algorithm;
+  Layout? get algorithm => _algorithm;
 
-  set algorithm(Layout value) {
+  set algorithm(Layout? value) {
     _algorithm = value;
     markNeedsLayout();
   }
@@ -122,21 +127,22 @@ class RenderCustomLayoutBox extends RenderBox
     while (child != null) {
       final node = child.parentData as NodeBoxData;
 
-      child.layout(BoxConstraints.loose(constraints.biggest), parentUsesSize: true);
-      graph.getNodeAtPosition(position).size = child.size;
+      child.layout(BoxConstraints.loose(constraints.biggest),
+          parentUsesSize: true);
+      graph!.getNodeAtPosition(position).size = child.size;
 
       child = node.nextSibling;
       position++;
     }
 
-    size = algorithm.run(graph, 10, 10);
+    size = algorithm!.run(graph, 10, 10);
 
     child = firstChild;
     position = 0;
     while (child != null) {
       final node = child.parentData as NodeBoxData;
 
-      node.offset = graph.getNodeAtPosition(position).position;
+      node.offset = graph!.getNodeAtPosition(position).position!;
 
       child = node.nextSibling;
       position++;
@@ -148,7 +154,7 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
 
-    algorithm.renderer.render(context.canvas, graph, edgePaint);
+    algorithm!.renderer!.render(context.canvas, graph, edgePaint);
 
     context.canvas.restore();
 
@@ -156,7 +162,7 @@ class RenderCustomLayoutBox extends RenderBox
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChildren(result, position: position);
   }
 

@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart' show IterableExtension;
 part of graphview;
 
 class Graph {
@@ -21,7 +22,7 @@ class Graph {
 
   void addNodes(List<Node> nodes) => nodes.forEach((it) => addNode(it));
 
-  void removeNode(Node node) {
+  void removeNode(Node? node) {
     if (!_nodes.contains(node)) {
 //            throw IllegalArgumentException("Unable to find node in graph.")
     }
@@ -37,9 +38,9 @@ class Graph {
     notifyGraphObserver();
   }
 
-  void removeNodes(List<Node> nodes) => nodes.forEach((it) => removeNode(it));
+  void removeNodes(List<Node?> nodes) => nodes.forEach((it) => removeNode(it));
 
-  Edge addEdge(Node source, Node destination, {Paint paint}) {
+  Edge addEdge(Node source, Node destination, {Paint? paint}) {
     final edge = Edge(source, destination, paint: paint);
     addEdgeS(edge);
 
@@ -70,26 +71,26 @@ class Graph {
 
   void removeEdges(List<Edge> edges) => edges.forEach((it) => removeEdge(it));
 
-  void removeEdgeFromPredecessor(Node predecessor, Node current) {
+  void removeEdgeFromPredecessor(Node? predecessor, Node? current) {
     _edges.removeWhere((edge) => edge.source == predecessor && edge.destination == current);
   }
 
   bool hasNodes() => _nodes.isNotEmpty;
 
-  Edge getEdgeBetween(Node source, Node destination) =>
-      _edges.firstWhere((element) => element.source == source && element.destination == destination, orElse: ()=> null);
+  Edge? getEdgeBetween(Node source, Node? destination) =>
+      _edges.firstWhereOrNull((element) => element.source == source && element.destination == destination);
 
-  bool hasSuccessor(Node node) => _edges.any((element) => element.source == node);
+  bool hasSuccessor(Node? node) => _edges.any((element) => element.source == node);
 
-  List<Node> successorsOf(Node node) =>
+  List<Node> successorsOf(Node? node) =>
       _edges.where((element) => element.source == node).map((e) => e.destination).toList();
 
   bool hasPredecessor(Node node) => _edges.any((element) => element.destination == node);
 
-  List<Node> predecessorsOf(Node node) =>
+  List<Node> predecessorsOf(Node? node) =>
       _edges.where((element) => element.destination == node).map((edge) => edge.source).toList();
 
-  bool contains({Node node, Edge edge}) =>
+  bool contains({Node? node, Edge? edge}) =>
       node != null && _nodes.contains(node) || edge != null && _edges.contains(edge);
 
 //  bool contains(Edge edge) => _edges.contains(edge);
@@ -123,7 +124,7 @@ class Graph {
 }
 
 class Node {
-  Key key;
+  Key? key;
 
   @required
   Widget data;
@@ -132,22 +133,22 @@ class Node {
 
   Size size = Size(0, 0);
 
-  Offset position = Offset(0, 0);
+  Offset? position = Offset(0, 0);
 
   double get height => size.height;
 
   double get width => size.width;
 
-  double get x => position.dx;
+  double get x => position!.dx;
 
-  double get y => position.dy;
+  double get y => position!.dy;
 
   set y(double value) {
-    position = Offset(position.dx, value);
+    position = Offset(position!.dx, value);
   }
 
   set x(double value) {
-    position = Offset(value, position.dy);
+    position = Offset(value, position!.dy);
   }
 
   @override
@@ -166,8 +167,8 @@ class Edge {
   Node source;
   Node destination;
 
-  Key key;
-  Paint paint;
+  Key? key;
+  Paint? paint;
 
   Edge(this.source, this.destination, {this.key, this.paint});
 
