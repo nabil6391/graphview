@@ -64,7 +64,8 @@ class _TreeViewPageState extends State<TreeViewPage> {
             RaisedButton(
               onPressed: () {
                 final node12 = Node(getNodeText());
-                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                var edge =
+                    graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                 print(edge);
                 graph.addEdge(edge, node12);
                 setState(() {});
@@ -81,7 +82,8 @@ class _TreeViewPageState extends State<TreeViewPage> {
               maxScale: 5.6,
               child: GraphView(
                 graph: graph,
-                algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                algorithm:
+                    BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
                 paint: Paint()
                   ..color = Colors.green
                   ..strokeWidth = 1
