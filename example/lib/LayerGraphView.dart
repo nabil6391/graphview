@@ -53,7 +53,8 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
             RaisedButton(
               onPressed: () {
                 final Node node12 = Node(getNodeText());
-                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                var edge =
+                    graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                 print(edge);
                 graph.addEdge(edge, node12);
                 setState(() {});

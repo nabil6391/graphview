@@ -1,11 +1,10 @@
 name: graphview
 description:  GraphView is used to display data in graph structures. It can display Tree layout, Directed and Layered graph. Useful for Family Tree, Hierarchy View.
-version: 0.6.6
+version: 1.6.6
 homepage: https://github.com/nabil6391/graphview
 
 environment:
   sdk: '>=2.12.0 <3.0.0'
-  flutter: ">=1.17.0 <2.0.0"
 
 dependencies:
   flutter:
