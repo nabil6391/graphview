@@ -70,7 +70,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
               BoxShadow(color: Colors.blue[100], spreadRadius: 1),
             ],
           ),
-          child: Text("Node $i")),
+          child: Text('Node $i')),
     );
   }
 

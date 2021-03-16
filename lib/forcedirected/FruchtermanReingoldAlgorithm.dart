@@ -15,6 +15,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
   late double repulsionK;
   int iterations = DEFAULT_ITERATIONS;
 
+  @override
   EdgeRenderer? renderer;
 
   FruchtermanReingoldAlgorithm(
@@ -83,6 +84,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
   var focusedNode;
 
+  @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     var size = findBiggestSize(graph!) * graph.nodeCount();
     width = size;
@@ -214,7 +216,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
   }
 
   double findBiggestSize(Graph graph) {
-    return graph.nodes.map((it) => max(it.height, it.width)).reduce(max) ?? 0;
+    return graph.nodes.map((it) => max(it.height, it.width)).reduce(max);
   }
 
   Offset getOffset(Graph graph) {

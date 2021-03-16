@@ -18,7 +18,7 @@ class SugiyamaAlgorithm extends Layout {
     renderer = SugiyamaEdgeRenderer(nodeData, edgeData);
   }
 
-  Widget get dummyText => Text("Dummy ${nodeCount++}");
+  Widget get dummyText => Text('Dummy ${nodeCount++}');
 
   bool isVertical() {
     var orientation = configuration.orientation;
@@ -32,6 +32,7 @@ class SugiyamaAlgorithm extends Layout {
         orientation == SugiyamaConfiguration.ORIENTATION_RIGHT_LEFT;
   }
 
+  @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     this.graph = copyGraph(graph!);
     reset();
@@ -473,15 +474,15 @@ class SugiyamaAlgorithm extends Layout {
     var values = List.filled(4, 0.0);
     graph.nodes.forEach((n) {
       for (var i = 0; i < 4; i++) {
-        values[i] = x[i]![n]!;
+        values[i] = x[i][n]!;
       }
       values.sort();
-      var average = (values[1]! + values[2]!) / 2;
+      var average = (values[1] + values[2]) / 2;
       coordinates[n] = average;
     });
 
     // get the minimum coordinate value
-    minValue = coordinates.values.reduce(min) ?? double.infinity;
+    minValue = coordinates.values.reduce(min);
 
     // set left border to 0
     if (minValue != 0) {
@@ -807,7 +808,7 @@ class SugiyamaAlgorithm extends Layout {
       final iterator = layers[i].iterator;
 
       while (iterator.moveNext()) {
-        final Node? current = iterator.current;
+        final current = iterator.current;
         if (nodeData[current!]!.isDummy) {
           final predecessor = graph.predecessorsOf(current)[0];
           final successor = graph.successorsOf(current)[0];

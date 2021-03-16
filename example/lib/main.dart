@@ -38,7 +38,7 @@ class Home extends StatelessWidget {
                               )),
                     ),
                 child: Text(
-                  "Tree View (BuchheimWalker)",
+                  'Tree View (BuchheimWalker)',
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 )),
             FlatButton(
@@ -51,7 +51,7 @@ class Home extends StatelessWidget {
                               )),
                     ),
                 child: Text(
-                  "Graph Cluster View (FruchtermanReingold)",
+                  'Graph Cluster View (FruchtermanReingold)',
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 )),
             FlatButton(
@@ -64,7 +64,7 @@ class Home extends StatelessWidget {
                               )),
                     ),
                 child: Text(
-                  "Layered View (Sugiyama)",
+                  'Layered View (Sugiyama)',
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 )),
           ]),
