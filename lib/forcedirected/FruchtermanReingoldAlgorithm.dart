@@ -254,7 +254,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
   }
 
   @override
-  void setFocusedNode(Node node) {
+  void setFocusedNode(Node? node) {
     focusedNode = node;
   }
 }

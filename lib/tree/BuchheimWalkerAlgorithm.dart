@@ -491,5 +491,5 @@ class BuchheimWalkerAlgorithm extends Layout {
   }
 
   @override
-  void setFocusedNode(Node node) {}
+  void setFocusedNode(Node? node) {}
 }

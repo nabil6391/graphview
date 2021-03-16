@@ -9,5 +9,5 @@ abstract class Layout {
   /// @return The size of the graph
   Size run(Graph? graph, double shiftX, double shiftY);
 
-  void setFocusedNode(Node node);
+  void setFocusedNode(Node? node);
 }
