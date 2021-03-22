@@ -86,7 +86,7 @@ class RenderCustomLayoutBox extends RenderBox
   set edgePaint(Paint? value) {
     _paint = value ??
         (Paint()
-          ..color = Colors.black
+          // ..color = Colors.black
           ..strokeWidth = 3)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.butt;
