@@ -21,13 +21,20 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
               minScale: 0.001,
               maxScale: 100,
               child: GraphView(
-                graph: graph,
-                algorithm: builder,
-                paint: Paint()
-                  ..color = Colors.green
-                  ..strokeWidth = 1
-                  ..style = PaintingStyle.fill,
-              )),
+                  graph: graph,
+                  algorithm: builder,
+                  paint: Paint()
+                    ..color = Colors.green
+                    ..strokeWidth = 1
+                    ..style = PaintingStyle.fill,
+                  builder: (Node node) {
+                    // I can decide what widget should be shown here based on the id
+                    var a =  node.key.value as int;
+                    if(a == 2 ) {
+                      return rectangWidget(a);
+                    }
+                    return rectangWidget(a);
+                  })),
         ),
       ],
     ));
@@ -36,7 +43,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   int n = 8;
   Random r = Random();
 
-  Widget getNodeText(int i) {
+  Widget rectangWidget(int i) {
     return GestureDetector(
       onLongPressStart: (details) {
         var x = details.globalPosition.dx;
@@ -67,7 +74,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             boxShadow: [
-              BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+              BoxShadow(color: Colors.blue, spreadRadius: 1),
             ],
           ),
           child: Text("Node $i")),
@@ -79,14 +86,14 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
 
   @override
   void initState() {
-    final a = Node(getNodeText(1));
-    final b = Node(getNodeText(2));
-    final c = Node(getNodeText(3));
-    final d = Node(getNodeText(4));
-    final e = Node(getNodeText(5));
-    final f = Node(getNodeText(6));
-    final g = Node(getNodeText(7));
-    final h = Node(getNodeText(8));
+    final a = Node.Id(1);
+    final b = Node.Id(2);
+    final c = Node.Id(3);
+    final d = Node.Id(4);
+    final e = Node.Id(5);
+    final f = Node(rectangWidget(6)); //using deprecated mechanism of directly placing the widget here
+    final g = Node(rectangWidget(7));
+    final h = Node(rectangWidget(8));
 
     graph.addEdge(a, b, paint: Paint()..color = Colors.red);
     graph.addEdge(a, c);
