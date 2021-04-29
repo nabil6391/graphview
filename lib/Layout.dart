@@ -9,4 +9,10 @@ abstract class Layout {
   /// @return The size of the graph
   Size run(Graph graph, double shiftX, double shiftY);
 
+  void init(Graph graph);
+
+  void step(Graph graph);
+
+  setDimensions(double width, double height);
+
 }

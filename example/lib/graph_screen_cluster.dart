@@ -1,31 +1,41 @@
 import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
-import 'package:provider/provider.dart';
 
-import 'graph_change_notifier.dart';
 
-class GraphScreen extends StatefulWidget {
+class GraphScreenCluster extends StatefulWidget {
+  Graph graph;
+
+  GraphScreenCluster(this.graph, Layout builder);
 
   @override
-  _GraphScreenState createState() => _GraphScreenState();
+  _GraphScreenClusterState createState() => _GraphScreenClusterState();
 }
 
-class _GraphScreenState extends State<GraphScreen> {
+class _GraphScreenClusterState extends State<GraphScreenCluster> {
   Timer timer;
   Icon animateIcon = Icon(Icons.play_arrow);
 
+  Graph graph;
+
+  Layout builder;
+
   @override
   void initState() {
-    Provider.of<GraphChangeNotifier>(context, listen: false).setupGraph();
+    graph = widget.graph;
+
+
+    builder.init(graph);
     startTimer();
     super.initState();
   }
 
   void startTimer() {
     timer = Timer.periodic(Duration(milliseconds: 25), (timer) {
-      Provider.of<GraphChangeNotifier>(context, listen: false).step();
-      Provider.of<GraphChangeNotifier>(context, listen: false).update();
+      builder.step(graph);
+      update();
     });
   }
 
@@ -37,11 +47,7 @@ class _GraphScreenState extends State<GraphScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Graph graph = Provider.of<GraphChangeNotifier>(context, listen: true).graph;
-    Provider.of<GraphChangeNotifier>(context, listen: false).graphWidth =
-        MediaQuery.of(context).size.width;
-    Provider.of<GraphChangeNotifier>(context, listen: false).graphHeight =
-        MediaQuery.of(context).size.height;
+     builder.setDimensions(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
 
     return Scaffold(
       appBar: AppBar(
@@ -51,9 +57,8 @@ class _GraphScreenState extends State<GraphScreen> {
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
-              Provider.of<GraphChangeNotifier>(context, listen: false)
-                  .setNodeInitialPositions();
-              Provider.of<GraphChangeNotifier>(context, listen: false).update();
+              builder.init(graph);
+              update();
             },
           ),
           IconButton(
@@ -70,6 +75,13 @@ class _GraphScreenState extends State<GraphScreen> {
                   animateIcon = Icon(Icons.play_arrow);
                 });
               }
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () async {
+              add();
+              update();
             },
           )
         ],
@@ -112,8 +124,7 @@ class _GraphScreenState extends State<GraphScreen> {
                     child: graph.getNodeAtPosition(index).data,
                     onPanUpdate: (details) {
                       graph.getNodeAtPosition(index).position += details.delta;
-                      Provider.of<GraphChangeNotifier>(context, listen: false)
-                          .update();
+                      update();
                     },
                   ),
                   top: graph.getNodeAtPosition(index).position.dy,
@@ -126,17 +137,51 @@ class _GraphScreenState extends State<GraphScreen> {
       ),
     );
   }
+
+  Future<void> update() async {
+    setState(() {});
+  }
+
+  Widget createNode(String nodeText) {
+    return GestureDetector(
+      child: Container(
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          border: Border.all(color: Colors.white, width: 1),
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Center(
+          child: Text(
+            nodeText,
+            style: TextStyle(fontSize: 10),
+          ),
+        ),
+      ),
+      onLongPress: () {
+        print(nodeText);
+      },
+    );
+  }
+
+  void add() {
+    var node2 = Node(createNode(Random().nextInt(10).toString()));
+
+    var node1 = graph.getNodeAtPosition(Random().nextInt(graph.nodes.length));
+    graph.addEdge(node1, node2);
+  }
 }
 
 class DrawLine extends CustomPainter {
   Map<String, double> start;
   Map<String, double> end;
+
   DrawLine({this.start, this.end});
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint line = new Paint()
-      ..color = Colors.white
+      ..color = Colors.red
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
       ..strokeWidth = 1;
