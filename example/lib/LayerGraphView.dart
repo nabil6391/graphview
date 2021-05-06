@@ -21,10 +21,10 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
               width: 100,
               child: TextFormField(
                 initialValue: builder.nodeSeparation.toString(),
-                decoration: InputDecoration(labelText: "Node Separation"),
+                decoration: InputDecoration(labelText: 'Node Separation'),
                 onChanged: (text) {
                   builder.nodeSeparation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
+                  setState(() {});
                 },
               ),
             ),
@@ -32,10 +32,10 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
               width: 100,
               child: TextFormField(
                 initialValue: builder.levelSeparation.toString(),
-                decoration: InputDecoration(labelText: "Level Separation"),
+                decoration: InputDecoration(labelText: 'Level Separation'),
                 onChanged: (text) {
                   builder.levelSeparation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
+                  setState(() {});
                 },
               ),
             ),
@@ -43,22 +43,23 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
               width: 100,
               child: TextFormField(
                 initialValue: builder.orientation.toString(),
-                decoration: InputDecoration(labelText: "Orientation"),
+                decoration: InputDecoration(labelText: 'Orientation'),
                 onChanged: (text) {
                   builder.orientation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
+                  setState(() {});
                 },
               ),
             ),
-            RaisedButton(
+            ElevatedButton(
               onPressed: () {
-                final Node node12 = Node(getNodeText());
-                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                final node12 = Node(getNodeText());
+                var edge =
+                    graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                 print(edge);
                 graph.addEdge(edge, node12);
                 setState(() {});
               },
-              child: Text("Add"),
+              child: Text('Add'),
             )
           ],
         ),
@@ -91,10 +92,10 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
           boxShadow: [
-            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+            BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
           ],
         ),
-        child: Text("Node ${n++}"));
+        child: Text('Node ${n++}'));
   }
 
   final Graph graph = Graph();
@@ -103,29 +104,29 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
 
   @override
   void initState() {
-    final Node node1 = Node(getNodeText());
-    final Node node2 = Node(getNodeText());
-    final Node node3 = Node(getNodeText());
-    final Node node4 = Node(getNodeText());
-    final Node node5 = Node(getNodeText());
-    final Node node6 = Node(getNodeText());
-    final Node node8 = Node(getNodeText());
-    final Node node7 = Node(getNodeText());
-    final Node node9 = Node(getNodeText());
-    final Node node10 = Node(getNodeText());
-    final Node node11 = Node(getNodeText());
-    final Node node12 = Node(getNodeText());
-    final Node node13 = Node(getNodeText());
-    final Node node14 = Node(getNodeText());
-    final Node node15 = Node(getNodeText());
-    final Node node16 = Node(getNodeText());
-    final Node node17 = Node(getNodeText());
-    final Node node18 = Node(getNodeText());
-    final Node node19 = Node(getNodeText());
-    final Node node20 = Node(getNodeText());
-    final Node node21 = Node(getNodeText());
-    final Node node22 = Node(getNodeText());
-    final Node node23 = Node(getNodeText());
+    final node1 = Node(getNodeText());
+    final node2 = Node(getNodeText());
+    final node3 = Node(getNodeText());
+    final node4 = Node(getNodeText());
+    final node5 = Node(getNodeText());
+    final node6 = Node(getNodeText());
+    final node8 = Node(getNodeText());
+    final node7 = Node(getNodeText());
+    final node9 = Node(getNodeText());
+    final node10 = Node(getNodeText());
+    final node11 = Node(getNodeText());
+    final node12 = Node(getNodeText());
+    final node13 = Node(getNodeText());
+    final node14 = Node(getNodeText());
+    final node15 = Node(getNodeText());
+    final node16 = Node(getNodeText());
+    final node17 = Node(getNodeText());
+    final node18 = Node(getNodeText());
+    final node19 = Node(getNodeText());
+    final node20 = Node(getNodeText());
+    final node21 = Node(getNodeText());
+    final node22 = Node(getNodeText());
+    final node23 = Node(getNodeText());
 
     graph.addEdge(node1, node13, paint: Paint()..color = Colors.red);
     graph.addEdge(node1, node21);
@@ -166,5 +167,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
       ..nodeSeparation = (15)
       ..levelSeparation = (15)
       ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
+
+    super.initState();
   }
 }

@@ -7,21 +7,21 @@ class ArrowEdgeRenderer extends EdgeRenderer {
   var trianglePath = Path();
 
   @override
-  void render(Canvas canvas, Graph graph, Paint paint) {
+  void render(Canvas canvas, Graph? graph, Paint? paint) {
     var trianglePaint = Paint()
-      ..color = paint.color
+      ..color = paint!.color
       ..style = PaintingStyle.fill;
 
-    graph.edges.forEach((edge) {
+    graph!.edges.forEach((edge) {
       var source = edge.source;
       var destination = edge.destination;
 
-      var sourceOffset = source.position;
+      var sourceOffset = source.position!;
 
       var x1 = sourceOffset.dx;
       var y1 = sourceOffset.dy;
 
-      var destinationOffset = destination.position;
+      var destinationOffset = destination.position!;
 
       var x2 = destinationOffset.dx;
       var y2 = destinationOffset.dy;
@@ -33,22 +33,30 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
       var clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
-      Paint edgeTrianglePaint;
+      Paint? edgeTrianglePaint;
       if (edge.paint != null) {
         edgeTrianglePaint = Paint()
-          ..color = edge.paint.color ?? paint.color
+          ..color = edge.paint!.color
           ..style = PaintingStyle.fill;
       }
 
       var triangleCentroid = drawTriangle(
-          canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+          canvas,
+          edgeTrianglePaint ?? trianglePaint,
+          clippedLine[0],
+          clippedLine[1],
+          clippedLine[2],
+          clippedLine[3]);
 
-      canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]),
+      canvas.drawLine(
+          Offset(clippedLine[0], clippedLine[1]),
+          Offset(triangleCentroid[0], triangleCentroid[1]),
           edge.paint ?? paint);
     });
   }
 
-  List<double> drawTriangle(Canvas canvas, Paint paint, double x1, double y1, double x2, double y2) {
+  List<double> drawTriangle(
+      Canvas canvas, Paint paint, double x1, double y1, double x2, double y2) {
     var angle = (atan2(y2 - y1, x2 - x1) + pi);
     var x3 = (x2 + ARROW_LENGTH * cos((angle - ARROW_DEGREES)));
     var y3 = (y2 + ARROW_LENGTH * sin((angle - ARROW_DEGREES)));
@@ -63,12 +71,13 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     // calculate centroid of the triangle
     var x = (x2 + x3 + x4) / 3;
     var y = (y2 + y3 + y4) / 3;
-    List<double> triangleCentroid = [x, y];
+    final triangleCentroid = [x, y];
     trianglePath.reset();
     return triangleCentroid;
   }
 
-  List<double> clipLine(double startX, double startY, double stopX, double stopY, Node destination) {
+  List<double> clipLine(double startX, double startY, double stopX,
+      double stopY, Node destination) {
     var resultLine = List.filled(4, 0.0);
     resultLine[0] = startX;
     resultLine[1] = startY;

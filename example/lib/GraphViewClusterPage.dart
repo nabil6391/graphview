@@ -67,15 +67,16 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             boxShadow: [
-              BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+              BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
             ],
           ),
+          // ignore: prefer_single_quotes
           child: Text("Node $i")),
     );
   }
 
   final Graph graph = Graph();
-  Layout builder;
+  late Layout builder;
 
   @override
   void initState() {
@@ -98,5 +99,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     graph.addEdge(h, g);
 
     builder = FruchtermanReingoldAlgorithm(iterations: 1000);
+
+    super.initState();
   }
 }

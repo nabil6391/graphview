@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
 
 class Home extends StatelessWidget {
   const Home({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -28,33 +28,35 @@ class Home extends StatelessWidget {
       child: Scaffold(
         body: Center(
           child: Column(children: [
-            FlatButton(
+            TextButton(
                 onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                                appBar: AppBar(),
-                                body: TreeViewPage(),
-                              )),
+                        builder: (context) => Scaffold(
+                          appBar: AppBar(),
+                          body: TreeViewPage(),
+                        ),
+                      ),
                     ),
                 child: Text(
-                  "Tree View (BuchheimWalker)",
+                  'Tree View (BuchheimWalker)',
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 )),
-            FlatButton(
+            TextButton(
                 onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                                appBar: AppBar(),
-                                body: GraphClusterViewPage(),
-                              )),
+                        builder: (context) => Scaffold(
+                          appBar: AppBar(),
+                          body: GraphClusterViewPage(),
+                        ),
+                      ),
                     ),
                 child: Text(
-                  "Graph Cluster View (FruchtermanReingold)",
+                  'Graph Cluster View (FruchtermanReingold)',
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 )),
-            FlatButton(
+            TextButton(
                 onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -64,7 +66,7 @@ class Home extends StatelessWidget {
                               )),
                     ),
                 child: Text(
-                  "Layered View (Sugiyama)",
+                  'Layered View (Sugiyama)',
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 )),
           ]),
