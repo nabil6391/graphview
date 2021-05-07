@@ -109,9 +109,12 @@ class Graph {
     return _nodes[position];
   }
 
+  @Deprecated('Please use the builder and id mechanism to build the widgets')
   Node getNodeAtUsingData(Widget data) => _nodes.firstWhere((element) => element.data == data);
 
   Node getNodeUsingKey(Key key) => _nodes.firstWhere((element) => element.key == key);
+
+  Node getNodeUsingId(int id) => _nodes.firstWhere((element) => element.key == ValueKey(id));
 
   List<Edge> getOutEdges(Node node) => _edges.where((element) => element.source == node).toList();
 
@@ -168,12 +171,18 @@ class Graph {
 }
 
 class Node {
-  Key key;
+  ValueKey key;
 
-  @required
+  @Deprecated('Please use the builder and id mechanism to build the widgets')
   Widget data;
 
-  Node(this.data, {this.key});
+  Node(this.data, { this.key }){
+    key ??= ValueKey(data.hashCode);
+  }
+
+  Node.Id(dynamic id){
+    key = ValueKey(id);
+  }
 
   Size size = Size(0, 0);
 
@@ -199,11 +208,11 @@ class Node {
   bool operator ==(Object other) => identical(this, other) || other is Node && hashCode == other.hashCode;
 
   @override
-  int get hashCode => key?.hashCode ?? data.hashCode;
+  int get hashCode => key?.hashCode;
 
   @override
   String toString() {
-    return 'Node{position: $position, data: $data, _size: $size}';
+    return 'Node{position: $position, key: $key, _size: $size}';
   }
 
   Node.clone(Node randomObject) : data = randomObject.data, this.position = randomObject.position, this.size = randomObject.size, key = UniqueKey();

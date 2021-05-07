@@ -63,7 +63,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
             ),
             RaisedButton(
               onPressed: () {
-                final Node node12 = Node(getNodeText());
+                final node12 = Node(rectangleWidget(r.nextInt(100)));
                 var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                 print(edge);
                 graph.addEdge(edge, node12);
@@ -86,6 +86,11 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   ..color = Colors.green
                   ..strokeWidth = 1
                   ..style = PaintingStyle.stroke,
+                builder: (Node node) {
+                  // I can decide what widget should be shown here based on the id
+                  var a = node.key.value as int;
+                  return rectangleWidget(a);
+                },
               )),
         ),
       ],
@@ -94,9 +99,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
 
   Random r = Random();
 
-  int n = 1;
-
-  Widget getNodeText() {
+  Widget rectangleWidget(int a) {
     return InkWell(
       onTap: () {
         print('clicked');
@@ -109,27 +112,27 @@ class _TreeViewPageState extends State<TreeViewPage> {
               BoxShadow(color: Colors.blue[100], spreadRadius: 1),
             ],
           ),
-          child: Text("Node ${n++}")),
+          child: Text('Node ${a}')),
     );
   }
 
-  final Graph graph = Graph();
+  final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
 
   @override
   void initState() {
-    final Node node1 = Node(getNodeText());
-    final Node node2 = Node(getNodeText());
-    final Node node3 = Node(getNodeText());
-    final Node node4 = Node(getNodeText());
-    final Node node5 = Node(getNodeText());
-    final Node node6 = Node(getNodeText());
-    final Node node8 = Node(getNodeText());
-    final Node node7 = Node(getNodeText());
-    final Node node9 = Node(getNodeText());
-    final Node node10 = Node(getNodeText());
-    final Node node11 = Node(getNodeText());
-    final Node node12 = Node(getNodeText());
+    final node1 = Node.Id(1);
+    final node2 = Node.Id(2);
+    final node3 = Node.Id(3);
+    final node4 = Node.Id(4);
+    final node5 = Node.Id(5);
+    final node6 = Node.Id(6);
+    final node8 = Node.Id(7);
+    final node7 = Node.Id(8);
+    final node9 = Node.Id(9);
+    final node10 = Node(rectangleWidget(10));  //using deprecated mechanism of directly placing the widget here
+    final node11 = Node(rectangleWidget(11));
+    final node12 = Node(rectangleWidget(12));
     graph.addEdge(node1, node2);
     graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);
     graph.addEdge(node1, node4, paint: Paint()..color = Colors.blue);

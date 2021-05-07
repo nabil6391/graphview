@@ -51,134 +51,140 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
-        home: GraphViewPage(),
+        home: TreeViewPage(),
       );
 }
 
-
-class GraphViewPage extends StatefulWidget {
+class TreeViewPage extends StatefulWidget {
   @override
-  _GraphViewPageState createState() => _GraphViewPageState();
+  _TreeViewPageState createState() => _TreeViewPageState();
 }
 
-class _GraphViewPageState extends State<GraphViewPage> {
+class _TreeViewPageState extends State<TreeViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         body: Column(
-          mainAxisSize: MainAxisSize.max,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Wrap(
           children: [
-            Wrap(
-              children: [
-                Container(
-                  width: 100,
-                  child: TextFormField(
-                    initialValue: builder.siblingSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Sibling Sepration"),
-                    onChanged: (text) {
-                      builder.siblingSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
-                    },
-                  ),
-                ),
-                Container(
-                  width: 100,
-                  child: TextFormField(
-                    initialValue: builder.levelSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Level Seperation"),
-                    onChanged: (text) {
-                      builder.levelSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
-                    },
-                  ),
-                ),
-                Container(
-                  width: 100,
-                  child: TextFormField(
-                    initialValue: builder.subtreeSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Subtree separation"),
-                    onChanged: (text) {
-                      builder.subtreeSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
-                    },
-                  ),
-                ),
-                Container(
-                  width: 100,
-                  child: TextFormField(
-                    initialValue: builder.orientation.toString(),
-                    decoration: InputDecoration(labelText: "Orientation"),
-                    onChanged: (text) {
-                      builder.orientation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
-                    },
-                  ),
-                ),
-                RaisedButton(
-                  onPressed: () {
-                    final Node node12 = Node(getNodeText());
-                    var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
-                    print(edge);
-                    graph.addEdge(edge, node12);
-                    setState(() {});
-                  },
-                  child: Text("Add"),
-                )
-              ],
+            Container(
+              width: 100,
+              child: TextFormField(
+                initialValue: builder.siblingSeparation.toString(),
+                decoration: InputDecoration(labelText: "Sibling Separation"),
+                onChanged: (text) {
+                  builder.siblingSeparation = int.tryParse(text) ?? 100;
+                  this.setState(() {});
+                },
+              ),
             ),
-             Expanded(
-                      child: InteractiveViewer(
-                          constrained: false,
-                          boundaryMargin: EdgeInsets.all(100),
-                          minScale: 0.01,
-                          maxScale: 5.6,
-                          child: GraphView(
-                            graph: graph,
-                            algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
-                            paint: Paint()
-                              ..color = Colors.green
-                              ..strokeWidth = 1
-                              ..style = PaintingStyle.stroke,
-                          )),
-                    ),
+            Container(
+              width: 100,
+              child: TextFormField(
+                initialValue: builder.levelSeparation.toString(),
+                decoration: InputDecoration(labelText: "Level Separation"),
+                onChanged: (text) {
+                  builder.levelSeparation = int.tryParse(text) ?? 100;
+                  this.setState(() {});
+                },
+              ),
+            ),
+            Container(
+              width: 100,
+              child: TextFormField(
+                initialValue: builder.subtreeSeparation.toString(),
+                decoration: InputDecoration(labelText: "Subtree separation"),
+                onChanged: (text) {
+                  builder.subtreeSeparation = int.tryParse(text) ?? 100;
+                  this.setState(() {});
+                },
+              ),
+            ),
+            Container(
+              width: 100,
+              child: TextFormField(
+                initialValue: builder.orientation.toString(),
+                decoration: InputDecoration(labelText: "Orientation"),
+                onChanged: (text) {
+                  builder.orientation = int.tryParse(text) ?? 100;
+                  this.setState(() {});
+                },
+              ),
+            ),
+            RaisedButton(
+              onPressed: () {
+                final node12 = Node(rectangleWidget(r.nextInt(100)));
+                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                print(edge);
+                graph.addEdge(edge, node12);
+                setState(() {});
+              },
+              child: Text("Add"),
+            )
           ],
-        )
-    );
+        ),
+        Expanded(
+          child: InteractiveViewer(
+              constrained: false,
+              boundaryMargin: EdgeInsets.all(100),
+              minScale: 0.01,
+              maxScale: 5.6,
+              child: GraphView(
+                graph: graph,
+                algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                paint: Paint()
+                  ..color = Colors.green
+                  ..strokeWidth = 1
+                  ..style = PaintingStyle.stroke,
+                builder: (Node node) {
+                  // I can decide what widget should be shown here based on the id
+                  var a = node.key.value as int;
+                  return rectangleWidget(a);
+                },
+              )),
+        ),
+      ],
+    ));
   }
 
   Random r = Random();
 
-  int n = 1;
-
-  Widget getNodeText() {
-    return Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: [
-            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
-          ],
-        ),
-        child: Text("Node ${n++}"));
+  Widget rectangleWidget(int a) {
+    return InkWell(
+      onTap: () {
+        print('clicked');
+      },
+      child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: [
+              BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+            ],
+          ),
+          child: Text('Node ${a}')),
+    );
   }
 
-  final Graph graph = Graph();
+  final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
 
   @override
   void initState() {
-    final Node node1 = Node(getNodeText());
-    final Node node2 = Node(getNodeText());
-    final Node node3 = Node(getNodeText());
-    final Node node4 = Node(getNodeText());
-    final Node node5 = Node(getNodeText());
-    final Node node6 = Node(getNodeText());
-    final Node node8 = Node(getNodeText());
-    final Node node7 = Node(getNodeText());
-    final Node node9 = Node(getNodeText());
-    final Node node10 = Node(getNodeText());
-    final Node node11 = Node(getNodeText());
-    final Node node12 = Node(getNodeText());
+    final node1 = Node.Id(1);
+    final node2 = Node.Id(2);
+    final node3 = Node.Id(3);
+    final node4 = Node.Id(4);
+    final node5 = Node.Id(5);
+    final node6 = Node.Id(6);
+    final node8 = Node.Id(7);
+    final node7 = Node.Id(8);
+    final node9 = Node.Id(9);
+    final node10 = Node(rectangleWidget(10));  //using deprecated mechanism of directly placing the widget here
+    final node11 = Node(rectangleWidget(11));
+    final node12 = Node(rectangleWidget(12));
 
     graph.addEdge(node1, node2);
     graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);
@@ -196,7 +202,7 @@ class _GraphViewPageState extends State<GraphViewPage> {
       ..siblingSeparation = (100)
       ..levelSeparation = (150)
       ..subtreeSeparation = (150)
-      ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM;
+      ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
   }
 }
 ```

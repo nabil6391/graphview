@@ -23,12 +23,14 @@ part 'tree/BuchheimWalkerConfiguration.dart';
 part 'tree/BuchheimWalkerNodeData.dart';
 part 'tree/TreeEdgeRenderer.dart';
 
+typedef NodeWidgetBuilder = Widget Function(Node node);
+
 class GraphView extends StatefulWidget {
   final Graph graph;
   final Layout algorithm;
   final Paint paint;
 
-  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint})
+  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, NodeWidgetBuilder builder})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key);
@@ -110,15 +112,19 @@ class _GraphView extends MultiChildRenderObjectWidget {
   _GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, this.vsync})
       : assert(graph != null),
         assert(algorithm != null),
-        super(key: key, children: _extractChildren(graph));
+        super(key: key, children: _extractChildren(graph, builder)) {
+    assert(() {
+      return true;
+    }());
+  }
 
   // Traverses the InlineSpan tree and depth-first collects the list of
   // child widgets that are created in WidgetSpans.
-  static List<Widget> _extractChildren(Graph graph) {
+  static List<Widget> _extractChildren(Graph graph, NodeWidgetBuilder builder) {
     final result = <Widget>[];
 
-    graph.nodes.forEach((element) {
-      result.add(element.data);
+    graph.nodes.forEach((node) {
+      result.add(node.data ?? builder(node));
     });
     return result;
   }

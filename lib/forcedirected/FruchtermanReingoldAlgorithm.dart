@@ -332,7 +332,7 @@ class NodeCluster {
       node.position = (node.position + Offset(xDiff, yDiff));
     });
 
-    rect.translate(xDiff, yDiff);
+    rect = rect.translate(xDiff, yDiff);
   }
 
   NodeCluster() {

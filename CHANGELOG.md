@@ -1,3 +1,11 @@
+## 0.7.0
+
+- Added methods for builder pattern and deprecated directly setting Widget Data in nodes.
+
+## 0.6.7
+
+- Fix rect value not being set in FruchtermanReingoldAlgorithm (#27)
+
 ## 0.6.6
 
 - Fix Index out of range for Sugiyama Algorithm (#20)
