@@ -110,7 +110,7 @@ class Home extends StatelessWidget {
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreenCluster(graph, builder)),
+                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.redAccent,
@@ -156,7 +156,7 @@ class Home extends StatelessWidget {
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreenCluster(graph, builder)),
+                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.blueAccent,
@@ -211,7 +211,7 @@ class Home extends StatelessWidget {
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreenCluster(graph, builder)),
+                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.green,
@@ -254,7 +254,7 @@ class Home extends StatelessWidget {
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreenCluster(graph, builder)),
+                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.green,
@@ -337,15 +337,15 @@ class Home extends StatelessWidget {
 
                 SugiyamaConfiguration builder1 = SugiyamaConfiguration();
                 builder1
-                  ..nodeSeparation = (55)
-                  ..levelSeparation = (55)
+                  ..nodeSeparation = (30)
+                  ..levelSeparation = (50)
                   ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
 
                 var builder = SugiyamaAlgorithm(builder1);
 
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GraphScreenCluster(graph, builder)),
+                  MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
                 );
               },
               color: Colors.green,
@@ -365,24 +365,29 @@ class Home extends StatelessWidget {
   }
 
   Widget createNode(String nodeText) {
-    return GestureDetector(
-      child: Container(
-        padding: EdgeInsets.all(10),
+    // return Container(
+    //   padding: EdgeInsets.all(10),
+    //   decoration: BoxDecoration(
+    //     color: Colors.red,
+    //     border: Border.all(color: Colors.white, width: 1),
+    //     borderRadius: BorderRadius.circular(30),
+    //   ),
+    //   child: Center(
+    //     child: Text(
+    //       nodeText,
+    //       style: TextStyle(fontSize: 10),
+    //     ),
+    //   ),
+    // );
+
+    return Container(
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red,
-          border: Border.all(color: Colors.white, width: 1),
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+          ],
         ),
-        child: Center(
-          child: Text(
-            nodeText,
-            style: TextStyle(fontSize: 10),
-          ),
-        ),
-      ),
-      onLongPress: () {
-        print(nodeText);
-      },
-    );
+        child: Text(nodeText));
   }
 }

@@ -5,36 +5,37 @@ import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
 
-class GraphScreenCluster extends StatefulWidget {
+class GraphScreen extends StatefulWidget {
   Graph graph;
-
-  GraphScreenCluster(this.graph, Layout builder);
+  Layout algorithm;
+  final Paint paint;
+  GraphScreen(this.graph, this.algorithm, this.paint);
 
   @override
-  _GraphScreenClusterState createState() => _GraphScreenClusterState();
+  _GraphScreenState createState() => _GraphScreenState();
 }
 
-class _GraphScreenClusterState extends State<GraphScreenCluster> {
+class _GraphScreenState extends State<GraphScreen> {
   Timer timer;
   Icon animateIcon = Icon(Icons.play_arrow);
 
   Graph graph;
 
-  Layout builder;
+  Layout algorithm;
 
   @override
   void initState() {
     graph = widget.graph;
 
-
-    builder.init(graph);
+    algorithm = widget.algorithm;
+    algorithm.init(graph);
     startTimer();
     super.initState();
   }
 
   void startTimer() {
     timer = Timer.periodic(Duration(milliseconds: 25), (timer) {
-      builder.step(graph);
+      algorithm.step(graph);
       update();
     });
   }
@@ -47,7 +48,7 @@ class _GraphScreenClusterState extends State<GraphScreenCluster> {
 
   @override
   Widget build(BuildContext context) {
-     builder.setDimensions(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
+     algorithm.setDimensions(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +58,7 @@ class _GraphScreenClusterState extends State<GraphScreenCluster> {
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
-              builder.init(graph);
+              algorithm.init(graph);
               update();
             },
           ),
@@ -98,26 +99,10 @@ class _GraphScreenClusterState extends State<GraphScreenCluster> {
             overflow: Overflow.visible,
             clipBehavior: Clip.none,
             children: [
-              ...List<Widget>.generate(graph.edges.length, (index) {
-                return GestureDetector(
-                  onLongPress: () {
-                    print(graph.edges[index].source.key.toString());
-                  },
-                  child: CustomPaint(
-                    size: MediaQuery.of(context).size,
-                    painter: DrawLine(
-                      start: {
-                        "x": graph.edges[index].source.position.dx + 20,
-                        "y": graph.edges[index].source.position.dy + 20
-                      },
-                      end: {
-                        "x": graph.edges[index].destination.position.dx + 20,
-                        "y": graph.edges[index].destination.position.dy + 20
-                      },
-                    ),
-                  ),
-                );
-              }),
+              CustomPaint(
+                size: MediaQuery.of(context).size,
+                painter: EdgeRender(algorithm, graph, Offset(20,20)),
+              ),
               ...List<Widget>.generate(graph.nodeCount(), (index) {
                 return Positioned(
                   child: GestureDetector(
@@ -172,24 +157,25 @@ class _GraphScreenClusterState extends State<GraphScreenCluster> {
   }
 }
 
-class DrawLine extends CustomPainter {
-  Map<String, double> start;
-  Map<String, double> end;
-
-  DrawLine({this.start, this.end});
+class EdgeRender extends CustomPainter {
+  Layout algorithm;
+  Graph graph;
+  Offset offset;
+  EdgeRender(this.algorithm, this.graph, this.offset);
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint line = new Paint()
-      ..color = Colors.red
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.fill
-      ..strokeWidth = 1;
-    canvas.drawLine(
-      Offset(start["x"], start["y"]),
-      Offset(end["x"], end["y"]),
-      line,
-    );
+    var edgePaint = (Paint()
+          ..color = Colors.black
+          ..strokeWidth = 3)
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.butt;
+
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+
+    algorithm.renderer.render(canvas, graph, edgePaint);
+    canvas.restore();
   }
 
   @override
