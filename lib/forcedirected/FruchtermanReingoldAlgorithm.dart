@@ -1,6 +1,10 @@
 part of graphview;
 
 const int DEFAULT_ITERATIONS = 1000;
+const double REPULSION_RATE = 0.5;
+const double REPULSION_PERCENTAGE = 0.4;
+const double ATTRACTION_RATE = 0.15;
+const double ATTRACTION_PERCENTAGE = 0.15;
 const int CLUSTER_PADDING = 15;
 const double EPSILON = 0.0001;
 
@@ -12,15 +16,21 @@ class FruchtermanReingoldAlgorithm implements Layout {
   double tick;
 
   int iterations = DEFAULT_ITERATIONS;
-
-  double repulsionRate = .5;
-  double attractionRate = .15;
-  double repulsionPercentage = 0.4;
-  double attractionPercentage = 0.15;
+  double repulsionRate = REPULSION_RATE;
+  double attractionRate = ATTRACTION_RATE;
+  double repulsionPercentage = REPULSION_PERCENTAGE;
+  double attractionPercentage = ATTRACTION_PERCENTAGE;
 
   EdgeRenderer renderer;
 
-  FruchtermanReingoldAlgorithm({this.iterations = DEFAULT_ITERATIONS, this.renderer}) {
+  FruchtermanReingoldAlgorithm({
+    this.iterations = DEFAULT_ITERATIONS,
+    this.renderer,
+    this.repulsionRate = REPULSION_RATE,
+    this.attractionRate = ATTRACTION_RATE,
+    this.repulsionPercentage = REPULSION_PERCENTAGE,
+    this.attractionPercentage = ATTRACTION_PERCENTAGE
+  }) {
     renderer = renderer ?? ArrowEdgeRenderer();
   }
 
@@ -74,8 +84,6 @@ class FruchtermanReingoldAlgorithm implements Layout {
       var destination = edge.destination;
       var delta = source.position - destination.position;
       var deltaDistance = max(EPSILON, delta.distance);
-      // var attractionVector = delta / deltaDistance * attractionForce(deltaDistance);
-
       var maxAttractionDistance = min(graphWidth * attractionPercentage, graphHeight * attractionPercentage);
       var attractionForce = min(0, (maxAttractionDistance - deltaDistance)).abs() / (maxAttractionDistance * 2);
       var attractionVector = delta * attractionForce * attractionRate;
@@ -86,18 +94,6 @@ class FruchtermanReingoldAlgorithm implements Layout {
   }
 
   void calculateRepulsion(List<Node> nodes) {
-    // every node repels each other node
-    // nodes.forEach((v) {
-    //   nodes.forEach((u) {
-    //     if (u != v) {
-    //       var delta = v.position - u.position;
-    //       var deltaDistance = max(EPSILON, delta.distance);
-    //       var repulsionVector = delta / deltaDistance * repulsionForce(deltaDistance);
-    //       displacement[v] += repulsionVector;
-    //     }
-    //   });
-    // });
-
     nodes.forEach((nodeA) {
       nodes.forEach((nodeB) {
         if (nodeA != nodeB) {
@@ -128,10 +124,6 @@ class FruchtermanReingoldAlgorithm implements Layout {
     var edges = graph.edges;
 
     tick = 0.1 * sqrt(graphWidth / 2 * graphHeight / 2);
-    var k = 0.75 * sqrt(graphWidth * graphHeight / nodes.length);
-
-    attractionPercentage = 0.75 * k;
-    repulsionPercentage = 0.75 * k;
 
     init(graph);
 

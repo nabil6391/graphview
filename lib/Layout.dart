@@ -13,6 +13,6 @@ abstract class Layout {
 
   void step(Graph graph);
 
-  setDimensions(double width, double height);
+  void setDimensions(double width, double height);
 
 }
