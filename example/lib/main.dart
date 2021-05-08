@@ -1,4 +1,5 @@
 import 'package:example/LayerGraphView.dart';
+import 'package:example/TreeViewPageFromJson.dart';
 import 'package:flutter/material.dart';
 
 import 'GraphViewClusterPage.dart';
@@ -65,6 +66,19 @@ class Home extends StatelessWidget {
                     ),
                 child: Text(
                   "Layered View (Sugiyama)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+            FlatButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(),
+                        body: TreeViewPageFromJson(),
+                      )),
+                ),
+                child: Text(
+                  "Tree View From Json(BuchheimWalker)",
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 )),
           ]),
