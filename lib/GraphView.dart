@@ -30,9 +30,9 @@ class GraphView extends StatefulWidget {
   final Algorithm algorithm;
   final Paint paint;
   final NodeWidgetBuilder builder;
-  final bool animated ;
+  final bool animated = false; // A later feature, had to include here to migrate to null safety
 
-  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, this.builder, this.animated = true})
+  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, this.builder})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key);
@@ -218,8 +218,8 @@ class RenderCustomLayoutBox extends RenderBox
 class NodeBoxData extends ContainerBoxParentData<RenderBox> {}
 
 class GraphAnimated extends StatefulWidget {
-  Graph graph;
-  Algorithm algorithm;
+  final Graph graph;
+  final Algorithm algorithm;
   final Paint paint;
   final result = <Widget>[];
 
