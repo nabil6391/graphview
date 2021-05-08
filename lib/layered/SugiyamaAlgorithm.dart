@@ -1,6 +1,6 @@
 part of graphview;
 
-class SugiyamaAlgorithm extends Layout {
+class SugiyamaAlgorithm extends Algorithm {
   Map<Node, SugiyamaNodeData> nodeData = {};
   Map<Edge, SugiyamaEdgeData> edgeData = {};
   Set<Node> stack = {};
@@ -845,4 +845,37 @@ class SugiyamaAlgorithm extends Layout {
 
   @override
   void setFocusedNode(Node node) {}
+
+  void init(Graph graph) {
+    this.graph = copyGraph(graph);
+    reset();
+    initSugiyamaData();
+    cycleRemoval();
+    layerAssignment();
+    nodeOrdering(); //expensive operation
+    coordinateAssignment(); //expensive operation
+    // shiftCoordinates(shiftX, shiftY);
+    final graphSize = calculateGraphSize(this.graph);
+    denormalize();
+    restoreCycle();
+    // shiftCoordinates(graph, shiftX, shiftY);
+  }
+
+  void step(Graph graph) {
+    reset();
+    initSugiyamaData();
+    cycleRemoval();
+    layerAssignment();
+    nodeOrdering(); //expensive operation
+    coordinateAssignment(); //expensive operation
+    // shiftCoordinates(shiftX, shiftY);
+    final graphSize = calculateGraphSize(this.graph);
+    denormalize();
+    restoreCycle();
+  }
+
+  void setDimensions(double width, double height) {
+    // graphWidth = width;
+    // graphHeight = height;
+  }
 }

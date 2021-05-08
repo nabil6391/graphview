@@ -3,13 +3,13 @@ library graphview;
 import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
-
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 part 'Graph.dart';
-part 'Layout.dart';
+part 'Algorithm.dart';
 part 'edgerenderer/ArrowEdgeRenderer.dart';
 part 'edgerenderer/EdgeRenderer.dart';
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
@@ -25,12 +25,51 @@ part 'tree/TreeEdgeRenderer.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
 
-class GraphView extends MultiChildRenderObjectWidget {
+class GraphView extends StatefulWidget {
   final Graph graph;
-  final Layout algorithm;
+  final Algorithm algorithm;
+  final Paint paint;
+  final NodeWidgetBuilder builder;
+  final bool animated = false; // A later feature, had to include here to migrate to null safety
+
+  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, this.builder})
+      : assert(graph != null),
+        assert(algorithm != null),
+        super(key: key);
+
+  @override
+  _GraphViewState createState() => _GraphViewState();
+}
+
+class _GraphViewState extends State<GraphView> {
+  @override
+  Widget build(BuildContext context) {
+    if (widget.animated) {
+      return GraphAnimated(
+        key: widget.key,
+        graph: widget.graph,
+        algorithm: widget.algorithm,
+        paint: widget.paint,
+        builder: widget.builder,
+      );
+    } else {
+      return _GraphView(
+        key: widget.key,
+        graph: widget.graph,
+        algorithm: widget.algorithm,
+        paint: widget.paint,
+        builder: widget.builder,
+      );
+    }
+  }
+}
+
+class _GraphView extends MultiChildRenderObjectWidget {
+  final Graph graph;
+  final Algorithm algorithm;
   final Paint paint;
 
-  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, NodeWidgetBuilder builder})
+  _GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, NodeWidgetBuilder builder})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key, children: _extractChildren(graph, builder)) {
@@ -38,7 +77,6 @@ class GraphView extends MultiChildRenderObjectWidget {
       return true;
     }());
   }
-
 
   // Traverses the InlineSpan tree and depth-first collects the list of
   // child widgets that are created in WidgetSpans.
@@ -68,12 +106,12 @@ class GraphView extends MultiChildRenderObjectWidget {
 class RenderCustomLayoutBox extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   Graph _graph;
-  Layout _algorithm;
+  Algorithm _algorithm;
   Paint _paint;
 
   RenderCustomLayoutBox(
     Graph graph,
-    Layout algorithm,
+    Algorithm algorithm,
     Paint paint, {
     List<RenderBox> children,
   }) {
@@ -102,9 +140,9 @@ class RenderCustomLayoutBox extends RenderBox
     markNeedsLayout();
   }
 
-  Layout get algorithm => _algorithm;
+  Algorithm get algorithm => _algorithm;
 
-  set algorithm(Layout value) {
+  set algorithm(Algorithm value) {
     _algorithm = value;
     markNeedsLayout();
   }
@@ -126,10 +164,11 @@ class RenderCustomLayoutBox extends RenderBox
 
     var child = firstChild;
     var position = 0;
+    var looseConstraints = BoxConstraints.loose(constraints.biggest);
     while (child != null) {
       final node = child.parentData as NodeBoxData;
 
-      child.layout(BoxConstraints.loose(constraints.biggest), parentUsesSize: true);
+      child.layout(looseConstraints, parentUsesSize: true);
       graph.getNodeAtPosition(position).size = child.size;
 
       child = node.nextSibling;
@@ -171,9 +210,114 @@ class RenderCustomLayoutBox extends RenderBox
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Graph>('graph', graph));
-    properties.add(DiagnosticsProperty<Layout>('algorithm', algorithm));
+    properties.add(DiagnosticsProperty<Algorithm>('algorithm', algorithm));
     properties.add(DiagnosticsProperty<Paint>('paint', edgePaint));
   }
 }
 
 class NodeBoxData extends ContainerBoxParentData<RenderBox> {}
+
+class GraphAnimated extends StatefulWidget {
+  final Graph graph;
+  final Algorithm algorithm;
+  final Paint paint;
+  final result = <Widget>[];
+
+  GraphAnimated({Key key, @required this.graph, @required this.algorithm, this.paint, NodeWidgetBuilder builder}){
+    graph.nodes.forEach((node) {
+      result.add(node.data ?? builder(node));
+    });
+  }
+
+  @override
+  _GraphAnimatedState createState() => _GraphAnimatedState();
+}
+
+class _GraphAnimatedState extends State<GraphAnimated> {
+  Timer timer;
+  Graph graph;
+  Algorithm algorithm;
+
+  @override
+  void initState() {
+    graph = widget.graph;
+
+    algorithm = widget.algorithm;
+    algorithm.init(graph);
+    startTimer();
+
+    super.initState();
+  }
+
+  void startTimer() {
+    timer = Timer.periodic(Duration(milliseconds: 25), (timer) {
+      algorithm.step(graph);
+      update();
+    });
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    algorithm.setDimensions(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CustomPaint(
+          size: MediaQuery.of(context).size,
+          painter: EdgeRender(algorithm, graph, Offset(20,20)),
+        ),
+        ...List<Widget>.generate(graph.nodeCount(), (index) {
+          return Positioned(
+            child: GestureDetector(
+              child: widget.result[index],
+              onPanUpdate: (details) {
+                graph.getNodeAtPosition(index).position += details.delta;
+                update();
+              },
+            ),
+            top: graph.getNodeAtPosition(index).position.dy,
+            left: graph.getNodeAtPosition(index).position.dx,
+          );
+        }),
+      ],
+    );
+  }
+
+  Future<void> update() async {
+    setState(() {});
+  }
+}
+
+class EdgeRender extends CustomPainter {
+  Algorithm algorithm;
+  Graph graph;
+  Offset offset;
+  EdgeRender(this.algorithm, this.graph, this.offset);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    var edgePaint = (Paint()
+      ..color = Colors.black
+      ..strokeWidth = 3)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
+
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+
+    algorithm.renderer.render(canvas, graph, edgePaint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
+  }
+}

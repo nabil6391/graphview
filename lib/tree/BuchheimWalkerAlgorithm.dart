@@ -1,6 +1,6 @@
 part of graphview;
 
-class BuchheimWalkerAlgorithm extends Layout {
+class BuchheimWalkerAlgorithm extends Algorithm {
   Map<Node, BuchheimWalkerNodeData> mNodeData;
   double minNodeHeight;
   double minNodeWidth;
@@ -471,5 +471,27 @@ class BuchheimWalkerAlgorithm extends Layout {
 
   @override
   void setFocusedNode(Node node) {}
+
+  void init(Graph graph) {
+    var firstNode = getFirstNode(graph);
+    firstWalk(graph, firstNode, 0, 0);
+    secondWalk(graph, firstNode, 0.0);
+    checkUnconnectedNotes(graph);
+    positionNodes(graph);
+    // shiftCoordinates(graph, shiftX, shiftY);
+  }
+
+  void step(Graph graph) {
+    var firstNode = getFirstNode(graph);
+    firstWalk(graph, firstNode, 0, 0);
+    secondWalk(graph, firstNode, 0.0);
+    checkUnconnectedNotes(graph);
+    positionNodes(graph);
+  }
+
+  void setDimensions(double width, double height) {
+    // graphWidth = width;
+    // graphHeight = height;
+  }
 }
 

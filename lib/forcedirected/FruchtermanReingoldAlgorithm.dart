@@ -1,32 +1,65 @@
 part of graphview;
 
 const int DEFAULT_ITERATIONS = 1000;
+const double REPULSION_RATE = 0.5;
+const double REPULSION_PERCENTAGE = 0.4;
+const double ATTRACTION_RATE = 0.15;
+const double ATTRACTION_PERCENTAGE = 0.15;
 const int CLUSTER_PADDING = 15;
 const double EPSILON = 0.0001;
 
-class FruchtermanReingoldAlgorithm implements Layout {
+class FruchtermanReingoldAlgorithm implements Algorithm {
   Map<Node, Offset> displacement = {};
   Random rand = Random();
-  double width;
-  double height;
-  double k;
+  double graphHeight = 500; //default value, change ahead of time
+  double graphWidth = 500;
   double tick;
-  double attractionK;
-  double repulsionK;
+
   int iterations = DEFAULT_ITERATIONS;
+  double repulsionRate = REPULSION_RATE;
+  double attractionRate = ATTRACTION_RATE;
+  double repulsionPercentage = REPULSION_PERCENTAGE;
+  double attractionPercentage = ATTRACTION_PERCENTAGE;
 
   EdgeRenderer renderer;
 
-  FruchtermanReingoldAlgorithm({this.iterations = DEFAULT_ITERATIONS, this.renderer}) {
+  FruchtermanReingoldAlgorithm({
+    this.iterations = DEFAULT_ITERATIONS,
+    this.renderer,
+    this.repulsionRate = REPULSION_RATE,
+    this.attractionRate = ATTRACTION_RATE,
+    this.repulsionPercentage = REPULSION_PERCENTAGE,
+    this.attractionPercentage = ATTRACTION_PERCENTAGE
+  }) {
     renderer = renderer ?? ArrowEdgeRenderer();
   }
 
-  void init(List<Node> nodes) {
-    nodes.forEach((node) {
+  void init(Graph graph) {
+    graph.nodes.forEach((node) {
       displacement[node] = Offset.zero;
-      if (node.position.distance == 0.0) {
-        node.position = Offset(randInt(rand, 0, width / 2), randInt(rand, 0, height / 2));
-      }
+      node.position = Offset(rand.nextDouble()  * graphWidth , rand.nextDouble() * graphHeight);
+    });
+  }
+
+  void step(Graph graph) {
+    displacement = {};
+    graph.nodes.forEach((node) {
+      displacement[node] = Offset.zero;
+    });
+    calculateRepulsion(graph.nodes);
+    calculateAttraction(graph.edges);
+    moveNodes(graph);
+  }
+
+  void moveNodes(Graph graph) {
+    graph.nodes.forEach((node) {
+      var newPosition = node.position += displacement[node];
+      double newDX = min(graphWidth - 40, max(0, newPosition.dx));
+      double newDY = min(graphHeight - 40,  max(0,newPosition.dy));
+
+      // double newDX = newPosition.dx;
+      // double newDY = newPosition.dy;
+      node.position = Offset(newDX, newDY);
     });
   }
 
@@ -50,56 +83,53 @@ class FruchtermanReingoldAlgorithm implements Layout {
       var source = edge.source;
       var destination = edge.destination;
       var delta = source.position - destination.position;
-      var deltaLength = max(EPSILON, delta.distance);
-      var offsetDisp = delta / deltaLength * forceAttraction(deltaLength);
-      displacement[source] = (displacement[source] - offsetDisp);
-      displacement[destination] = (displacement[destination] + offsetDisp);
+      var deltaDistance = max(EPSILON, delta.distance);
+      var maxAttractionDistance = min(graphWidth * attractionPercentage, graphHeight * attractionPercentage);
+      var attractionForce = min(0, (maxAttractionDistance - deltaDistance)).abs() / (maxAttractionDistance * 2);
+      var attractionVector = delta * attractionForce * attractionRate;
+
+      displacement[source] -= attractionVector;
+      displacement[destination] += attractionVector;
     });
   }
 
   void calculateRepulsion(List<Node> nodes) {
-    nodes.forEach((v) {
-      nodes.forEach((u) {
-        if (u != v) {
-          var delta = v.position - u.position;
-          var deltaLength = max(EPSILON, delta.distance);
-          displacement[v] = (displacement[v] + (delta / deltaLength * forceRepulsion(deltaLength)));
+    nodes.forEach((nodeA) {
+      nodes.forEach((nodeB) {
+        if (nodeA != nodeB) {
+          var delta = nodeA.position - nodeB.position;
+          var deltaDistance = max(EPSILON, delta.distance); //protect for 0
+          var maxRepulsionDistance = min(graphWidth * repulsionPercentage, graphHeight * repulsionPercentage);
+          var repulsionForce = max(0, maxRepulsionDistance - deltaDistance) / maxRepulsionDistance; //value between 0-1
+          var repulsionVector = delta * repulsionForce * repulsionRate;
+
+          displacement[nodeA] += repulsionVector;
         }
       });
     });
-  }
 
-  double forceAttraction(double x) {
-    return x * x / attractionK;
-  }
-
-  double forceRepulsion(double x) {
-    return repulsionK * repulsionK / x;
+    nodes.forEach((nodeA) {
+      displacement[nodeA] = displacement[nodeA] / nodes.length.toDouble();
+    });
   }
 
   var focusedNode;
 
   Size run(Graph graph, double shiftX, double shiftY) {
     var size = findBiggestSize(graph) * graph.nodeCount();
-    width = size;
-    height = size;
+    graphWidth = size;
+    graphHeight = size;
 
     var nodes = graph.nodes;
     var edges = graph.edges;
 
-    tick = 0.1 * sqrt(width / 2 * height / 2);
-    k = 0.75 * sqrt(width * height / nodes.length);
+    tick = 0.1 * sqrt(graphWidth / 2 * graphHeight / 2);
 
-    attractionK = 0.75 * k;
-    repulsionK = 0.75 * k;
-
-    init(nodes);
+    init(graph);
 
     for (var i = 0; i < iterations; i++) {
       calculateRepulsion(nodes);
-
       calculateAttraction(edges);
-
       limitMaximumDisplacement(nodes);
 
       cool(i);
@@ -224,7 +254,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
   }
 
   bool done() {
-    return tick < 1.0 / max(height, width);
+    return tick < 1.0 / max(graphHeight, graphWidth);
   }
 
   void drawEdges(Canvas canvas, Graph graph, Paint linePaint) {}
@@ -246,8 +276,11 @@ class FruchtermanReingoldAlgorithm implements Layout {
   }
 
   @override
-  void setFocusedNode(Node node) {
-    focusedNode = node;
+  void setFocusedNode(Node node) {}
+
+  void setDimensions(double width, double height) {
+    graphWidth = width;
+    graphHeight = height;
   }
 }
 
@@ -306,8 +339,4 @@ class NodeCluster {
     nodes = [];
     rect = Rect.zero;
   }
-}
-
-double randInt(Random rand, int min, num max) {
-  return (rand.nextInt(max.toInt() - min + 1).toDouble() + min).toDouble();
 }

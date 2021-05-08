@@ -13,10 +13,10 @@ class Graph {
   int nodeCount() => _nodes.length;
 
   void addNode(Node node) {
-    if (!_nodes.contains(node)) {
+    // if (!_nodes.contains(node)) {
       _nodes.add(node);
       notifyGraphObserver();
-    }
+    // }
   }
 
   void addNodes(List<Node> nodes) => nodes.forEach((it) => addNode(it));
@@ -123,6 +123,7 @@ class Graph {
   void notifyGraphObserver() => graphObserver.forEach((element) {
         element.notifyGraphInvalidated();
       });
+
 }
 
 class Node {

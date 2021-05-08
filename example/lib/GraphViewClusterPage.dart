@@ -30,7 +30,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
                   builder: (Node node) {
                     // I can decide what widget should be shown here based on the id
                     var a =  node.key.value as int;
-                    if(a == 2 ) {
+                    if(a == 2) {
                       return rectangWidget(a);
                     }
                     return rectangWidget(a);
@@ -44,45 +44,19 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   Random r = Random();
 
   Widget rectangWidget(int i) {
-    return GestureDetector(
-      onLongPressStart: (details) {
-        var x = details.globalPosition.dx;
-        var y = details.globalPosition.dy;
-        Offset(x, y);
-      },
-      onPanStart: (details) {
-        var x = details.globalPosition.dx;
-        var y = details.globalPosition.dy;
-        setState(() {
-          builder.setFocusedNode(graph.getNodeAtPosition(i - 1));
-          graph.getNodeAtPosition(i - 1).position = Offset(x, y);
-        });
-      },
-      onPanUpdate: (details) {
-        var x = details.globalPosition.dx;
-        var y = details.globalPosition.dy;
-        setState(() {
-          builder.setFocusedNode(graph.getNodeAtPosition(i - 1));
-          graph.getNodeAtPosition(i - 1).position = Offset(x, y);
-        });
-      },
-      onPanEnd: (details) {
-        builder.setFocusedNode(null);
-      },
-      child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(color: Colors.blue, spreadRadius: 1),
-            ],
-          ),
-          child: Text("Node $i")),
-    );
+    return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue, spreadRadius: 1),
+          ],
+        ),
+        child: Text("Node $i"));
   }
 
   final Graph graph = Graph();
-  Layout builder;
+  Algorithm builder;
 
   @override
   void initState() {

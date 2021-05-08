@@ -206,23 +206,20 @@ class _TreeViewPageState extends State<TreeViewPage> {
   }
 }
 ```
-### Using any widget inside the Node
+### Using builder mechanism to build Nodes
 You can use any widget inside the node:
 
 ```dart
-Node node = Node(getNodeText);
+Node node = Node.Id(fromNodeId) ;
 
-getNodeText() {
-    return Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: [
-            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
-          ],
-        ),
-        child: Text("Node ${n++}"));
-  }
+builder: (Node node) {
+                  // I can decide what widget should be shown here based on the id
+                  var a = node.key.value as int;
+                  if(a ==2)
+                    return rectangleWidget(a);
+                  else 
+                    return circleWidget(a);
+                },
 ```
 
 ### Using Paint to color and line thickness
@@ -261,6 +258,9 @@ You can focus on a specific node. This will allow scrolling to that node in the 
         });
       },
 ```
+
+### Add drag nodes feature with animation
+The code is there but not enabled yet due to dart null safety migration being more important
 
 ### Extract info from any json to Graph Object
 Now its a bit easy to use Ids to extract info from any json to Graph Object
@@ -309,6 +309,25 @@ Step 2: Then using builder and find the nodeValues from the json using id and th
                   var nodeValue = nodes.firstWhere((element) => element['id'] == a);
                   return rectangleWidget(nodeValue['label'] as String);
                 },
+```
+
+### Using any widget inside the Node (Deprecated)
+You can use any widget inside the node:
+
+```dart
+Node node = Node(getNodeText);
+
+getNodeText() {
+    return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+          ],
+        ),
+        child: Text("Node ${n++}"));
+  }
 ```
 Examples
 ========
