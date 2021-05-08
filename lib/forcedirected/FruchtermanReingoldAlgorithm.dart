@@ -8,7 +8,7 @@ const double ATTRACTION_PERCENTAGE = 0.15;
 const int CLUSTER_PADDING = 15;
 const double EPSILON = 0.0001;
 
-class FruchtermanReingoldAlgorithm implements Layout {
+class FruchtermanReingoldAlgorithm implements Algorithm {
   Map<Node, Offset> displacement = {};
   Random rand = Random();
   double graphHeight = 500; //default value, change ahead of time

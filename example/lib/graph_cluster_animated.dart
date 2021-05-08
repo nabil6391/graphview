@@ -6,7 +6,7 @@ import 'package:graphview/GraphView.dart';
 
 class GraphScreen extends StatefulWidget {
   Graph graph;
-  Layout algorithm;
+  Algorithm algorithm;
   final Paint paint;
   GraphScreen(this.graph, this.algorithm, this.paint);
 

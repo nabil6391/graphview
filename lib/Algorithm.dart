@@ -1,6 +1,6 @@
 part of graphview;
 
-abstract class Layout {
+abstract class Algorithm {
   EdgeRenderer renderer;
 
   /// Executes the algorithm.
@@ -8,6 +8,8 @@ abstract class Layout {
   /// @param shiftX Shifts the x-coordinate origin
   /// @return The size of the graph
   Size run(Graph graph, double shiftX, double shiftY);
+
+  void setFocusedNode(Node node);
 
   void init(Graph graph);
 

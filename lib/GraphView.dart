@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 part 'Graph.dart';
-part 'Layout.dart';
+part 'Algorithm.dart';
 part 'edgerenderer/ArrowEdgeRenderer.dart';
 part 'edgerenderer/EdgeRenderer.dart';
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
@@ -27,7 +27,7 @@ typedef NodeWidgetBuilder = Widget Function(Node node);
 
 class GraphView extends StatefulWidget {
   final Graph graph;
-  final Layout algorithm;
+  final Algorithm algorithm;
   final Paint paint;
   final NodeWidgetBuilder builder;
   final bool animated ;
@@ -66,7 +66,7 @@ class _GraphViewState extends State<GraphView> {
 
 class _GraphView extends MultiChildRenderObjectWidget {
   final Graph graph;
-  final Layout algorithm;
+  final Algorithm algorithm;
   final Paint paint;
 
   _GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, NodeWidgetBuilder builder})
@@ -106,12 +106,12 @@ class _GraphView extends MultiChildRenderObjectWidget {
 class RenderCustomLayoutBox extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   Graph _graph;
-  Layout _algorithm;
+  Algorithm _algorithm;
   Paint _paint;
 
   RenderCustomLayoutBox(
     Graph graph,
-    Layout algorithm,
+    Algorithm algorithm,
     Paint paint, {
     List<RenderBox> children,
   }) {
@@ -140,9 +140,9 @@ class RenderCustomLayoutBox extends RenderBox
     markNeedsLayout();
   }
 
-  Layout get algorithm => _algorithm;
+  Algorithm get algorithm => _algorithm;
 
-  set algorithm(Layout value) {
+  set algorithm(Algorithm value) {
     _algorithm = value;
     markNeedsLayout();
   }
@@ -210,7 +210,7 @@ class RenderCustomLayoutBox extends RenderBox
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Graph>('graph', graph));
-    properties.add(DiagnosticsProperty<Layout>('algorithm', algorithm));
+    properties.add(DiagnosticsProperty<Algorithm>('algorithm', algorithm));
     properties.add(DiagnosticsProperty<Paint>('paint', edgePaint));
   }
 }
@@ -219,7 +219,7 @@ class NodeBoxData extends ContainerBoxParentData<RenderBox> {}
 
 class GraphAnimated extends StatefulWidget {
   Graph graph;
-  Layout algorithm;
+  Algorithm algorithm;
   final Paint paint;
   final result = <Widget>[];
 
@@ -236,7 +236,7 @@ class GraphAnimated extends StatefulWidget {
 class _GraphAnimatedState extends State<GraphAnimated> {
   Timer timer;
   Graph graph;
-  Layout algorithm;
+  Algorithm algorithm;
 
   @override
   void initState() {
@@ -296,7 +296,7 @@ class _GraphAnimatedState extends State<GraphAnimated> {
 }
 
 class EdgeRender extends CustomPainter {
-  Layout algorithm;
+  Algorithm algorithm;
   Graph graph;
   Offset offset;
   EdgeRender(this.algorithm, this.graph, this.offset);

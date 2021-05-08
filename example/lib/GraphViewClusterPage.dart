@@ -56,7 +56,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   }
 
   final Graph graph = Graph();
-  Layout builder;
+  Algorithm builder;
 
   @override
   void initState() {

@@ -1,6 +1,6 @@
 part of graphview;
 
-class BuchheimWalkerAlgorithm extends Layout {
+class BuchheimWalkerAlgorithm extends Algorithm {
   Map<Node, BuchheimWalkerNodeData> mNodeData;
   double minNodeHeight;
   double minNodeWidth;

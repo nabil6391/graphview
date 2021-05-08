@@ -1,6 +1,6 @@
 part of graphview;
 
-class SugiyamaAlgorithm extends Layout {
+class SugiyamaAlgorithm extends Algorithm {
   Map<Node, SugiyamaNodeData> nodeData = {};
   Map<Edge, SugiyamaEdgeData> edgeData = {};
   Set<Node> stack = {};
