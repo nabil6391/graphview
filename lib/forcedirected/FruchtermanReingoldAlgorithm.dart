@@ -53,7 +53,7 @@ class FruchtermanReingoldAlgorithm implements Layout {
 
   void moveNodes(Graph graph) {
     graph.nodes.forEach((node) {
-      Offset newPosition = node.position += displacement[node];
+      var newPosition = node.position += displacement[node];
       double newDX = min(graphWidth - 40, max(0, newPosition.dx));
       double newDY = min(graphHeight - 40,  max(0,newPosition.dy));
 

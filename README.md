@@ -261,6 +261,20 @@ You can focus on a specific node. This will allow scrolling to that node in the 
         });
       },
 ```
+
+### Add drag nodes feature with animation
+You can focus on a specific node. This will allow scrolling to that node in the future, but for now , using it we can drag a node with realtime updates in force directed graph
+
+```dart
+ onPanUpdate: (details) {
+        var x = details.globalPosition.dx;
+        var y = details.globalPosition.dy;
+        setState(() {
+          builder.setFocusedNode(graph.getNodeAtPosition(i));
+          graph.getNodeAtPosition(i).position = Offset(x,y);
+        });
+      },
+```
 Examples
 ========
 #### Rooted Tree
