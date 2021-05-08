@@ -43,7 +43,6 @@ class _GraphScreenState extends State<GraphScreen> {
           child: GraphView(
             graph: widget.graph,
             algorithm: widget.algorithm,
-            animated: animated,
           )),
     );
   }

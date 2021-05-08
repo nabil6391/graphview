@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 
 part 'Graph.dart';
 part 'Algorithm.dart';
@@ -28,11 +29,11 @@ typedef NodeWidgetBuilder = Widget Function(Node node);
 class GraphView extends StatefulWidget {
   final Graph graph;
   final Algorithm algorithm;
-  final Paint paint;
-  final NodeWidgetBuilder builder;
+  final Paint? paint;
+  final NodeWidgetBuilder? builder;
   final bool animated = false; // A later feature, had to include here to migrate to null safety
 
-  GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, this.builder})
+  GraphView({Key? key, required this.graph, required this.algorithm, this.paint, this.builder})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key);
@@ -67,9 +68,9 @@ class _GraphViewState extends State<GraphView> {
 class _GraphView extends MultiChildRenderObjectWidget {
   final Graph graph;
   final Algorithm algorithm;
-  final Paint paint;
+  final Paint? paint;
 
-  _GraphView({Key key, @required this.graph, @required this.algorithm, this.paint, NodeWidgetBuilder builder})
+  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder? builder})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key, children: _extractChildren(graph, builder)) {
@@ -80,11 +81,11 @@ class _GraphView extends MultiChildRenderObjectWidget {
 
   // Traverses the InlineSpan tree and depth-first collects the list of
   // child widgets that are created in WidgetSpans.
-  static List<Widget> _extractChildren(Graph graph, NodeWidgetBuilder builder) {
+  static List<Widget> _extractChildren(Graph graph, NodeWidgetBuilder? builder) {
     final result = <Widget>[];
 
     graph.nodes.forEach((node) {
-      result.add(node.data ?? builder(node));
+      result.add(node.data ?? builder!(node));
     });
     return result;
   }
@@ -105,15 +106,15 @@ class _GraphView extends MultiChildRenderObjectWidget {
 
 class RenderCustomLayoutBox extends RenderBox
     with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
-  Graph _graph;
-  Algorithm _algorithm;
-  Paint _paint;
+  late Graph _graph;
+  late Algorithm _algorithm;
+  late Paint _paint;
 
   RenderCustomLayoutBox(
     Graph graph,
     Algorithm algorithm,
-    Paint paint, {
-    List<RenderBox> children,
+    Paint? paint, {
+    List<RenderBox>? children,
   }) {
     _algorithm = algorithm;
     _graph = graph;
@@ -123,7 +124,7 @@ class RenderCustomLayoutBox extends RenderBox
 
   Paint get edgePaint => _paint;
 
-  set edgePaint(Paint value) {
+  set edgePaint(Paint? value) {
     _paint = value ??
         (Paint()
           ..color = Colors.black
@@ -194,7 +195,7 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
 
-    algorithm.renderer.render(context.canvas, graph, edgePaint);
+    algorithm.renderer!.render(context.canvas, graph, edgePaint);
 
     context.canvas.restore();
 
@@ -202,7 +203,7 @@ class RenderCustomLayoutBox extends RenderBox
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset position}) {
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChildren(result, position: position);
   }
 
@@ -220,12 +221,12 @@ class NodeBoxData extends ContainerBoxParentData<RenderBox> {}
 class GraphAnimated extends StatefulWidget {
   final Graph graph;
   final Algorithm algorithm;
-  final Paint paint;
+  final Paint? paint;
   final result = <Widget>[];
 
-  GraphAnimated({Key key, @required this.graph, @required this.algorithm, this.paint, NodeWidgetBuilder builder}){
+  GraphAnimated({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder? builder}){
     graph.nodes.forEach((node) {
-      result.add(node.data ?? builder(node));
+      result.add(node.data ?? builder!(node));
     });
   }
 
@@ -234,9 +235,9 @@ class GraphAnimated extends StatefulWidget {
 }
 
 class _GraphAnimatedState extends State<GraphAnimated> {
-  Timer timer;
-  Graph graph;
-  Algorithm algorithm;
+  late Timer timer;
+  late Graph graph;
+  late Algorithm algorithm;
 
   @override
   void initState() {
@@ -312,7 +313,7 @@ class EdgeRender extends CustomPainter {
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
 
-    algorithm.renderer.render(canvas, graph, edgePaint);
+    algorithm.renderer!.render(canvas, graph, edgePaint);
     canvas.restore();
   }
 

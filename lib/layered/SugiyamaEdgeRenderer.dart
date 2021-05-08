@@ -26,22 +26,22 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
       var clippedLine = <double>[];
 
-      Paint edgeTrianglePaint;
+      Paint? edgeTrianglePaint;
       if (edge.paint != null) {
         edgeTrianglePaint = Paint()
-          ..color = edge.paint.color ?? paint.color
+          ..color = edge.paint?.color ?? paint.color
           ..style = PaintingStyle.fill;
       }
 
-      var p = edge.paint ?? paint
+      var currentPaint = edge.paint ?? paint
         ..style = PaintingStyle.stroke;
 
-      if (edgeData.containsKey(edge) && edgeData[edge].bendPoints.isNotEmpty) {
+      if (edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty) {
         // draw bend points
-        var bendPoints = edgeData[edge].bendPoints;
+        var bendPoints = edgeData[edge]!.bendPoints;
         final size = bendPoints.length;
 
-        if (nodeData[source].isReversed) {
+        if (nodeData[source]!.isReversed) {
           clippedLine = clipLine(bendPoints[2], bendPoints[3], bendPoints[0], bendPoints[1], destination);
         } else {
           clippedLine = clipLine(
@@ -59,7 +59,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         }
 
         path.lineTo(triangleCentroid[0], triangleCentroid[1]);
-        canvas.drawPath(path, p);
+        canvas.drawPath(path, currentPaint);
       } else {
         final startX = x + source.width / 2;
         final startY = y + source.height / 2;
@@ -71,7 +71,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         final triangleCentroid = drawTriangle(
             canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
 
-        canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), p);
+        canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
       }
     });
   }

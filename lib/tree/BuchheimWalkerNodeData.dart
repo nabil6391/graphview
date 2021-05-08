@@ -1,8 +1,8 @@
 part of graphview;
 
 class BuchheimWalkerNodeData {
-  Node ancestor;
-  Node thread;
+  Node? ancestor;
+  Node? thread;
   int number = 0;
   int depth = 0;
   double prelim = 0.toDouble();

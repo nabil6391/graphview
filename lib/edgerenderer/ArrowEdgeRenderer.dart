@@ -33,10 +33,10 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
       var clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
-      Paint edgeTrianglePaint;
+      Paint? edgeTrianglePaint;
       if (edge.paint != null) {
         edgeTrianglePaint = Paint()
-          ..color = edge.paint.color ?? paint.color
+          ..color = edge.paint?.color ?? paint.color
           ..style = PaintingStyle.fill;
       }
 
@@ -63,7 +63,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     // calculate centroid of the triangle
     var x = (x2 + x3 + x4) / 3;
     var y = (y2 + y3 + y4) / 3;
-    List<double> triangleCentroid = [x, y];
+    var triangleCentroid = [x, y];
     trianglePath.reset();
     return triangleCentroid;
   }

@@ -21,7 +21,7 @@ class Graph {
 
   void addNodes(List<Node> nodes) => nodes.forEach((it) => addNode(it));
 
-  void removeNode(Node node) {
+  void removeNode(Node? node) {
     if (!_nodes.contains(node)) {
 //            throw IllegalArgumentException("Unable to find node in graph.")
     }
@@ -39,7 +39,7 @@ class Graph {
 
   void removeNodes(List<Node> nodes) => nodes.forEach((it) => removeNode(it));
 
-  Edge addEdge(Node source, Node destination, {Paint paint}) {
+  Edge addEdge(Node source, Node destination, {Paint? paint}) {
     final edge = Edge(source, destination, paint: paint);
     addEdgeS(edge);
 
@@ -70,26 +70,26 @@ class Graph {
 
   void removeEdges(List<Edge> edges) => edges.forEach((it) => removeEdge(it));
 
-  void removeEdgeFromPredecessor(Node predecessor, Node current) {
+  void removeEdgeFromPredecessor(Node? predecessor, Node? current) {
     _edges.removeWhere((edge) => edge.source == predecessor && edge.destination == current);
   }
 
   bool hasNodes() => _nodes.isNotEmpty;
 
-  Edge getEdgeBetween(Node source, Node destination) =>
-      _edges.firstWhere((element) => element.source == source && element.destination == destination, orElse: ()=> null);
+  Edge? getEdgeBetween(Node source, Node? destination) =>
+      _edges.firstWhereOrNull((element) => element.source == source && element.destination == destination);
 
-  bool hasSuccessor(Node node) => _edges.any((element) => element.source == node);
+  bool hasSuccessor(Node? node) => _edges.any((element) => element.source == node);
 
-  List<Node> successorsOf(Node node) =>
+  List<Node> successorsOf(Node? node) =>
       _edges.where((element) => element.source == node).map((e) => e.destination).toList();
 
   bool hasPredecessor(Node node) => _edges.any((element) => element.destination == node);
 
-  List<Node> predecessorsOf(Node node) =>
+  List<Node> predecessorsOf(Node? node) =>
       _edges.where((element) => element.destination == node).map((edge) => edge.source).toList();
 
-  bool contains({Node node, Edge edge}) =>
+  bool contains({Node? node, Edge? edge}) =>
       node != null && _nodes.contains(node) || edge != null && _edges.contains(edge);
 
 //  bool contains(Edge edge) => _edges.contains(edge);
@@ -127,13 +127,13 @@ class Graph {
 }
 
 class Node {
-  ValueKey key;
+  ValueKey? key;
 
   @Deprecated('Please use the builder and id mechanism to build the widgets')
-  Widget data;
+  Widget? data;
 
-  Node(this.data, { this.key }){
-    key ??= ValueKey(data.hashCode);
+  Node(this.data, { Key? key }){
+    this.key = ValueKey(key?.hashCode ?? data.hashCode);
   }
 
   Node.Id(dynamic id){
@@ -164,7 +164,7 @@ class Node {
   bool operator ==(Object other) => identical(this, other) || other is Node && hashCode == other.hashCode;
 
   @override
-  int get hashCode => key?.hashCode;
+  int get hashCode => key.hashCode;
 
   @override
   String toString() {
@@ -176,13 +176,13 @@ class Edge {
   Node source;
   Node destination;
 
-  Key key;
-  Paint paint;
+  Key? key;
+  Paint? paint;
 
   Edge(this.source, this.destination, {this.key, this.paint});
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
+  bool operator == (Object? other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
 
   @override
   int get hashCode => key?.hashCode ?? source.hashCode ^ destination.hashCode;
