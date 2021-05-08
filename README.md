@@ -275,6 +275,55 @@ You can focus on a specific node. This will allow scrolling to that node in the 
         });
       },
 ```
+
+### Extract info from any json to Graph Object
+Now its a bit easy to use Ids to extract info from any json to Graph Object
+
+For example, if the json is like this:
+```dart
+var json = {
+   "nodes": [
+     {"id": 1, "label": 'circle'},
+     {"id": 2, "label": 'ellipse'},
+     {"id": 3, "label": 'database'},
+     {"id": 4, "label": 'box'},
+     {"id": 5, "label": 'diamond'},
+     {"id": 6, "label": 'dot'},
+     {"id": 7, "label": 'square'},
+     {"id": 8, "label": 'triangle'},
+   ],
+   "edges": [
+     {"from": 1, "to": 2},
+     {"from": 2, "to": 3},
+     {"from": 2, "to": 4},
+     {"from": 2, "to": 5},
+     {"from": 5, "to": 6},
+     {"from": 5, "to": 7},
+     {"from": 6, "to": 8}
+   ]
+ };
+```
+
+Step 1, add the edges by using ids
+```dart
+  edges.forEach((element) {
+      var fromNodeId = element['from'];
+      var toNodeId = element['to'];
+      graph.addEdge(Node.Id(fromNodeId), Node.Id(toNodeId));
+    });
+```
+
+Step 2: Then using builder and find the nodeValues from the json using id and then set the value of that.
+
+```dart
+ builder: (Node node) {
+                  // I can decide what widget should be shown here based on the id
+                  var a = node.key.value as int;
+                  var nodes = json['nodes'];
+                  var nodeValue = nodes.firstWhere((element) => element['id'] == a);
+                  return rectangleWidget(nodeValue['label'] as String);
+                },
+```
 Examples
 ========
 #### Rooted Tree
