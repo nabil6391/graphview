@@ -30,7 +30,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
                   builder: (Node node) {
                     // I can decide what widget should be shown here based on the id
                     var a =  node.key.value as int;
-                    if(a == 2 ) {
+                    if(a == 2) {
                       return rectangWidget(a);
                     }
                     return rectangWidget(a);

@@ -266,57 +266,32 @@ class _GraphAnimatedState extends State<GraphAnimated> {
   Widget build(BuildContext context) {
     algorithm.setDimensions(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
 
-    return Container(
-      decoration: BoxDecoration(border: Border.all(color: Colors.white)),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          CustomPaint(
-            size: MediaQuery.of(context).size,
-            painter: EdgeRender(algorithm, graph, Offset(20,20)),
-          ),
-          ...List<Widget>.generate(graph.nodeCount(), (index) {
-            return Positioned(
-              child: GestureDetector(
-                child: widget.result[index],
-                onPanUpdate: (details) {
-                  graph.getNodeAtPosition(index).position += details.delta;
-                  update();
-                },
-              ),
-              top: graph.getNodeAtPosition(index).position.dy,
-              left: graph.getNodeAtPosition(index).position.dx,
-            );
-          }),
-        ],
-      ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CustomPaint(
+          size: MediaQuery.of(context).size,
+          painter: EdgeRender(algorithm, graph, Offset(20,20)),
+        ),
+        ...List<Widget>.generate(graph.nodeCount(), (index) {
+          return Positioned(
+            child: GestureDetector(
+              child: widget.result[index],
+              onPanUpdate: (details) {
+                graph.getNodeAtPosition(index).position += details.delta;
+                update();
+              },
+            ),
+            top: graph.getNodeAtPosition(index).position.dy,
+            left: graph.getNodeAtPosition(index).position.dx,
+          );
+        }),
+      ],
     );
   }
 
   Future<void> update() async {
     setState(() {});
-  }
-
-  Widget createNode(String nodeText) {
-    return GestureDetector(
-      child: Container(
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          border: Border.all(color: Colors.white, width: 1),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Center(
-          child: Text(
-            nodeText,
-            style: TextStyle(fontSize: 10),
-          ),
-        ),
-      ),
-      onLongPress: () {
-        print(nodeText);
-      },
-    );
   }
 }
 
