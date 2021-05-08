@@ -124,50 +124,6 @@ class Graph {
         element.notifyGraphInvalidated();
       });
 
-  static Graph lerp(Graph a, Graph b, double t) {
-    if (b == null) {
-      if (a == null) {
-        return null;
-      } else {
-        a.nodes.forEach((n) {
-          n.position = Offset.lerp(n.position, null, t);
-        });
-        return a;
-      }
-    } else {
-      if (a == null) {
-        b.nodes.forEach((n) {
-          n.position = Offset.lerp(null, n.position, t);
-        });
-        return b;
-      } else {
-        a.nodes.asMap().forEach((position, value) {
-          a.nodes[position].position = Offset.lerp(value.position, b.nodes[position].position, t);
-        });
-        return a;
-      }
-    }
-  }
-
-  List<Offset> getOffsets() {
-    return nodes.map((e) => Offset(e.position.dx, e.position.dy)).toList();
-  }
-
-  Graph clone() {
-    var _graph = Graph();
-    Map<Node, Node> hashmap = HashMap();
-    this.nodes.forEach((element) {
-      hashmap[element] = Node.clone(element);
-    });
-
-    this.edges.forEach((element) {
-      _graph.addEdge(hashmap[element.source], hashmap[element.destination], paint: element.paint);
-    });
-
-    return _graph;
-  }
-
-  // Graph.clone(Graph source) : this._edges = source.edges, this._nodes = source.nodes.map((e) => Node.clone(e).toList());
 }
 
 class Node {
@@ -214,8 +170,6 @@ class Node {
   String toString() {
     return 'Node{position: $position, key: $key, _size: $size}';
   }
-
-  Node.clone(Node randomObject) : data = randomObject.data, this.position = randomObject.position, this.size = randomObject.size, key = UniqueKey();
 }
 
 class Edge {
