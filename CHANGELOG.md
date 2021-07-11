@@ -1,3 +1,7 @@
+## 1.0.0-nullsafety.0
+
+- Null Safety Support
+
 ## 0.7.0
 
 - Added methods for builder pattern and deprecated directly setting Widget Data in nodes.
