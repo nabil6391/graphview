@@ -14,8 +14,8 @@ class Graph {
 
   void addNode(Node node) {
     // if (!_nodes.contains(node)) {
-      _nodes.add(node);
-      notifyGraphObserver();
+    _nodes.add(node);
+    notifyGraphObserver();
     // }
   }
 
@@ -123,7 +123,6 @@ class Graph {
   void notifyGraphObserver() => graphObserver.forEach((element) {
         element.notifyGraphInvalidated();
       });
-
 }
 
 class Node {
@@ -132,11 +131,11 @@ class Node {
   @Deprecated('Please use the builder and id mechanism to build the widgets')
   Widget? data;
 
-  Node(this.data, { Key? key }){
+  Node(this.data, {Key? key}) {
     this.key = ValueKey(key?.hashCode ?? data.hashCode);
   }
 
-  Node.Id(dynamic id){
+  Node.Id(dynamic id) {
     key = ValueKey(id);
   }
 
@@ -182,7 +181,7 @@ class Edge {
   Edge(this.source, this.destination, {this.key, this.paint});
 
   @override
-  bool operator == (Object? other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
+  bool operator ==(Object? other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
 
   @override
   int get hashCode => key?.hashCode ?? source.hashCode ^ destination.hashCode;
