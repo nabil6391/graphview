@@ -112,7 +112,7 @@ class Graph {
   @Deprecated('Please use the builder and id mechanism to build the widgets')
   Node getNodeAtUsingData(Widget data) => _nodes.firstWhere((element) => element.data == data);
 
-  Node getNodeUsingKey(Key key) => _nodes.firstWhere((element) => element.key == key);
+  Node getNodeUsingKey(ValueKey key) => _nodes.firstWhere((element) => element.key == key);
 
   Node getNodeUsingId(int id) => _nodes.firstWhere((element) => element.key == ValueKey(id));
 
