@@ -30,13 +30,11 @@ class GraphView extends StatefulWidget {
   final Graph graph;
   final Algorithm algorithm;
   final Paint? paint;
-  final NodeWidgetBuilder? builder;
-  final bool animated = false; // A later feature, had to include here to migrate to null safety
+  final NodeWidgetBuilder builder;
+  final bool animated;
 
-  GraphView({Key? key, required this.graph, required this.algorithm, this.paint, this.builder})
-      : assert(graph != null),
-        assert(algorithm != null),
-        super(key: key);
+  GraphView({Key? key, required this.graph, required this.algorithm, this.paint, required this.builder, this.animated = true})
+      : super(key: key);
 
   @override
   _GraphViewState createState() => _GraphViewState();
@@ -45,8 +43,8 @@ class GraphView extends StatefulWidget {
 class _GraphViewState extends State<GraphView> {
   @override
   Widget build(BuildContext context) {
-    if (widget.animated) {
-      return GraphAnimated(
+    if (widget.algorithm is FruchtermanReingoldAlgorithm) {
+      return _GraphViewAnimated(
         key: widget.key,
         graph: widget.graph,
         algorithm: widget.algorithm,
@@ -70,23 +68,30 @@ class _GraphView extends MultiChildRenderObjectWidget {
   final Algorithm algorithm;
   final Paint? paint;
 
-  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder? builder})
-      : assert(graph != null),
-        assert(algorithm != null),
-        super(key: key, children: _extractChildren(graph, builder)) {
+  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder builder})
+      : super(key: key, children: _extractChildren(graph, builder)) {
     assert(() {
+      if(children.isEmpty) {
+        throw FlutterError(
+          'Children must not be empty, ensure you are overriding the builder',
+        );
+      }
+
       return true;
     }());
   }
 
-  // Traverses the InlineSpan tree and depth-first collects the list of
-  // child widgets that are created in WidgetSpans.
-  static List<Widget> _extractChildren(Graph graph, NodeWidgetBuilder? builder) {
+  // Traverses the nodes depth-first collects the list of child widgets that are created.
+  static List<Widget> _extractChildren(Graph graph, NodeWidgetBuilder builder) {
     final result = <Widget>[];
 
     graph.nodes.forEach((node) {
-      result.add(node.data ?? builder!(node));
+      var widget = node.data ?? builder(node);
+      if (widget != null) {
+        result.add(widget);
+      }
     });
+
     return result;
   }
 
@@ -218,23 +223,24 @@ class RenderCustomLayoutBox extends RenderBox
 
 class NodeBoxData extends ContainerBoxParentData<RenderBox> {}
 
-class GraphAnimated extends StatefulWidget {
+class _GraphViewAnimated extends StatefulWidget {
   final Graph graph;
   final Algorithm algorithm;
   final Paint? paint;
-  final result = <Widget>[];
+  final nodes = <Widget>[];
+  final stepMilis = 25;
 
-  GraphAnimated({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder? builder}){
+  _GraphViewAnimated({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder builder}){
     graph.nodes.forEach((node) {
-      result.add(node.data ?? builder!(node));
+      nodes.add(node.data ?? builder(node));
     });
   }
 
   @override
-  _GraphAnimatedState createState() => _GraphAnimatedState();
+  _GraphViewAnimatedState createState() => _GraphViewAnimatedState();
 }
 
-class _GraphAnimatedState extends State<GraphAnimated> {
+class _GraphViewAnimatedState extends State<_GraphViewAnimated> {
   late Timer timer;
   late Graph graph;
   late Algorithm algorithm;
@@ -251,7 +257,7 @@ class _GraphAnimatedState extends State<GraphAnimated> {
   }
 
   void startTimer() {
-    timer = Timer.periodic(Duration(milliseconds: 25), (timer) {
+    timer = Timer.periodic(Duration(milliseconds: widget.stepMilis), (timer) {
       algorithm.step(graph);
       update();
     });
@@ -277,7 +283,7 @@ class _GraphAnimatedState extends State<GraphAnimated> {
         ...List<Widget>.generate(graph.nodeCount(), (index) {
           return Positioned(
             child: GestureDetector(
-              child: widget.result[index],
+              child: widget.nodes[index],
               onPanUpdate: (details) {
                 graph.getNodeAtPosition(index).position += details.delta;
                 update();
