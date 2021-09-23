@@ -10,18 +10,31 @@ import 'package:flutter/rendering.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 
 part 'Graph.dart';
+
 part 'Algorithm.dart';
+
 part 'edgerenderer/ArrowEdgeRenderer.dart';
+
 part 'edgerenderer/EdgeRenderer.dart';
+
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
+
 part 'layered/SugiyamaAlgorithm.dart';
+
 part 'layered/SugiyamaConfiguration.dart';
+
 part 'layered/SugiyamaEdgeData.dart';
+
 part 'layered/SugiyamaEdgeRenderer.dart';
+
 part 'layered/SugiyamaNodeData.dart';
+
 part 'tree/BuchheimWalkerAlgorithm.dart';
+
 part 'tree/BuchheimWalkerConfiguration.dart';
+
 part 'tree/BuchheimWalkerNodeData.dart';
+
 part 'tree/TreeEdgeRenderer.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
@@ -33,7 +46,8 @@ class GraphView extends StatefulWidget {
   final NodeWidgetBuilder builder;
   final bool animated;
 
-  GraphView({Key? key, required this.graph, required this.algorithm, this.paint, required this.builder, this.animated = true})
+  GraphView(
+      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder, this.animated = true})
       : super(key: key);
 
   @override
@@ -71,7 +85,7 @@ class _GraphView extends MultiChildRenderObjectWidget {
   _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder})
       : super(key: key, children: _extractChildren(graph, builder)) {
     assert(() {
-      if(children.isEmpty) {
+      if (children.isEmpty) {
         throw FlutterError(
           'Children must not be empty, ensure you are overriding the builder',
         );
@@ -230,7 +244,8 @@ class _GraphViewAnimated extends StatefulWidget {
   final nodes = <Widget>[];
   final stepMilis = 25;
 
-  _GraphViewAnimated({Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder}){
+  _GraphViewAnimated(
+      {Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder}) {
     graph.nodes.forEach((node) {
       nodes.add(node.data ?? builder(node));
     });
@@ -278,7 +293,7 @@ class _GraphViewAnimatedState extends State<_GraphViewAnimated> {
       children: [
         CustomPaint(
           size: MediaQuery.of(context).size,
-          painter: EdgeRender(algorithm, graph, Offset(20,20)),
+          painter: EdgeRender(algorithm, graph, Offset(20, 20)),
         ),
         ...List<Widget>.generate(graph.nodeCount(), (index) {
           return Positioned(
@@ -306,6 +321,7 @@ class EdgeRender extends CustomPainter {
   Algorithm algorithm;
   Graph graph;
   Offset offset;
+
   EdgeRender(this.algorithm, this.graph, this.offset);
 
   @override

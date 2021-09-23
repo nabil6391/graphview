@@ -544,8 +544,8 @@ class SugiyamaAlgorithm extends Algorithm {
     return type1Conflicts;
   }
 
-  void verticalAlignment(
-      Map<Node?, Node?> root, Map<Node?, Node?> align, List<List<bool>> type1Conflicts, bool downward, bool leftToRight) {
+  void verticalAlignment(Map<Node?, Node?> root, Map<Node?, Node?> align, List<List<bool>> type1Conflicts,
+      bool downward, bool leftToRight) {
     // for all Level;
     var i = downward ? 0 : layers.length - 1;
     while (downward && i <= layers.length - 1 || !downward && i >= 0) {
@@ -626,8 +626,8 @@ class SugiyamaAlgorithm extends Algorithm {
     });
   }
 
-  void placeBlock(Node? v, Map<Node?, Node?> sink, Map<Node?, double> shift, Map<Node?, double?> x, Map<Node?, Node?> align,
-      Map<Node?, double> blockWidth, Map<Node?, Node?> root, bool leftToRight) {
+  void placeBlock(Node? v, Map<Node?, Node?> sink, Map<Node?, double> shift, Map<Node?, double?> x,
+      Map<Node?, Node?> align, Map<Node?, double> blockWidth, Map<Node?, Node?> root, bool leftToRight) {
     if (x[v] == double.negativeInfinity) {
       x[v] = 0;
       var w = v;
@@ -645,11 +645,11 @@ class SugiyamaAlgorithm extends Algorithm {
             }
             if (sink[v] != sink[u]) {
               if (leftToRight) {
-                shift[sink[u]] = min(
-                    shift[sink[u]]!, x[v]! - x[u]! - configuration.nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                shift[sink[u]] = min(shift[sink[u]]!,
+                    x[v]! - x[u]! - configuration.nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
               } else {
-                shift[sink[u]] = max(
-                    shift[sink[u]]!, x[v]! - x[u]! + configuration.nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                shift[sink[u]] = max(shift[sink[u]]!,
+                    x[v]! - x[u]! + configuration.nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
               }
             } else {
               if (leftToRight) {
@@ -729,7 +729,11 @@ class SugiyamaAlgorithm extends Algorithm {
       var level = layers[i];
       var maxHeight = 0;
       level.forEach((node) {
-        var h = nodeData[node!]!.isDummy ? 0 : isVertical() ? node.height : node.width;
+        var h = nodeData[node!]!.isDummy
+            ? 0
+            : isVertical()
+                ? node.height
+                : node.width;
         if (h > maxHeight) {
           maxHeight = h.toInt();
         }
@@ -840,7 +844,7 @@ class SugiyamaAlgorithm extends Algorithm {
         finalOffset = Offset(offset.dy - node.y, node.x - offset.dx);
         break;
       default:
-        finalOffset = Offset(0,0);
+        finalOffset = Offset(0, 0);
         break;
     }
 

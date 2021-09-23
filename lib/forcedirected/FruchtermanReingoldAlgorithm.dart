@@ -23,21 +23,20 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
 
   EdgeRenderer? renderer;
 
-  FruchtermanReingoldAlgorithm({
-    this.iterations = DEFAULT_ITERATIONS,
-    this.renderer,
-    this.repulsionRate = REPULSION_RATE,
-    this.attractionRate = ATTRACTION_RATE,
-    this.repulsionPercentage = REPULSION_PERCENTAGE,
-    this.attractionPercentage = ATTRACTION_PERCENTAGE
-  }) {
+  FruchtermanReingoldAlgorithm(
+      {this.iterations = DEFAULT_ITERATIONS,
+      this.renderer,
+      this.repulsionRate = REPULSION_RATE,
+      this.attractionRate = ATTRACTION_RATE,
+      this.repulsionPercentage = REPULSION_PERCENTAGE,
+      this.attractionPercentage = ATTRACTION_PERCENTAGE}) {
     renderer = renderer ?? ArrowEdgeRenderer();
   }
 
   void init(Graph? graph) {
     graph!.nodes.forEach((node) {
       displacement[node] = Offset.zero;
-      node.position = Offset(rand.nextDouble()  * graphWidth , rand.nextDouble() * graphHeight);
+      node.position = Offset(rand.nextDouble() * graphWidth, rand.nextDouble() * graphHeight);
     });
   }
 
@@ -55,7 +54,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
     graph.nodes.forEach((node) {
       var newPosition = node.position += displacement[node]!;
       double newDX = min(graphWidth - 40, max(0, newPosition.dx));
-      double newDY = min(graphHeight - 40,  max(0,newPosition.dy));
+      double newDY = min(graphHeight - 40, max(0, newPosition.dy));
 
       // double newDX = newPosition.dx;
       // double newDY = newPosition.dy;

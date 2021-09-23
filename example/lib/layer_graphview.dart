@@ -14,77 +14,77 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     return Scaffold(
         appBar: AppBar(),
         body: Column(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        Wrap(
+          mainAxisSize: MainAxisSize.max,
           children: [
-            Container(
-              width: 100,
-              child: TextFormField(
-                initialValue: builder.nodeSeparation.toString(),
-                decoration: InputDecoration(labelText: "Node Separation"),
-                onChanged: (text) {
-                  builder.nodeSeparation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
-                },
-              ),
+            Wrap(
+              children: [
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.nodeSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Node Separation"),
+                    onChanged: (text) {
+                      builder.nodeSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.levelSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Level Separation"),
+                    onChanged: (text) {
+                      builder.levelSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.orientation.toString(),
+                    decoration: InputDecoration(labelText: "Orientation"),
+                    onChanged: (text) {
+                      builder.orientation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    final node12 = Node.Id(r.nextInt(100));
+                    var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                    print(edge);
+                    graph.addEdge(edge, node12);
+                    setState(() {});
+                  },
+                  child: Text("Add"),
+                )
+              ],
             ),
-            Container(
-              width: 100,
-              child: TextFormField(
-                initialValue: builder.levelSeparation.toString(),
-                decoration: InputDecoration(labelText: "Level Separation"),
-                onChanged: (text) {
-                  builder.levelSeparation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
-                },
-              ),
+            Expanded(
+              child: InteractiveViewer(
+                  constrained: false,
+                  boundaryMargin: EdgeInsets.all(100),
+                  minScale: 0.0001,
+                  maxScale: 10.6,
+                  child: GraphView(
+                    graph: graph,
+                    algorithm: SugiyamaAlgorithm(builder),
+                    paint: Paint()
+                      ..color = Colors.green
+                      ..strokeWidth = 1
+                      ..style = PaintingStyle.stroke,
+                    builder: (Node node) {
+                      // I can decide what widget should be shown here based on the id
+                      var a = node.key!.value as int?;
+                      return rectangleWidget(a);
+                    },
+                  )),
             ),
-            Container(
-              width: 100,
-              child: TextFormField(
-                initialValue: builder.orientation.toString(),
-                decoration: InputDecoration(labelText: "Orientation"),
-                onChanged: (text) {
-                  builder.orientation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
-                },
-              ),
-            ),
-            RaisedButton(
-              onPressed: () {
-                final node12 = Node.Id(r.nextInt(100));
-                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
-                print(edge);
-                graph.addEdge(edge, node12);
-                setState(() {});
-              },
-              child: Text("Add"),
-            )
           ],
-        ),
-        Expanded(
-          child: InteractiveViewer(
-              constrained: false,
-              boundaryMargin: EdgeInsets.all(100),
-              minScale: 0.0001,
-              maxScale: 10.6,
-              child: GraphView(
-                graph: graph,
-                algorithm: SugiyamaAlgorithm(builder),
-                paint: Paint()
-                  ..color = Colors.green
-                  ..strokeWidth = 1
-                  ..style = PaintingStyle.stroke,
-                builder: (Node node) {
-                  // I can decide what widget should be shown here based on the id
-                  var a = node.key!.value as int?;
-                  return rectangleWidget(a);
-                },
-              )),
-        ),
-      ],
-    ));
+        ));
   }
 
   Random r = Random();
@@ -174,5 +174,3 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
       ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
   }
 }
-
-

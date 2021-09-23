@@ -5,6 +5,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Edge, SugiyamaEdgeData> edgeData;
 
   SugiyamaEdgeRenderer(this.nodeData, this.edgeData);
+
   var path = Path();
 
   void render(Canvas canvas, Graph graph, Paint paint) {
@@ -71,7 +72,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         final triangleCentroid = drawTriangle(
             canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
 
-        canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
+        canvas.drawLine(
+            Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
       }
     });
   }

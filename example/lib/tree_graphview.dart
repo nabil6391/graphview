@@ -14,88 +14,88 @@ class _TreeViewPageState extends State<TreeViewPage> {
     return Scaffold(
         appBar: AppBar(),
         body: Column(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        Wrap(
+          mainAxisSize: MainAxisSize.max,
           children: [
-            Container(
-              width: 100,
-              child: TextFormField(
-                initialValue: builder.siblingSeparation.toString(),
-                decoration: InputDecoration(labelText: "Sibling Separation"),
-                onChanged: (text) {
-                  builder.siblingSeparation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
-                },
-              ),
+            Wrap(
+              children: [
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.siblingSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Sibling Separation"),
+                    onChanged: (text) {
+                      builder.siblingSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.levelSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Level Separation"),
+                    onChanged: (text) {
+                      builder.levelSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.subtreeSeparation.toString(),
+                    decoration: InputDecoration(labelText: "Subtree separation"),
+                    onChanged: (text) {
+                      builder.subtreeSeparation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: builder.orientation.toString(),
+                    decoration: InputDecoration(labelText: "Orientation"),
+                    onChanged: (text) {
+                      builder.orientation = int.tryParse(text) ?? 100;
+                      this.setState(() {});
+                    },
+                  ),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    final node12 = Node.Id(r.nextInt(100));
+                    var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                    print(edge);
+                    graph.addEdge(edge, node12);
+                    setState(() {});
+                  },
+                  child: Text("Add"),
+                )
+              ],
             ),
-            Container(
-              width: 100,
-              child: TextFormField(
-                initialValue: builder.levelSeparation.toString(),
-                decoration: InputDecoration(labelText: "Level Separation"),
-                onChanged: (text) {
-                  builder.levelSeparation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
-                },
-              ),
+            Expanded(
+              child: InteractiveViewer(
+                  constrained: false,
+                  boundaryMargin: EdgeInsets.all(100),
+                  minScale: 0.01,
+                  maxScale: 5.6,
+                  child: GraphView(
+                    graph: graph,
+                    algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                    paint: Paint()
+                      ..color = Colors.green
+                      ..strokeWidth = 1
+                      ..style = PaintingStyle.stroke,
+                    builder: (Node node) {
+                      // I can decide what widget should be shown here based on the id
+                      var a = node.key!.value as int?;
+                      return rectangleWidget(a);
+                    },
+                  )),
             ),
-            Container(
-              width: 100,
-              child: TextFormField(
-                initialValue: builder.subtreeSeparation.toString(),
-                decoration: InputDecoration(labelText: "Subtree separation"),
-                onChanged: (text) {
-                  builder.subtreeSeparation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
-                },
-              ),
-            ),
-            Container(
-              width: 100,
-              child: TextFormField(
-                initialValue: builder.orientation.toString(),
-                decoration: InputDecoration(labelText: "Orientation"),
-                onChanged: (text) {
-                  builder.orientation = int.tryParse(text) ?? 100;
-                  this.setState(() {});
-                },
-              ),
-            ),
-            RaisedButton(
-              onPressed: () {
-                final node12 = Node.Id(r.nextInt(100));
-                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
-                print(edge);
-                graph.addEdge(edge, node12);
-                setState(() {});
-              },
-              child: Text("Add"),
-            )
           ],
-        ),
-        Expanded(
-          child: InteractiveViewer(
-              constrained: false,
-              boundaryMargin: EdgeInsets.all(100),
-              minScale: 0.01,
-              maxScale: 5.6,
-              child: GraphView(
-                graph: graph,
-                algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
-                paint: Paint()
-                  ..color = Colors.green
-                  ..strokeWidth = 1
-                  ..style = PaintingStyle.stroke,
-                builder: (Node node) {
-                  // I can decide what widget should be shown here based on the id
-                  var a = node.key!.value as int?;
-                  return rectangleWidget(a);
-                },
-              )),
-        ),
-      ],
-    ));
+        ));
   }
 
   Random r = Random();

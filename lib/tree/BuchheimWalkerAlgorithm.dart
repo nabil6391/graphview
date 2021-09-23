@@ -35,8 +35,8 @@ class BuchheimWalkerAlgorithm extends Algorithm {
 
   void checkUnconnectedNotes(Graph graph) {
     graph.nodes.forEach((element) {
-      if(getNodeData(element) ==null) {
-        if(!kReleaseMode) {
+      if (getNodeData(element) == null) {
+        if (!kReleaseMode) {
           print('$element is not connected to primary ancestor');
         }
       }
@@ -326,7 +326,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   void positionNodes(Graph graph) {
-    var doesNeedReverseOrder  = needReverseOrder();
+    var doesNeedReverseOrder = needReverseOrder();
 
     var offset = getOffset(graph, doesNeedReverseOrder);
     var nodes = sortByLevel(graph, doesNeedReverseOrder);
@@ -439,7 +439,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
         finalOffset = Offset(offset.dy - node.y - globalPadding, node.x - offset.dx);
         break;
       default:
-        finalOffset = Offset(0,0);
+        finalOffset = Offset(0, 0);
         break;
     }
 
@@ -451,13 +451,13 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     if (descending) {
       nodes.reversed;
     }
-    nodes.sort((data1, data2) => compare(getNodeData(data1)?.depth ?? 0, getNodeData(data2)?.depth??0));
+    nodes.sort((data1, data2) => compare(getNodeData(data1)?.depth ?? 0, getNodeData(data2)?.depth ?? 0));
 
     return nodes;
   }
 
   List<Node> filterByLevel(List<Node> nodes, int? level) {
-    return nodes.where((node) => getNodeData(node)?.depth  == level).toList();
+    return nodes.where((node) => getNodeData(node)?.depth == level).toList();
   }
 
   @override
@@ -497,4 +497,3 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     // graphHeight = height;
   }
 }
-

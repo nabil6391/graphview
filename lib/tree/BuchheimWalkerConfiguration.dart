@@ -25,5 +25,4 @@ class BuchheimWalkerConfiguration {
   int getSubtreeSeparation() {
     return subtreeSeparation;
   }
-
 }

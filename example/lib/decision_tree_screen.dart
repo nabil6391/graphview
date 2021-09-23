@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:graphview/GraphView.dart';
 
-
 class DecisionTreeScreen extends StatefulWidget {
   @override
   _DecisionTreeScreenState createState() => _DecisionTreeScreenState();
@@ -15,7 +14,7 @@ class _DecisionTreeScreenState extends State<DecisionTreeScreen> {
   final _graph = Graph()..isTree = true;
 
   final _configuration = SugiyamaConfiguration()
-  ..orientation = 1
+    ..orientation = 1
     ..nodeSeparation = 40
     ..levelSeparation = 50;
 
@@ -52,8 +51,7 @@ class _DecisionTreeScreenState extends State<DecisionTreeScreen> {
           builder: (node) {
             final id = node.key!.value as int;
 
-            final text =
-                List.generate(id == 1 || id == 4 ? 500 : 10, (index) => "X").join(" ");
+            final text = List.generate(id == 1 || id == 4 ? 500 : 10, (index) => "X").join(" ");
 
             return Container(
               width: 180,

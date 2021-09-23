@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
 import 'directed_graphview.dart';
-import 'tree_graphview.dart';
 import 'graph_cluster_animated.dart';
+import 'tree_graphview.dart';
 
 void main() {
   runApp(MyApp());
@@ -41,7 +41,8 @@ class Home extends StatelessWidget {
                 onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => TreeViewPage(),),
+                        builder: (context) => TreeViewPage(),
+                      ),
                     ),
                 child: Text(
                   "Tree View (BuchheimWalker)",
@@ -58,8 +59,8 @@ class Home extends StatelessWidget {
                 onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => GraphClusterViewPage(),
-                              ),
+                        builder: (context) => GraphClusterViewPage(),
+                      ),
                     ),
                 child: Text(
                   "Graph Cluster View (FruchtermanReingold)",
@@ -76,7 +77,8 @@ class Home extends StatelessWidget {
                 onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>  LayeredGraphViewPage(),),
+                        builder: (context) => LayeredGraphViewPage(),
+                      ),
                     ),
                 child: Text(
                   "Layered View (Sugiyama)",
@@ -93,7 +95,8 @@ class Home extends StatelessWidget {
                 onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>  TreeViewPageFromJson(),),
+                        builder: (context) => TreeViewPageFromJson(),
+                      ),
                     ),
                 child: Text(
                   "Tree View From Json(BuchheimWalker)",
@@ -387,7 +390,6 @@ class Home extends StatelessWidget {
             ),
             MaterialButton(
               onPressed: () {
-
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => DecisionTreeScreen()),
