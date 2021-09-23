@@ -193,13 +193,17 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void nodeOrdering() {
     final best = <List<Node?>>[...layers];
-
-    for (var i = 0; i < 23; i++) {
+    for (var i = 0; i < 10; i++) {
       median(best, i);
-      transpose(best);
-      if (crossing(best) < crossing(layers)) {
-        layers = best;
+      var changed = transpose(best);
+      if (!changed) {
+        break;
       }
+      // var c = crossing(best);
+      // var l = crossing(layers);
+      // if (c < l) {
+      //   layers = best;
+      // }
     }
   }
 
@@ -266,7 +270,8 @@ class SugiyamaAlgorithm extends Algorithm {
     }
   }
 
-  void transpose(List<List<Node?>> layers) {
+  bool transpose(List<List<Node?>> layers) {
+    var changed = false;
     var improved = true;
     while (improved) {
       improved = false;
@@ -280,10 +285,12 @@ class SugiyamaAlgorithm extends Algorithm {
           if (crossingb(northernNodes, v, w) > crossingb(northernNodes, w, v)) {
             improved = true;
             exchange(southernNodes, v, w);
+            changed = true;
           }
         }
       }
     }
+    return changed;
   }
 
   void exchange(List<Node?> nodes, Node? v, Node? w) {
@@ -456,7 +463,7 @@ class SugiyamaAlgorithm extends Algorithm {
         values[i] = x[i][n]!;
       }
       values.sort();
-      var average = (values[1] + values[2]) / 2;
+      var average = (values[1] + values[2]) * 0.5;
       coordinates[n] = average;
     });
 
@@ -715,28 +722,22 @@ class SugiyamaAlgorithm extends Algorithm {
   void assignY() {
     // compute y-coordinates;
     final k = layers.length;
-    // compute height of each layer;
-    final height = List.filled(graph.nodes.length, 0);
-
-    for (var i = 0; i < k; i++) {
-      var level = layers[i];
-      level.forEach((node) {
-        var h = nodeData[node!]!.isDummy ? 0 : isVertical() ? node.height : node.width;
-        if (h > height[i]) {
-          height[i] = h.toInt();
-        }
-      });
-    }
 
     // assign y-coordinates
     var yPos = 0.0;
     for (var i = 0; i < k; i++) {
       var level = layers[i];
+      var maxHeight = 0;
       level.forEach((node) {
-        node!.y = yPos;
+        var h = nodeData[node!]!.isDummy ? 0 : isVertical() ? node.height : node.width;
+        if (h > maxHeight) {
+          maxHeight = h.toInt();
+        }
+        node.y = yPos;
       });
-      if(i < k - 1) {
-        yPos += configuration.levelSeparation + 0.5 * (height[i] + height[i + 1]);
+
+      if (i < k - 1) {
+        yPos += configuration.levelSeparation + maxHeight;
       }
     }
   }
