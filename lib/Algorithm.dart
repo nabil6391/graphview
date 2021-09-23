@@ -16,5 +16,4 @@ abstract class Algorithm {
   void step(Graph? graph);
 
   void setDimensions(double width, double height);
-
 }

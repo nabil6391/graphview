@@ -14,9 +14,7 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home:  Home()
-    );
+    return MaterialApp(home: Home());
   }
 }
 
@@ -28,64 +26,64 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child:Scaffold(
-      body: Center(
-        child: Column(children: [
-          FlatButton(
-              onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                              appBar: AppBar(),
-                              body: TreeViewPage(),
-                            )),
-                  ),
-              child: Text(
-                "Tree View (BuchheimWalker)",
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              )),
-          FlatButton(
-              onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                              appBar: AppBar(),
-                              body: GraphClusterViewPage(),
-                            )),
-                  ),
-              child: Text(
-                "Graph Cluster View (FruchtermanReingold)",
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              )),
-          FlatButton(
-              onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                              appBar: AppBar(),
-                              body: LayeredGraphViewPage(),
-                            )),
-                  ),
-              child: Text(
-                "Layered View (Sugiyama)",
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              )),
-          FlatButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => Scaffold(
-                      appBar: AppBar(),
-                      body: TreeViewPageFromJson(),
-                    )),
-              ),
-              child: Text(
-                "Tree View From Json(BuchheimWalker)",
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              )),
-          Center(
-            child: MaterialButton(
-              onPressed: () {
+      child: Scaffold(
+        body: Center(
+          child: Column(children: [
+            FlatButton(
+                onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(),
+                                body: TreeViewPage(),
+                              )),
+                    ),
+                child: Text(
+                  "Tree View (BuchheimWalker)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+            FlatButton(
+                onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(),
+                                body: GraphClusterViewPage(),
+                              )),
+                    ),
+                child: Text(
+                  "Graph Cluster View (FruchtermanReingold)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+            FlatButton(
+                onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(),
+                                body: LayeredGraphViewPage(),
+                              )),
+                    ),
+                child: Text(
+                  "Layered View (Sugiyama)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+            FlatButton(
+                onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(),
+                                body: TreeViewPageFromJson(),
+                              )),
+                    ),
+                child: Text(
+                  "Tree View From Json(BuchheimWalker)",
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                )),
+            Center(
+              child: MaterialButton(
+                onPressed: () {
                   var graph = new Graph();
                   Node node1 = Node(createNode("One"));
                   Node node2 = Node(createNode("Two"));
@@ -102,29 +100,40 @@ class Home extends StatelessWidget {
                   Node node13 = Node(createNode("Thirteen"));
 
                   graph.addEdge(node1, node2);
-                  graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);
-                  graph.addEdge(node1, node4, paint: Paint()..color = Colors.blue);
+                  graph.addEdge(node1, node3,
+                      paint: Paint()..color = Colors.red);
+                  graph.addEdge(node1, node4,
+                      paint: Paint()..color = Colors.blue);
                   graph.addEdge(node2, node5);
                   graph.addEdge(node2, node6);
-                  graph.addEdge(node6, node7, paint: Paint()..color = Colors.red);
-                  graph.addEdge(node6, node8, paint: Paint()..color = Colors.red);
+                  graph.addEdge(node6, node7,
+                      paint: Paint()..color = Colors.red);
+                  graph.addEdge(node6, node8,
+                      paint: Paint()..color = Colors.red);
                   graph.addEdge(node4, node9);
-                  graph.addEdge(node4, node10, paint: Paint()..color = Colors.black);
-                  graph.addEdge(node4, node11, paint: Paint()..color = Colors.red);
+                  graph.addEdge(node4, node10,
+                      paint: Paint()..color = Colors.black);
+                  graph.addEdge(node4, node11,
+                      paint: Paint()..color = Colors.red);
                   graph.addEdge(node11, node12);
 
-                  BuchheimWalkerConfiguration builder1 = BuchheimWalkerConfiguration();
+                  BuchheimWalkerConfiguration builder1 =
+                      BuchheimWalkerConfiguration();
                   builder1
                     ..siblingSeparation = (100)
                     ..levelSeparation = (150)
                     ..subtreeSeparation = (150)
-                    ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
+                    ..orientation =
+                        (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
 
-                  var builder = BuchheimWalkerAlgorithm(builder1,TreeEdgeRenderer(builder1));
+                  var builder = BuchheimWalkerAlgorithm(
+                      builder1, TreeEdgeRenderer(builder1));
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.redAccent,
@@ -170,7 +179,9 @@ class Home extends StatelessWidget {
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.blueAccent,
@@ -225,7 +236,9 @@ class Home extends StatelessWidget {
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.green,
@@ -268,7 +281,9 @@ class Home extends StatelessWidget {
 
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            GraphScreen(graph, builder, null)),
                   );
                 },
                 color: Colors.green,
@@ -281,97 +296,101 @@ class Home extends StatelessWidget {
                 ),
               ),
             ),
-          SizedBox(
-            height: 50,
-          ),
-          Center(
-            child: MaterialButton(
-              onPressed: () {
-                var graph = new Graph();
+            SizedBox(
+              height: 50,
+            ),
+            Center(
+              child: MaterialButton(
+                onPressed: () {
+                  var graph = new Graph();
 
-                Node node1 = Node(createNode("One"));
-                Node node2 = Node(createNode("Two"));
-                Node node3 = Node(createNode("Three"));
-                Node node4 = Node(createNode("Four"));
-                Node node5 = Node(createNode("Five"));
-                Node node6 = Node(createNode("Six"));
-                Node node7 = Node(createNode("Seven"));
-                Node node8 = Node(createNode("Eight"));
-                Node node9 = Node(createNode("Nine"));
-                Node node10 = Node(createNode("Ten"));
-                Node node11 = Node(createNode("Ten0"));
+                  Node node1 = Node(createNode("One"));
+                  Node node2 = Node(createNode("Two"));
+                  Node node3 = Node(createNode("Three"));
+                  Node node4 = Node(createNode("Four"));
+                  Node node5 = Node(createNode("Five"));
+                  Node node6 = Node(createNode("Six"));
+                  Node node7 = Node(createNode("Seven"));
+                  Node node8 = Node(createNode("Eight"));
+                  Node node9 = Node(createNode("Nine"));
+                  Node node10 = Node(createNode("Ten"));
+                  Node node11 = Node(createNode("Ten0"));
 
-                final Node node12 = Node(createNode("Ten1"));
-                final Node node13 = Node(createNode("Ten2"));
-                final Node node14 = Node(createNode("Ten3"));
-                final Node node15 = Node(createNode("Ten4"));
-                final Node node16 = Node(createNode("Ten5"));
-                final Node node17 = Node(createNode("Ten6"));
-                final Node node18 = Node(createNode("Ten7"));
-                final Node node19 = Node(createNode("Ten8"));
-                final Node node20 = Node(createNode("Ten9"));
-                final Node node21 = Node(createNode("Ten11"));
-                final Node node22 = Node(createNode("Ten12"));
-                final Node node23 = Node(createNode("Ten10"));
+                  final Node node12 = Node(createNode("Ten1"));
+                  final Node node13 = Node(createNode("Ten2"));
+                  final Node node14 = Node(createNode("Ten3"));
+                  final Node node15 = Node(createNode("Ten4"));
+                  final Node node16 = Node(createNode("Ten5"));
+                  final Node node17 = Node(createNode("Ten6"));
+                  final Node node18 = Node(createNode("Ten7"));
+                  final Node node19 = Node(createNode("Ten8"));
+                  final Node node20 = Node(createNode("Ten9"));
+                  final Node node21 = Node(createNode("Ten11"));
+                  final Node node22 = Node(createNode("Ten12"));
+                  final Node node23 = Node(createNode("Ten10"));
 
-                graph.addEdge(node1, node13, paint: Paint()..color = Colors.red);
-                graph.addEdge(node1, node21);
-                graph.addEdge(node1, node4);
-                graph.addEdge(node1, node3);
-                graph.addEdge(node2, node3);
-                graph.addEdge(node2, node20);
-                graph.addEdge(node3, node4);
-                graph.addEdge(node3, node5);
-                graph.addEdge(node3, node23);
-                graph.addEdge(node4, node6);
-                graph.addEdge(node5, node7);
-                graph.addEdge(node6, node8);
-                graph.addEdge(node6, node16);
-                graph.addEdge(node6, node23);
-                graph.addEdge(node7, node9);
-                graph.addEdge(node8, node10);
-                graph.addEdge(node8, node11);
-                graph.addEdge(node9, node12);
-                graph.addEdge(node10, node13);
-                graph.addEdge(node10, node14);
-                graph.addEdge(node10, node15);
-                graph.addEdge(node11, node15);
-                graph.addEdge(node11, node16);
-                graph.addEdge(node12, node20);
-                graph.addEdge(node13, node17);
-                graph.addEdge(node14, node17);
-                graph.addEdge(node14, node18);
-                graph.addEdge(node16, node18);
-                graph.addEdge(node16, node19);
-                graph.addEdge(node16, node20);
-                graph.addEdge(node18, node21);
-                graph.addEdge(node19, node22);
-                graph.addEdge(node21, node23);
-                graph.addEdge(node22, node23);
+                  graph.addEdge(node1, node13,
+                      paint: Paint()..color = Colors.red);
+                  graph.addEdge(node1, node21);
+                  graph.addEdge(node1, node4);
+                  graph.addEdge(node1, node3);
+                  graph.addEdge(node2, node3);
+                  graph.addEdge(node2, node20);
+                  graph.addEdge(node3, node4);
+                  graph.addEdge(node3, node5);
+                  graph.addEdge(node3, node23);
+                  graph.addEdge(node4, node6);
+                  graph.addEdge(node5, node7);
+                  graph.addEdge(node6, node8);
+                  graph.addEdge(node6, node16);
+                  graph.addEdge(node6, node23);
+                  graph.addEdge(node7, node9);
+                  graph.addEdge(node8, node10);
+                  graph.addEdge(node8, node11);
+                  graph.addEdge(node9, node12);
+                  graph.addEdge(node10, node13);
+                  graph.addEdge(node10, node14);
+                  graph.addEdge(node10, node15);
+                  graph.addEdge(node11, node15);
+                  graph.addEdge(node11, node16);
+                  graph.addEdge(node12, node20);
+                  graph.addEdge(node13, node17);
+                  graph.addEdge(node14, node17);
+                  graph.addEdge(node14, node18);
+                  graph.addEdge(node16, node18);
+                  graph.addEdge(node16, node19);
+                  graph.addEdge(node16, node20);
+                  graph.addEdge(node18, node21);
+                  graph.addEdge(node19, node22);
+                  graph.addEdge(node21, node23);
+                  graph.addEdge(node22, node23);
 
-                SugiyamaConfiguration builder1 = SugiyamaConfiguration();
-                builder1
-                  ..nodeSeparation = (30)
-                  ..levelSeparation = (50)
-                  ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
+                  SugiyamaConfiguration builder1 = SugiyamaConfiguration();
+                  builder1
+                    ..nodeSeparation = (30)
+                    ..levelSeparation = (50)
+                    ..orientation =
+                        SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
 
-                var builder = SugiyamaAlgorithm(builder1);
+                  var builder = SugiyamaAlgorithm(builder1);
 
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
-                );
-              },
-              color: Colors.green,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Text(
-                "Sugiyama",
-                style: TextStyle(fontSize: 30),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            GraphScreen(graph, builder, null)),
+                  );
+                },
+                color: Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Text(
+                  "Sugiyama",
+                  style: TextStyle(fontSize: 30),
+                ),
               ),
             ),
-          ),
           ]),
         ),
       ),

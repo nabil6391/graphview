@@ -53,7 +53,8 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
             RaisedButton(
               onPressed: () {
                 final node12 = Node(rectangleWidget(r.nextInt(100)));
-                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                var edge =
+                    graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                 print(edge);
                 graph.addEdge(edge, node12);
                 setState(() {});
@@ -122,7 +123,8 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     final node14 = Node.Id(14);
     final node15 = Node.Id(15);
     final node16 = Node.Id(16);
-    final node17 = Node(rectangleWidget(17)); //using deprecated mechanism of directly placing the widget here
+    final node17 = Node(rectangleWidget(
+        17)); //using deprecated mechanism of directly placing the widget here
     final node18 = Node(rectangleWidget(18));
     final node19 = Node(rectangleWidget(19));
     final node20 = Node(rectangleWidget(20));

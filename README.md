@@ -4,7 +4,7 @@ Get it from
 [![pub package](https://img.shields.io/pub/v/graphview.svg)](https://pub.dev/packages/graphview)
 [![pub points](https://badges.bar/graphview/pub%20points)](https://pub.dev/packages/graphview/score) 
 [![popularity](https://badges.bar/graphview/popularity)](https://pub.dev/packages/graphview/score)
-[![likes](https://badges.bar/graphview/likes)](https://pub.dev/packages/graphview/score) |
+[![likes](https://badges.bar/graphview/likes)](https://pub.dev/packages/graphview/score)
 
 Flutter GraphView is used to display data in graph structures. It can display Tree layout, Directed and Layered graph. Useful for Family Tree, Hierarchy View.
 

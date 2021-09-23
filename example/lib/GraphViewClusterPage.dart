@@ -29,8 +29,8 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
                     ..style = PaintingStyle.fill,
                   builder: (Node node) {
                     // I can decide what widget should be shown here based on the id
-                    var a =  node.key.value as int;
-                    if(a == 2) {
+                    var a = node.key.value as int;
+                    if (a == 2) {
                       return rectangWidget(a);
                     }
                     return rectangWidget(a);
@@ -65,7 +65,8 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     final c = Node.Id(3);
     final d = Node.Id(4);
     final e = Node.Id(5);
-    final f = Node(rectangWidget(6)); //using deprecated mechanism of directly placing the widget here
+    final f = Node(rectangWidget(
+        6)); //using deprecated mechanism of directly placing the widget here
     final g = Node(rectangWidget(7));
     final h = Node(rectangWidget(8));
 

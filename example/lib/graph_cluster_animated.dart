@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
-
 class GraphScreen extends StatefulWidget {
   Graph graph;
   Algorithm algorithm;
@@ -15,7 +14,6 @@ class GraphScreen extends StatefulWidget {
 }
 
 class _GraphScreenState extends State<GraphScreen> {
-
   bool animated = true;
 
   @override

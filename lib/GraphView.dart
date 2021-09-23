@@ -31,9 +31,15 @@ class GraphView extends StatefulWidget {
   final Algorithm algorithm;
   final Paint? paint;
   final NodeWidgetBuilder? builder;
-  final bool animated = false; // A later feature, had to include here to migrate to null safety
+  final bool animated =
+      false; // A later feature, had to include here to migrate to null safety
 
-  GraphView({Key? key, required this.graph, required this.algorithm, this.paint, this.builder})
+  GraphView(
+      {Key? key,
+      required this.graph,
+      required this.algorithm,
+      this.paint,
+      this.builder})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key);
@@ -70,7 +76,12 @@ class _GraphView extends MultiChildRenderObjectWidget {
   final Algorithm algorithm;
   final Paint? paint;
 
-  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder? builder})
+  _GraphView(
+      {Key? key,
+      required this.graph,
+      required this.algorithm,
+      this.paint,
+      NodeWidgetBuilder? builder})
       : assert(graph != null),
         assert(algorithm != null),
         super(key: key, children: _extractChildren(graph, builder)) {
@@ -81,7 +92,8 @@ class _GraphView extends MultiChildRenderObjectWidget {
 
   // Traverses the InlineSpan tree and depth-first collects the list of
   // child widgets that are created in WidgetSpans.
-  static List<Widget> _extractChildren(Graph graph, NodeWidgetBuilder? builder) {
+  static List<Widget> _extractChildren(
+      Graph graph, NodeWidgetBuilder? builder) {
     final result = <Widget>[];
 
     graph.nodes.forEach((node) {
@@ -96,7 +108,8 @@ class _GraphView extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderCustomLayoutBox renderObject) {
+  void updateRenderObject(
+      BuildContext context, RenderCustomLayoutBox renderObject) {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
@@ -105,7 +118,9 @@ class _GraphView extends MultiChildRenderObjectWidget {
 }
 
 class RenderCustomLayoutBox extends RenderBox
-    with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
+    with
+        ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   late Graph _graph;
   late Algorithm _algorithm;
   late Paint _paint;
@@ -224,7 +239,12 @@ class GraphAnimated extends StatefulWidget {
   final Paint? paint;
   final result = <Widget>[];
 
-  GraphAnimated({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder? builder}){
+  GraphAnimated(
+      {Key? key,
+      required this.graph,
+      required this.algorithm,
+      this.paint,
+      NodeWidgetBuilder? builder}) {
     graph.nodes.forEach((node) {
       result.add(node.data ?? builder!(node));
     });
@@ -265,14 +285,15 @@ class _GraphAnimatedState extends State<GraphAnimated> {
 
   @override
   Widget build(BuildContext context) {
-    algorithm.setDimensions(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
+    algorithm.setDimensions(
+        MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
         CustomPaint(
           size: MediaQuery.of(context).size,
-          painter: EdgeRender(algorithm, graph, Offset(20,20)),
+          painter: EdgeRender(algorithm, graph, Offset(20, 20)),
         ),
         ...List<Widget>.generate(graph.nodeCount(), (index) {
           return Positioned(

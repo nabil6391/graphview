@@ -41,14 +41,22 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       }
 
       var triangleCentroid = drawTriangle(
-          canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+          canvas,
+          edgeTrianglePaint ?? trianglePaint,
+          clippedLine[0],
+          clippedLine[1],
+          clippedLine[2],
+          clippedLine[3]);
 
-      canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]),
+      canvas.drawLine(
+          Offset(clippedLine[0], clippedLine[1]),
+          Offset(triangleCentroid[0], triangleCentroid[1]),
           edge.paint ?? paint);
     });
   }
 
-  List<double> drawTriangle(Canvas canvas, Paint paint, double x1, double y1, double x2, double y2) {
+  List<double> drawTriangle(
+      Canvas canvas, Paint paint, double x1, double y1, double x2, double y2) {
     var angle = (atan2(y2 - y1, x2 - x1) + pi);
     var x3 = (x2 + ARROW_LENGTH * cos((angle - ARROW_DEGREES)));
     var y3 = (y2 + ARROW_LENGTH * sin((angle - ARROW_DEGREES)));
@@ -68,7 +76,8 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     return triangleCentroid;
   }
 
-  List<double> clipLine(double startX, double startY, double stopX, double stopY, Node destination) {
+  List<double> clipLine(double startX, double startY, double stopX,
+      double stopY, Node destination) {
     var resultLine = List.filled(4, 0.0);
     resultLine[0] = startX;
     resultLine[1] = startY;

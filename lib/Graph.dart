@@ -32,7 +32,8 @@ class Graph {
 
     _nodes.remove(node);
 
-    _edges.removeWhere((edge) => edge.source == node || edge.destination == node);
+    _edges
+        .removeWhere((edge) => edge.source == node || edge.destination == node);
 
     notifyGraphObserver();
   }
@@ -53,7 +54,8 @@ class Graph {
       _nodes.add(edge.source);
     }
     if (_nodes.contains(edge.destination)) {
-      edge.destination = _nodes.firstWhere((element) => element == edge.destination);
+      edge.destination =
+          _nodes.firstWhere((element) => element == edge.destination);
     } else {
       _nodes.add(edge.destination);
     }
@@ -71,26 +73,35 @@ class Graph {
   void removeEdges(List<Edge> edges) => edges.forEach((it) => removeEdge(it));
 
   void removeEdgeFromPredecessor(Node? predecessor, Node? current) {
-    _edges.removeWhere((edge) => edge.source == predecessor && edge.destination == current);
+    _edges.removeWhere(
+        (edge) => edge.source == predecessor && edge.destination == current);
   }
 
   bool hasNodes() => _nodes.isNotEmpty;
 
   Edge? getEdgeBetween(Node source, Node? destination) =>
-      _edges.firstWhereOrNull((element) => element.source == source && element.destination == destination);
+      _edges.firstWhereOrNull((element) =>
+          element.source == source && element.destination == destination);
 
-  bool hasSuccessor(Node? node) => _edges.any((element) => element.source == node);
+  bool hasSuccessor(Node? node) =>
+      _edges.any((element) => element.source == node);
 
-  List<Node> successorsOf(Node? node) =>
-      _edges.where((element) => element.source == node).map((e) => e.destination).toList();
+  List<Node> successorsOf(Node? node) => _edges
+      .where((element) => element.source == node)
+      .map((e) => e.destination)
+      .toList();
 
-  bool hasPredecessor(Node node) => _edges.any((element) => element.destination == node);
+  bool hasPredecessor(Node node) =>
+      _edges.any((element) => element.destination == node);
 
-  List<Node> predecessorsOf(Node? node) =>
-      _edges.where((element) => element.destination == node).map((edge) => edge.source).toList();
+  List<Node> predecessorsOf(Node? node) => _edges
+      .where((element) => element.destination == node)
+      .map((edge) => edge.source)
+      .toList();
 
   bool contains({Node? node, Edge? edge}) =>
-      node != null && _nodes.contains(node) || edge != null && _edges.contains(edge);
+      node != null && _nodes.contains(node) ||
+      edge != null && _edges.contains(edge);
 
 //  bool contains(Edge edge) => _edges.contains(edge);
 
@@ -110,15 +121,20 @@ class Graph {
   }
 
   @Deprecated('Please use the builder and id mechanism to build the widgets')
-  Node getNodeAtUsingData(Widget data) => _nodes.firstWhere((element) => element.data == data);
+  Node getNodeAtUsingData(Widget data) =>
+      _nodes.firstWhere((element) => element.data == data);
 
-  Node getNodeUsingKey(ValueKey key) => _nodes.firstWhere((element) => element.key == key);
+  Node getNodeUsingKey(ValueKey key) =>
+      _nodes.firstWhere((element) => element.key == key);
 
-  Node getNodeUsingId(int id) => _nodes.firstWhere((element) => element.key == ValueKey(id));
+  Node getNodeUsingId(int id) =>
+      _nodes.firstWhere((element) => element.key == ValueKey(id));
 
-  List<Edge> getOutEdges(Node node) => _edges.where((element) => element.source == node).toList();
+  List<Edge> getOutEdges(Node node) =>
+      _edges.where((element) => element.source == node).toList();
 
-  List<Edge> getInEdges(Node node) => _edges.where((element) => element.destination == node).toList();
+  List<Edge> getInEdges(Node node) =>
+      _edges.where((element) => element.destination == node).toList();
 
   void notifyGraphObserver() => graphObserver.forEach((element) {
         element.notifyGraphInvalidated();
@@ -160,7 +176,8 @@ class Node {
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Node && hashCode == other.hashCode;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Node && hashCode == other.hashCode;
 
   @override
   int get hashCode => key.hashCode;
@@ -181,7 +198,8 @@ class Edge {
   Edge(this.source, this.destination, {this.key, this.paint});
 
   @override
-  bool operator ==(Object? other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
+  bool operator ==(Object? other) =>
+      identical(this, other) || other is Edge && hashCode == other.hashCode;
 
   @override
   int get hashCode => key?.hashCode ?? source.hashCode ^ destination.hashCode;
