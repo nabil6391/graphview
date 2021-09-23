@@ -12,6 +12,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(),
         body: Column(
       children: [
         Expanded(
@@ -29,8 +30,8 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
                     ..style = PaintingStyle.fill,
                   builder: (Node node) {
                     // I can decide what widget should be shown here based on the id
-                    var a =  node.key.value as int;
-                    if(a == 2) {
+                    var a = node.key!.value as int?;
+                    if (a == 2) {
                       return rectangWidget(a);
                     }
                     return rectangWidget(a);
@@ -43,7 +44,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   int n = 8;
   Random r = Random();
 
-  Widget rectangWidget(int i) {
+  Widget rectangWidget(int? i) {
     return Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -56,7 +57,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   }
 
   final Graph graph = Graph();
-  Algorithm builder;
+  late Algorithm builder;
 
   @override
   void initState() {
@@ -65,9 +66,9 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     final c = Node.Id(3);
     final d = Node.Id(4);
     final e = Node.Id(5);
-    final f = Node(rectangWidget(6)); //using deprecated mechanism of directly placing the widget here
-    final g = Node(rectangWidget(7));
-    final h = Node(rectangWidget(8));
+    final f = Node.Id(6);
+    final g = Node.Id(7);
+    final h = Node.Id(8);
 
     graph.addEdge(a, b, paint: Paint()..color = Colors.red);
     graph.addEdge(a, c);

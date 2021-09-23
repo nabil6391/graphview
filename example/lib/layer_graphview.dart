@@ -12,6 +12,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(),
         body: Column(
       mainAxisSize: MainAxisSize.max,
       children: [
@@ -52,7 +53,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
             ),
             RaisedButton(
               onPressed: () {
-                final node12 = Node(rectangleWidget(r.nextInt(100)));
+                final node12 = Node.Id(r.nextInt(100));
                 var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                 print(edge);
                 graph.addEdge(edge, node12);
@@ -77,7 +78,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                   ..style = PaintingStyle.stroke,
                 builder: (Node node) {
                   // I can decide what widget should be shown here based on the id
-                  var a = node.key.value as int;
+                  var a = node.key!.value as int?;
                   return rectangleWidget(a);
                 },
               )),
@@ -88,13 +89,13 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
 
   Random r = Random();
 
-  Widget rectangleWidget(int a) {
+  Widget rectangleWidget(int? a) {
     return Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
           boxShadow: [
-            BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+            BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
           ],
         ),
         child: Text("Node ${a}"));
@@ -122,13 +123,13 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     final node14 = Node.Id(14);
     final node15 = Node.Id(15);
     final node16 = Node.Id(16);
-    final node17 = Node(rectangleWidget(17)); //using deprecated mechanism of directly placing the widget here
-    final node18 = Node(rectangleWidget(18));
-    final node19 = Node(rectangleWidget(19));
-    final node20 = Node(rectangleWidget(20));
-    final node21 = Node(rectangleWidget(21));
-    final node22 = Node(rectangleWidget(22));
-    final node23 = Node(rectangleWidget(23));
+    final node17 = Node.Id(17);
+    final node18 = Node.Id(18);
+    final node19 = Node.Id(19);
+    final node20 = Node.Id(20);
+    final node21 = Node.Id(21);
+    final node22 = Node.Id(22);
+    final node23 = Node.Id(23);
 
     graph.addEdge(node1, node13, paint: Paint()..color = Colors.red);
     graph.addEdge(node1, node21);
@@ -164,10 +165,14 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     graph.addEdge(node19, node22);
     graph.addEdge(node21, node23);
     graph.addEdge(node22, node23);
+    graph.addEdge(node1, node22);
+    graph.addEdge(node7, node8);
 
     builder
       ..nodeSeparation = (15)
       ..levelSeparation = (15)
-      ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
+      ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
   }
 }
+
+

@@ -1,8 +1,8 @@
-import 'package:example/LayerGraphView.dart';
+import 'package:example/layer_graphview.dart';
 import 'package:flutter/material.dart';
 
-import 'GraphViewClusterPage.dart';
-import 'TreeViewPage.dart';
+import 'directed_graphview.dart';
+import 'tree_graphview.dart';
 
 void main() {
   runApp(MyApp());
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
 
 class Home extends StatelessWidget {
   const Home({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override

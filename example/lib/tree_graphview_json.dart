@@ -1,17 +1,39 @@
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
-class TreeViewPage extends StatefulWidget {
+class TreeViewPageFromJson extends StatefulWidget {
   @override
-  _TreeViewPageState createState() => _TreeViewPageState();
+  _TreeViewPageFromJsonState createState() => _TreeViewPageFromJsonState();
 }
 
-class _TreeViewPageState extends State<TreeViewPage> {
+class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
+  var json = {
+    "nodes": [
+      {"id": 1, "label": 'circle'},
+      {"id": 2, "label": 'ellipse'},
+      {"id": 3, "label": 'database'},
+      {"id": 4, "label": 'box'},
+      {"id": 5, "label": 'diamond'},
+      {"id": 6, "label": 'dot'},
+      {"id": 7, "label": 'square'},
+      {"id": 8, "label": 'triangle'},
+    ],
+    "edges": [
+      {"from": 1, "to": 2},
+      {"from": 2, "to": 3},
+      {"from": 2, "to": 4},
+      {"from": 2, "to": 5},
+      {"from": 5, "to": 6},
+      {"from": 5, "to": 7},
+      {"from": 6, "to": 8}
+    ]
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(),
         body: Column(
       mainAxisSize: MainAxisSize.max,
       children: [
@@ -61,16 +83,6 @@ class _TreeViewPageState extends State<TreeViewPage> {
                 },
               ),
             ),
-            RaisedButton(
-              onPressed: () {
-                final node12 = Node(rectangleWidget(r.nextInt(100)));
-                var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
-                print(edge);
-                graph.addEdge(edge, node12);
-                setState(() {});
-              },
-              child: Text("Add"),
-            )
           ],
         ),
         Expanded(
@@ -88,8 +100,10 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   ..style = PaintingStyle.stroke,
                 builder: (Node node) {
                   // I can decide what widget should be shown here based on the id
-                  var a = node.key.value as int;
-                  return rectangleWidget(a);
+                  var a = node.key!.value as int?;
+                  var nodes = json['nodes']!;
+                  var nodeValue = nodes.firstWhere((element) => element['id'] == a);
+                  return rectangleWidget(nodeValue['label'] as String?);
                 },
               )),
         ),
@@ -97,9 +111,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
     ));
   }
 
-  Random r = Random();
-
-  Widget rectangleWidget(int a) {
+  Widget rectangleWidget(String? a) {
     return InkWell(
       onTap: () {
         print('clicked');
@@ -109,10 +121,10 @@ class _TreeViewPageState extends State<TreeViewPage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             boxShadow: [
-              BoxShadow(color: Colors.blue[100], spreadRadius: 1),
+              BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
             ],
           ),
-          child: Text('Node ${a}')),
+          child: Text('${a}')),
     );
   }
 
@@ -121,29 +133,12 @@ class _TreeViewPageState extends State<TreeViewPage> {
 
   @override
   void initState() {
-    final node1 = Node.Id(1);
-    final node2 = Node.Id(2);
-    final node3 = Node.Id(3);
-    final node4 = Node.Id(4);
-    final node5 = Node.Id(5);
-    final node6 = Node.Id(6);
-    final node8 = Node.Id(7);
-    final node7 = Node.Id(8);
-    final node9 = Node.Id(9);
-    final node10 = Node(rectangleWidget(10));  //using deprecated mechanism of directly placing the widget here
-    final node11 = Node(rectangleWidget(11));
-    final node12 = Node(rectangleWidget(12));
-    graph.addEdge(node1, node2);
-    graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);
-    graph.addEdge(node1, node4, paint: Paint()..color = Colors.blue);
-    graph.addEdge(node2, node5);
-    graph.addEdge(node2, node6);
-    graph.addEdge(node6, node7, paint: Paint()..color = Colors.red);
-    graph.addEdge(node6, node8, paint: Paint()..color = Colors.red);
-    graph.addEdge(node4, node9);
-    graph.addEdge(node4, node10, paint: Paint()..color = Colors.black);
-    graph.addEdge(node4, node11, paint: Paint()..color = Colors.red);
-    graph.addEdge(node11, node12);
+    var edges = json['edges']!;
+    edges.forEach((element) {
+      var fromNodeId = element['from'];
+      var toNodeId = element['to'];
+      graph.addEdge(Node.Id(fromNodeId), Node.Id(toNodeId));
+    });
 
     builder
       ..siblingSeparation = (100)
