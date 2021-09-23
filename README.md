@@ -115,7 +115,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
             ),
             RaisedButton(
               onPressed: () {
-                final node12 = Node(rectangleWidget(r.nextInt(100)));
+                final node12 = Node.Id(r.nextInt(100));
                 var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                 print(edge);
                 graph.addEdge(edge, node12);
@@ -182,9 +182,9 @@ class _TreeViewPageState extends State<TreeViewPage> {
     final node8 = Node.Id(7);
     final node7 = Node.Id(8);
     final node9 = Node.Id(9);
-    final node10 = Node(rectangleWidget(10));  //using deprecated mechanism of directly placing the widget here
-    final node11 = Node(rectangleWidget(11));
-    final node12 = Node(rectangleWidget(12));
+    final node10 = Node.Id(10);  
+    final node11 = Node.Id(11);
+    final node12 = Node.Id(12);
 
     graph.addEdge(node1, node2);
     graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);

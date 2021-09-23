@@ -1,3 +1,9 @@
+## 1.0.0
+
+- Full Null Safety Support
+- Sugiyama Algorithm Performance Improvements
+- Sugiyama Algorithm TOP_BOTTOM Height Issue Solved (#48)
+
 ## 1.0.0-nullsafety.0
 
 - Null Safety Support
