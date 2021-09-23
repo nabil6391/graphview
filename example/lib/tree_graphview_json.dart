@@ -42,7 +42,8 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.siblingSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Sibling Separation"),
+                    decoration:
+                        InputDecoration(labelText: "Sibling Separation"),
                     onChanged: (text) {
                       builder.siblingSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -64,7 +65,8 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.subtreeSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Subtree separation"),
+                    decoration:
+                        InputDecoration(labelText: "Subtree separation"),
                     onChanged: (text) {
                       builder.subtreeSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -92,7 +94,8 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                   maxScale: 5.6,
                   child: GraphView(
                     graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                    algorithm: BuchheimWalkerAlgorithm(
+                        builder, TreeEdgeRenderer(builder)),
                     paint: Paint()
                       ..color = Colors.green
                       ..strokeWidth = 1
@@ -101,7 +104,8 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                       // I can decide what widget should be shown here based on the id
                       var a = node.key!.value as int?;
                       var nodes = json['nodes']!;
-                      var nodeValue = nodes.firstWhere((element) => element['id'] == a);
+                      var nodeValue =
+                          nodes.firstWhere((element) => element['id'] == a);
                       return rectangleWidget(nodeValue['label'] as String?);
                     },
                   )),

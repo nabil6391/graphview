@@ -190,7 +190,8 @@ class Home extends StatelessWidget {
 
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                  MaterialPageRoute(
+                      builder: (context) => GraphScreen(graph, builder, null)),
                 );
               },
               color: Colors.blueAccent,
@@ -243,7 +244,8 @@ class Home extends StatelessWidget {
 
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GraphScreen(graph, builder, null)),
+                  MaterialPageRoute(
+                      builder: (context) => GraphScreen(graph, builder, null)),
                 );
               },
               color: Colors.blueAccent,

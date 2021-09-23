@@ -3,9 +3,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('Graph', () {
-
     test('value should be incremented', () {
-      final graph  = Graph();
+      final graph = Graph();
       var node1 = Node.Id('One');
       var node2 = Node.Id('Two');
       var node3 = Node.Id('Three');
@@ -31,7 +30,5 @@ void main() {
 
       expect(graph.nodeCount(), 0);
     });
-
-
   });
 }

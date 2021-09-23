@@ -30,7 +30,8 @@ class _GraphScreenState extends State<GraphScreen> {
             onPressed: () async {
               setState(() {
                 final node12 = Node.Id(r.nextInt(100).toString());
-                var edge = widget.graph.getNodeAtPosition(r.nextInt(widget.graph.nodeCount()));
+                var edge = widget.graph
+                    .getNodeAtPosition(r.nextInt(widget.graph.nodeCount()));
                 print(edge);
                 widget.graph.addEdge(edge, node12);
                 setState(() {});
