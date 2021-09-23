@@ -18,7 +18,7 @@ class SugiyamaAlgorithm extends Algorithm {
     renderer = SugiyamaEdgeRenderer(nodeData, edgeData);
   }
 
-  Widget get dummyText => Text("Dummy ${nodeCount++}");
+  int get dummyId => 'Dummy ${nodeCount++}'.hashCode;
 
   bool isVertical() {
     var orientation = configuration.orientation;
@@ -147,7 +147,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
         while (iterator.moveNext()) {
           final edge = iterator.current;
-          final dummy = Node(dummyText);
+          final dummy = Node.Id(dummyId.hashCode);
           final dummyNodeData = SugiyamaNodeData();
           dummyNodeData.isDummy = true;
           dummyNodeData.layer = indexNextLayer;
