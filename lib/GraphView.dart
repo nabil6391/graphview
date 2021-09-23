@@ -68,7 +68,7 @@ class _GraphView extends MultiChildRenderObjectWidget {
   final Algorithm algorithm;
   final Paint? paint;
 
-  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder builder})
+  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder})
       : super(key: key, children: _extractChildren(graph, builder)) {
     assert(() {
       if(children.isEmpty) {
@@ -230,7 +230,7 @@ class _GraphViewAnimated extends StatefulWidget {
   final nodes = <Widget>[];
   final stepMilis = 25;
 
-  _GraphViewAnimated({Key? key, required this.graph, required this.algorithm, this.paint, NodeWidgetBuilder builder}){
+  _GraphViewAnimated({Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder}){
     graph.nodes.forEach((node) {
       nodes.add(node.data ?? builder(node));
     });
