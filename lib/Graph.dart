@@ -114,7 +114,7 @@ class Graph {
 
   Node getNodeUsingKey(ValueKey key) => _nodes.firstWhere((element) => element.key == key);
 
-  Node getNodeUsingId(int id) => _nodes.firstWhere((element) => element.key == ValueKey(id));
+  Node getNodeUsingId(dynamic id) => _nodes.firstWhere((element) => element.key == ValueKey(id));
 
   List<Edge> getOutEdges(Node node) => _edges.where((element) => element.source == node).toList();
 
@@ -131,6 +131,7 @@ class Node {
   @Deprecated('Please use the builder and id mechanism to build the widgets')
   Widget? data;
 
+  @Deprecated('Please use the Node.Id')
   Node(this.data, {Key? key}) {
     this.key = ValueKey(key?.hashCode ?? data.hashCode);
   }
