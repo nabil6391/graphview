@@ -56,7 +56,15 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   BuchheimWalkerNodeData? getNodeData(Node? node) {
-    return mNodeData[node!];
+    if (node == null) {
+      return null;
+    }
+
+    if (mNodeData[node] == null) {
+      mNodeData[node] = BuchheimWalkerNodeData();
+    }
+    
+    return mNodeData[node];
   }
 
   void firstWalk(Graph graph, Node node, int depth, int number) {
@@ -141,7 +149,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
 
     var w = getRightMostChild(graph, node);
     while (w != null) {
-      final nodeData = getNodeData(w)!;
+      final nodeData = getNodeData(w) ?? BuchheimWalkerNodeData();
 
       nodeData.prelim = nodeData.prelim + shift;
       nodeData.modifier = nodeData.modifier + shift;
@@ -206,23 +214,29 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   void setAncestor(Node? v, Node ancestor) {
-    getNodeData(v)!.ancestor = ancestor;
+    if (v != null) {
+      getNodeData(v)!.ancestor = ancestor;
+    }
   }
 
   void setModifier(Node? v, double modifier) {
-    getNodeData(v)!.modifier = modifier;
+    if (v != null) {
+      getNodeData(v)!.modifier = modifier;
+    }
   }
 
   void setThread(Node? v, Node thread) {
-    getNodeData(v)!.thread = thread;
+    if (v != null) {
+      getNodeData(v)!.thread = thread;
+    }
   }
 
   double getPrelim(Node? v) {
-    return getNodeData(v)!.prelim;
+    return getNodeData(v)?.prelim ?? 0;
   }
 
   double getModifier(Node? vip) {
-    return getNodeData(vip)!.modifier;
+    return getNodeData(vip)?.modifier ?? 0;
   }
 
   void moveSubtree(Node? wm, Node wp, double shift) {
@@ -244,11 +258,15 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   Node? nextRight(Graph graph, Node? node) {
-    return graph.hasSuccessor(node) ? getRightMostChild(graph, node) : getNodeData(node)!.thread;
+    return graph.hasSuccessor(node)
+        ? getRightMostChild(graph, node)
+        : getNodeData(node)?.thread;
   }
 
   Node? nextLeft(Graph graph, Node? node) {
-    return graph.hasSuccessor(node) ? getLeftMostChild(graph, node) : getNodeData(node)!.thread;
+    return graph.hasSuccessor(node)
+        ? getLeftMostChild(graph, node)
+        : getNodeData(node)?.thread;
   }
 
   num getSpacing(Graph graph, Node? leftNode, Node rightNode) {
