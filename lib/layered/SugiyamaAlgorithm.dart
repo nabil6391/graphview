@@ -213,12 +213,13 @@ class SugiyamaAlgorithm extends Algorithm {
         var currentLayer = layers[i];
         var previousLayer = layers[i - 1];
 
+        final positions = graph.edges
+            .where((element) => previousLayer.contains(element.source))
+            .map((e) => previousLayer.indexOf(e.source))
+            .toList();
+        positions.sort();
+
         for (var node in currentLayer) {
-          final positions = graph.edges
-              .where((element) => previousLayer.contains(element.source))
-              .map((e) => previousLayer.indexOf(e.source))
-              .toList();
-          positions.sort();
           final median = positions.length ~/ 2;
           if (positions.isNotEmpty) {
             if (positions.length == 1) {
@@ -237,22 +238,21 @@ class SugiyamaAlgorithm extends Algorithm {
           }
         }
 
-        currentLayer.sort((n1, n2) {
-          return nodeData[n1!]!.median - nodeData[n2!]!.median;
-        });
+        currentLayer.sort((n1, n2) => nodeData[n1!]!.median - nodeData[n2!]!.median);
       }
     } else {
       for (var l = 1; l < layers.length; l++) {
         var currentLayer = layers[l];
         var previousLayer = layers[l - 1];
 
+        final positions = graph.edges
+            .where((element) => previousLayer.contains(element.source))
+            .map((e) => previousLayer.indexOf(e.source))
+            .toList();
+        positions.sort();
+
         for (var i = currentLayer.length - 1; i > 1; i--) {
           final node = currentLayer[i];
-          final positions = graph.edges
-              .where((element) => previousLayer.contains(element.source))
-              .map((e) => previousLayer.indexOf(e.source))
-              .toList();
-          positions.sort();
           if (positions.isNotEmpty) {
             if (positions.length == 1) {
               nodeData[node!]!.median = positions[0];
@@ -263,9 +263,7 @@ class SugiyamaAlgorithm extends Algorithm {
           }
         }
 
-        currentLayer.sort((n1, n2) {
-          return nodeData[n1!]!.median - nodeData[n2!]!.median;
-        });
+        currentLayer.sort((n1, n2) => nodeData[n1!]!.median - nodeData[n2!]!.median);
       }
     }
   }
