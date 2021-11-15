@@ -303,12 +303,14 @@ class SugiyamaAlgorithm extends Algorithm {
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
   int crossingb(List<Node?> northernNodes, Node? n1, Node? n2) {
+    final indexMap = northernNodes.asMap().map((key, value) => MapEntry(value, key));
+
     var crossing = 0;
-    final parentNodesN1 = graph.edges.where((element) => element.destination == n1).map((e) => e.source).toList();
-    final parentNodesN2 = graph.edges.where((element) => element.destination == n2).map((e) => e.source).toList();
+    final parentNodesN1 = graph.edges.where((element) => element.destination == n1).map((e) => e.source);
+    final parentNodesN2 = graph.edges.where((element) => element.destination == n2).map((e) => e.source);
     parentNodesN2.forEach((pn2) {
-      final indexOfPn2 = northernNodes.indexOf(pn2);
-      parentNodesN1.where((it) => indexOfPn2 < northernNodes.indexOf(it)).forEach((element) {
+      final indexOfPn2 = indexMap[pn2]!;
+      parentNodesN1.where((it) => indexOfPn2 < indexMap[it]!).forEach((element) {
         crossing++;
       });
     });
@@ -863,7 +865,7 @@ class SugiyamaAlgorithm extends Algorithm {
     nodeOrdering(); //expensive operation
     coordinateAssignment(); //expensive operation
     // shiftCoordinates(shiftX, shiftY);
-    final graphSize = calculateGraphSize(this.graph);
+    //final graphSize = calculateGraphSize(this.graph);
     denormalize();
     restoreCycle();
     // shiftCoordinates(graph, shiftX, shiftY);
@@ -877,7 +879,7 @@ class SugiyamaAlgorithm extends Algorithm {
     nodeOrdering(); //expensive operation
     coordinateAssignment(); //expensive operation
     // shiftCoordinates(shiftX, shiftY);
-    final graphSize = calculateGraphSize(this.graph);
+    //final graphSize = calculateGraphSize(this.graph);
     denormalize();
     restoreCycle();
   }
