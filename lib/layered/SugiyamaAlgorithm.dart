@@ -193,17 +193,12 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void nodeOrdering() {
     final best = <List<Node?>>[...layers];
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < configuration.iterations; i++) {
       median(best, i);
       var changed = transpose(best);
       if (!changed) {
         break;
       }
-      // var c = crossing(best);
-      // var l = crossing(layers);
-      // if (c < l) {
-      //   layers = best;
-      // }
     }
   }
 
