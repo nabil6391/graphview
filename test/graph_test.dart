@@ -1,10 +1,10 @@
 import 'package:graphview/GraphView.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Graph', () {
 
-    test('value should be incremented', () {
+    test('Graph Node counts are correct', () {
       final graph  = Graph();
       var node1 = Node.Id('One');
       var node2 = Node.Id('Two');
@@ -29,7 +29,16 @@ void main() {
       graph.addEdge(node7, node8);
       graph.addEdge(node8, node9);
 
-      expect(graph.nodeCount(), 0);
+      expect(graph.nodeCount(), 9);
+
+      graph.removeNode(Node.Id('One'));
+      graph.removeNode(Node.Id('Ten'));
+
+      expect(graph.nodeCount(), 8);
+
+      graph.addNode(Node.Id('Ten'));
+
+      expect(graph.nodeCount(), 9);
     });
 
 

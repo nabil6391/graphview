@@ -13,6 +13,6 @@ dependencies:
   collection: ^1.15.0
 
 dev_dependencies:
-  test: ^1.17.12
-
+  flutter_test:
+    sdk: flutter
 flutter:
