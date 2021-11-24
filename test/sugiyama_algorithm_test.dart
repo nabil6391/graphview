@@ -3,13 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 const itemHeight = 100.0;
 const itemWidth = 100.0;
 
 void main() {
   group('Sugiyama Graph', () {
-
-    final graph  = Graph();
+    final graph = Graph();
     final node1 = Node.Id(1);
     final node2 = Node.Id(2);
     final node3 = Node.Id(3);
@@ -72,15 +72,14 @@ void main() {
     graph.addEdge(node7, node8);
 
     test('Sugiyama Node positions are correct for Top_Bottom', () {
-
-    final _configuration = SugiyamaConfiguration()
+      final _configuration = SugiyamaConfiguration()
         ..nodeSeparation = 15
         ..levelSeparation = 15
         ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
 
-     var algorithm =  SugiyamaAlgorithm(_configuration);
+      var algorithm = SugiyamaAlgorithm(_configuration);
 
-      for(var i = 0 ; i < graph.nodeCount(); i++ ) {
+      for (var i = 0; i < graph.nodeCount(); i++) {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
@@ -102,16 +101,15 @@ void main() {
       expect(size, Size(1365.0, 1135.0));
     });
 
-
     test('Sugiyama Node positions correct for LEFT_RIGHT', () {
       final _configuration = SugiyamaConfiguration()
         ..nodeSeparation = 15
         ..levelSeparation = 15
         ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
 
-      var algorithm =  SugiyamaAlgorithm(_configuration);
+      var algorithm = SugiyamaAlgorithm(_configuration);
 
-      for(var i = 0 ; i < graph.nodeCount(); i++ ) {
+      for (var i = 0; i < graph.nodeCount(); i++) {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
@@ -133,9 +131,8 @@ void main() {
       expect(size, Size(1135.0, 865.0));
     });
 
-
     test('Sugiyama Performance for unconnected nodes', () {
-      final graph  = Graph();
+      final graph = Graph();
 
       graph.addEdge(Node.Id(1), Node.Id(3));
       graph.addEdge(Node.Id(4), Node.Id(7));
@@ -145,9 +142,9 @@ void main() {
         ..levelSeparation = 15
         ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
 
-      var algorithm =  SugiyamaAlgorithm(_configuration);
+      var algorithm = SugiyamaAlgorithm(_configuration);
 
-      for(var i = 0 ; i < graph.nodeCount(); i++ ) {
+      for (var i = 0; i < graph.nodeCount(); i++) {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
@@ -164,7 +161,7 @@ void main() {
     });
 
     test('Sugiyama for a single directional graph', () {
-      final graph  = Graph();
+      final graph = Graph();
 
       graph.addEdge(Node.Id(1), Node.Id(3));
       graph.addEdge(Node.Id(3), Node.Id(4));
@@ -177,9 +174,9 @@ void main() {
         ..levelSeparation = 15
         ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
 
-      var algorithm =  SugiyamaAlgorithm(_configuration);
+      var algorithm = SugiyamaAlgorithm(_configuration);
 
-      for(var i = 0 ; i < graph.nodeCount(); i++ ) {
+      for (var i = 0; i < graph.nodeCount(); i++) {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
@@ -197,7 +194,7 @@ void main() {
     });
 
     test('Sugiyama for a cyclic graph', () {
-      final graph  = Graph();
+      final graph = Graph();
 
       graph.addEdge(Node.Id(1), Node.Id(3));
       graph.addEdge(Node.Id(3), Node.Id(4));
@@ -210,9 +207,9 @@ void main() {
         ..levelSeparation = 15
         ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
 
-      var algorithm =  SugiyamaAlgorithm(_configuration);
+      var algorithm = SugiyamaAlgorithm(_configuration);
 
-      for(var i = 0 ; i < graph.nodeCount(); i++ ) {
+      for (var i = 0; i < graph.nodeCount(); i++) {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
@@ -228,7 +225,5 @@ void main() {
 
       expect(size, Size(560.0, 157.5));
     });
-
-
   });
 }
