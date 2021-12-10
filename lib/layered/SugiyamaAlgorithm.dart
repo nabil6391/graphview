@@ -509,22 +509,28 @@ class SugiyamaAlgorithm extends Algorithm {
         var firstIndex = 0; // index of first node on layer;
         final currentLevel = layers[i];
         final nextLevel = downward ? layers[i + 1] : layers[i - 1];
+
         // for all nodes on next level;
         for (var l1 = 0; l1 < nextLevel.length; l1++) {
           final virtualTwin = virtualTwinNode(nextLevel[l1], downward);
+
           if (l1 == nextLevel.length - 1 || virtualTwin != null) {
             k1 = currentLevel.length - 1;
+
             if (virtualTwin != null) {
               k1 = positionOfNode(virtualTwin);
             }
+
             while (firstIndex <= l1) {
               final upperNeighbours = getAdjNodes(nextLevel[l1], downward);
+
               for (var currentNeighbour in upperNeighbours) {
                 /*;
                 *  XXX< 0 in first iteration is still ok for indizes starting;
                 * with 0 because no index can be smaller than 0;
                  */
                 final currentNeighbourIndex = positionOfNode(currentNeighbour);
+
                 if (currentNeighbourIndex < k0 || currentNeighbourIndex > k1) {
                   type1Conflicts[l1][currentNeighbourIndex] = true;
                 }
@@ -625,38 +631,49 @@ class SugiyamaAlgorithm extends Algorithm {
   void placeBlock(Node? v, Map<Node?, Node?> sink, Map<Node?, double> shift, Map<Node?, double?> x,
       Map<Node?, Node?> align, Map<Node?, double> blockWidth, Map<Node?, Node?> root, bool leftToRight) {
     if (x[v] == double.negativeInfinity) {
+      var nodeSeparation = configuration.nodeSeparation;
       x[v] = 0;
-      var w = v;
+      var currentNode = v;
 
       try {
         do {
           // if not first node on layer;
-          if (leftToRight && positionOfNode(w) > 0 ||
-              !leftToRight && positionOfNode(w) < layers[getLayerIndex(w)].length - 1) {
-            final pred = predecessor(w, leftToRight);
+          if (leftToRight && positionOfNode(currentNode) > 0 ||
+              !leftToRight && positionOfNode(currentNode) < layers[getLayerIndex(currentNode)].length - 1) {
+            final pred = predecessor(currentNode, leftToRight);
+            /* Get the root of u (proceeding all the way upwards in the block) */
             final u = root[pred];
+            /* Place the block of u recursively */
             placeBlock(u, sink, shift, x, align, blockWidth, root, leftToRight);
+            /* If v is its own sink yet, set its sink to the sink of u */
             if (sink[v] == v) {
               sink[v] = sink[u];
             }
+            /* If v and u have different sinks (i.e. they are in different classes),
+             * shift the sink of u so that the two blocks are separated by the
+             * preferred gap
+             */
             if (sink[v] != sink[u]) {
               if (leftToRight) {
                 shift[sink[u]] = min(shift[sink[u]]!,
-                    x[v]! - x[u]! - configuration.nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                    x[v]! - x[u]! - nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
               } else {
                 shift[sink[u]] = max(shift[sink[u]]!,
-                    x[v]! - x[u]! + configuration.nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                    x[v]! - x[u]! + nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
               }
             } else {
+              /* v and u have the same sink, i.e. they are in the same class. Make sure
+                 * that v is separated from u by at least gap.
+                 */
               if (leftToRight) {
-                x[v] = max(x[v]!, x[u]! + configuration.nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                x[v] = max(x[v]!, x[u]! + nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
               } else {
-                x[v] = min(x[v]!, x[u]! - configuration.nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                x[v] = min(x[v]!, x[u]! - nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
               }
             }
           }
-          w = align[w];
-        } while (w != v);
+          currentNode = align[currentNode];
+        } while (currentNode != v);
       } catch (e) {
         print(e);
       }
@@ -668,12 +685,14 @@ class SugiyamaAlgorithm extends Algorithm {
     final pos = positionOfNode(v);
     final rank = getLayerIndex(v);
     final level = layers[rank];
-    return (leftToRight && pos != 0 || !leftToRight && pos != level.length - 1)
-        ? level[(leftToRight) ? pos - 1 : pos + 1]
-        : null;
+    if (leftToRight && pos != 0 || !leftToRight && pos != level.length - 1) {
+      return level[(leftToRight) ? pos - 1 : pos + 1];
+    } else {
+      return null;
+    }
   }
 
-  Node? virtualTwinNode(Node? node, bool downward) {
+  Node? virtualTwinNode(Node node, bool downward) {
     if (!isLongEdgeDummy(node)) {
       return null;
     }
