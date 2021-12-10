@@ -353,8 +353,8 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     var localMaxSize = findMaxSize(filterByLevel(nodes, firstLevel));
     int? currentLevel = doesNeedReverseOrder ? firstLevel : 0;
 
-    var globalPadding = 0;
-    var localPadding = 0;
+    var globalPadding = 0.0;
+    var localPadding = 0.0;
     nodes.forEach((node) {
       final depth = getNodeData(node)?.depth;
       if (depth != currentLevel) {
@@ -363,7 +363,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
         } else {
           globalPadding += localPadding;
         }
-        localPadding = 0;
+        localPadding = 0.0;
         currentLevel = depth;
 
         localMaxSize = findMaxSize(filterByLevel(nodes, currentLevel));
