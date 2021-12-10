@@ -1,5 +1,6 @@
 import 'package:example/decision_tree_screen.dart';
 import 'package:example/layer_graphview.dart';
+import 'package:example/optimised_layer_graphview.dart';
 import 'package:example/tree_graphview_json.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
@@ -81,7 +82,25 @@ class Home extends StatelessWidget {
                       ),
                     ),
                 child: Text(
-                  "Layered View (Sugiyama)",
+                  'Layered View (Sugiyama)',
+                  style: TextStyle(fontSize: 30),
+                )),
+            SizedBox(
+              height: 20,
+            ),
+            MaterialButton(
+                color: Colors.greenAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OptimisedLayeredGraphViewPage(),
+                  ),
+                ),
+                child: Text(
+                  'Layered View (Eiglsperger)',
                   style: TextStyle(fontSize: 30),
                 )),
             SizedBox(
@@ -215,25 +234,6 @@ class Home extends StatelessWidget {
               ),
               child: Text(
                 'Decision Tree (Sugiyama)',
-                style: TextStyle(fontSize: 30),
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            MaterialButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FamilyTreeScreen()),
-                );
-              },
-              color: Colors.greenAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Text(
-                'Family Tree (Sugiyama)',
                 style: TextStyle(fontSize: 30),
               ),
             ),
