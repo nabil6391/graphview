@@ -498,15 +498,6 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   List<List<bool>> markType1Conflicts(bool downward) {
-    final type1Conflicts = <List<bool>>[];
-
-    graph.nodes.asMap().forEach((i, value) {
-      type1Conflicts.add([]);
-      graph.edges.forEach((element) {
-        type1Conflicts[i].add(false);
-      });
-    });
-
     if (layers.length >= 4) {
       int upper;
       int lower; // iteration bounds;
