@@ -5,7 +5,8 @@ class SugiyamaAlgorithm extends Algorithm {
   Map<Edge, SugiyamaEdgeData> edgeData = {};
   Set<Node> stack = {};
   Set<Node> visited = {};
-  List<List<Node?>> layers = [];
+  List<List<Node>> layers = [];
+  final type1Conflicts = <List<bool>>[];
   late Graph graph;
   SugiyamaConfiguration configuration;
 
@@ -140,7 +141,7 @@ class SugiyamaAlgorithm extends Algorithm {
       for (var node in currentLayer) {
         final edges = graph.edges
             .where((element) =>
-                element.source == node && ((nodeData[element.destination]!.layer - nodeData[node!]!.layer).abs() > 1))
+                element.source == node && ((nodeData[element.destination]!.layer - nodeData[node]!.layer).abs() > 1))
             .toList();
 
         final iterator = edges.iterator;
@@ -387,7 +388,7 @@ class SugiyamaAlgorithm extends Algorithm {
     balance(x, blockWidth);
   }
 
-  void balance(List<Map<Node?, double?>> x, List<Map<Node?, double>> blockWidth) {
+  void balance(List<Map<Node, double>> x, List<Map<Node?, double>> blockWidth) {
     final coordinates = <Node, double>{};
     var minWidth = double.infinity;
     var smallestWidthLayout = 0;
@@ -445,7 +446,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
     x.forEach((element) {
       element.forEach((key, value) {
-        if (value! < minValue!) {
+        if (value < minValue!) {
           minValue = value;
         }
       });
@@ -724,7 +725,7 @@ class SugiyamaAlgorithm extends Algorithm {
       var level = layers[i];
       var maxHeight = 0;
       level.forEach((node) {
-        var h = nodeData[node!]!.isDummy
+        var h = nodeData[node]!.isDummy
             ? 0
             : isVertical()
                 ? node.height
@@ -748,7 +749,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
       while (iterator.moveNext()) {
         final current = iterator.current;
-        if (nodeData[current!]!.isDummy) {
+        if (nodeData[current]!.isDummy) {
           final predecessor = graph.predecessorsOf(current)[0];
           final successor = graph.successorsOf(current)[0];
           final bendPoints = edgeData[graph.getEdgeBetween(predecessor, current)!]!.bendPoints;
