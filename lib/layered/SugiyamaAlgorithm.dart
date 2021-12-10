@@ -292,7 +292,7 @@ class SugiyamaAlgorithm extends Algorithm {
         for (var i = 0; i < southernNodes.length - 1; i++) {
           final v = southernNodes[i];
           final w = southernNodes[i + 1];
-          if (crossingb(northernNodes, v, w) > crossingb(northernNodes, w, v)) {
+          if (crossingCount(northernNodes, v, w) > crossingCount(northernNodes, w, v)) {
             improved = true;
             exchange(southernNodes, v, w);
             changed = true;
@@ -312,7 +312,7 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
-  int crossingb(List<Node?> northernNodes, Node? n1, Node? n2) {
+  int crossingCount(List<Node?> northernNodes, Node? n1, Node? n2) {
     // Create a map that holds the index of every [Node]. Key is the [Node] and value is the index of the item.
     final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
     final indexOf = (Node node) => indexMap[node]!;
@@ -338,7 +338,7 @@ class SugiyamaAlgorithm extends Algorithm {
       for (var i = 0; i < southernNodes.length - 2; i++) {
         final v = southernNodes[i];
         final w = southernNodes[i + 1];
-        crossinga += crossingb(northernNodes, v, w);
+        crossinga += crossingCount(northernNodes, v, w);
       }
     }
     return crossinga;
