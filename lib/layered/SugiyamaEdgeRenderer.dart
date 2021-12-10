@@ -8,6 +8,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
   var path = Path();
 
+  @override
   void render(Canvas canvas, Graph graph, Paint paint) {
     var trianglePaint = Paint()
       ..color = paint.color

@@ -33,6 +33,7 @@ class SugiyamaAlgorithm extends Algorithm {
         orientation == SugiyamaConfiguration.ORIENTATION_RIGHT_LEFT;
   }
 
+  @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     this.graph = copyGraph(graph!);
     reset();
@@ -569,7 +570,7 @@ class SugiyamaAlgorithm extends Algorithm {
       bool downward, bool leftToRight) {
     // for all Level;
 
-    var layersa = downward ? this.layers : this.layers.reversed;
+    var layersa = downward ? layers : layers.reversed;
 
     for (var layer in layersa) {
       // As with layers, we need a reversed iterator for blocks for different directions
@@ -607,7 +608,7 @@ class SugiyamaAlgorithm extends Algorithm {
       Map<Node?, double> shift, Map<Node?, double> blockWidth, Map<Node?, double?> x, bool leftToRight, bool downward) {
     // calculate class relative coordinates for all roots;
     // If the layers are traversed from right to left, a reverse iterator is needed (note that this does not change the original list of layers)
-    var layersa = leftToRight ? this.layers : this.layers.reversed;
+    var layersa = leftToRight ? layers : layers.reversed;
 
     for (var layer in layersa) {
       // As with layers, we need a reversed iterator for blocks for different directions
@@ -898,6 +899,7 @@ class SugiyamaAlgorithm extends Algorithm {
   @override
   void setFocusedNode(Node node) {}
 
+  @override
   void init(Graph? graph) {
     this.graph = copyGraph(graph!);
     reset();
@@ -913,6 +915,7 @@ class SugiyamaAlgorithm extends Algorithm {
     // shiftCoordinates(graph, shiftX, shiftY);
   }
 
+  @override
   void step(Graph? graph) {
     reset();
     initSugiyamaData();
@@ -926,6 +929,7 @@ class SugiyamaAlgorithm extends Algorithm {
     restoreCycle();
   }
 
+  @override
   void setDimensions(double width, double height) {
     // graphWidth = width;
     // graphHeight = height;

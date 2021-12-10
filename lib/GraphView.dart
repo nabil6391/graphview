@@ -101,9 +101,7 @@ class _GraphView extends MultiChildRenderObjectWidget {
 
     graph.nodes.forEach((node) {
       var widget = node.data ?? builder(node);
-      if (widget != null) {
-        result.add(widget);
-      }
+      result.add(widget);
     });
 
     return result;

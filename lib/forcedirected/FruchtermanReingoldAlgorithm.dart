@@ -21,6 +21,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
   double repulsionPercentage = REPULSION_PERCENTAGE;
   double attractionPercentage = ATTRACTION_PERCENTAGE;
 
+  @override
   EdgeRenderer? renderer;
 
   FruchtermanReingoldAlgorithm(
@@ -33,6 +34,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
     renderer = renderer ?? ArrowEdgeRenderer();
   }
 
+  @override
   void init(Graph? graph) {
     graph!.nodes.forEach((node) {
       displacement[node] = Offset.zero;
@@ -40,6 +42,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
     });
   }
 
+  @override
   void step(Graph? graph) {
     displacement = {};
     graph!.nodes.forEach((node) {
@@ -114,6 +117,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
 
   var focusedNode;
 
+  @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     var size = findBiggestSize(graph!) * graph.nodeCount();
     graphWidth = size;
@@ -277,6 +281,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
   @override
   void setFocusedNode(Node node) {}
 
+  @override
   void setDimensions(double width, double height) {
     graphWidth = width;
     graphHeight = height;
