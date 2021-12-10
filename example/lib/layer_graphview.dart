@@ -22,7 +22,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.nodeSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Node Separation"),
+                    decoration: InputDecoration(labelText: 'Node Separation'),
                     onChanged: (text) {
                       builder.nodeSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -33,7 +33,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.levelSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Level Separation"),
+                    decoration: InputDecoration(labelText: 'Level Separation'),
                     onChanged: (text) {
                       builder.levelSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -44,14 +44,14 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.orientation.toString(),
-                    decoration: InputDecoration(labelText: "Orientation"),
+                    decoration: InputDecoration(labelText: 'Orientation'),
                     onChanged: (text) {
                       builder.orientation = int.tryParse(text) ?? 100;
                       this.setState(() {});
                     },
                   ),
                 ),
-                RaisedButton(
+                ElevatedButton(
                   onPressed: () {
                     final node12 = Node.Id(r.nextInt(100));
                     var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
@@ -59,7 +59,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                     graph.addEdge(edge, node12);
                     setState(() {});
                   },
-                  child: Text("Add"),
+                  child: Text('Add'),
                 )
               ],
             ),
@@ -98,7 +98,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
             BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
           ],
         ),
-        child: Text("Node ${a}"));
+        child: Text('Node ${a}'));
   }
 
   final Graph graph = Graph();

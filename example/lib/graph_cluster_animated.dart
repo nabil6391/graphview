@@ -23,7 +23,7 @@ class _GraphScreenState extends State<GraphScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Graph Screen"),
+        title: Text('Graph Screen'),
         actions: [
           IconButton(
             icon: Icon(Icons.add),
@@ -74,7 +74,7 @@ class _GraphScreenState extends State<GraphScreen> {
             BoxShadow(color: Colors.blue, spreadRadius: 1),
           ],
         ),
-        child: Center(child: Text("Node $i")));
+        child: Center(child: Text('Node $i')));
   }
 
   Future<void> update() async {

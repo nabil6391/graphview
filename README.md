@@ -113,7 +113,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                 },
               ),
             ),
-            RaisedButton(
+            ElevatedButton(
               onPressed: () {
                 final node12 = Node.Id(r.nextInt(100));
                 var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));

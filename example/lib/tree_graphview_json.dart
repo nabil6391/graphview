@@ -8,24 +8,24 @@ class TreeViewPageFromJson extends StatefulWidget {
 
 class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
   var json = {
-    "nodes": [
-      {"id": 1, "label": 'circle'},
-      {"id": 2, "label": 'ellipse'},
-      {"id": 3, "label": 'database'},
-      {"id": 4, "label": 'box'},
-      {"id": 5, "label": 'diamond'},
-      {"id": 6, "label": 'dot'},
-      {"id": 7, "label": 'square'},
-      {"id": 8, "label": 'triangle'},
+    'nodes': [
+      {'id': 1, 'label': 'circle'},
+      {'id': 2, 'label': 'ellipse'},
+      {'id': 3, 'label': 'database'},
+      {'id': 4, 'label': 'box'},
+      {'id': 5, 'label': 'diamond'},
+      {'id': 6, 'label': 'dot'},
+      {'id': 7, 'label': 'square'},
+      {'id': 8, 'label': 'triangle'},
     ],
-    "edges": [
-      {"from": 1, "to": 2},
-      {"from": 2, "to": 3},
-      {"from": 2, "to": 4},
-      {"from": 2, "to": 5},
-      {"from": 5, "to": 6},
-      {"from": 5, "to": 7},
-      {"from": 6, "to": 8}
+    'edges': [
+      {'from': 1, 'to': 2},
+      {'from': 2, 'to': 3},
+      {'from': 2, 'to': 4},
+      {'from': 2, 'to': 5},
+      {'from': 5, 'to': 6},
+      {'from': 5, 'to': 7},
+      {'from': 6, 'to': 8}
     ]
   };
 
@@ -42,10 +42,10 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.siblingSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Sibling Separation"),
+                    decoration: InputDecoration(labelText: 'Sibling Separation'),
                     onChanged: (text) {
                       builder.siblingSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
+                      setState(() {});
                     },
                   ),
                 ),
@@ -53,10 +53,10 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.levelSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Level Separation"),
+                    decoration: InputDecoration(labelText: 'Level Separation'),
                     onChanged: (text) {
                       builder.levelSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
+                      setState(() {});
                     },
                   ),
                 ),
@@ -64,10 +64,10 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.subtreeSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Subtree separation"),
+                    decoration: InputDecoration(labelText: 'Subtree separation'),
                     onChanged: (text) {
                       builder.subtreeSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
+                      setState(() {});
                     },
                   ),
                 ),
@@ -75,10 +75,10 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.orientation.toString(),
-                    decoration: InputDecoration(labelText: "Orientation"),
+                    decoration: InputDecoration(labelText: 'Orientation'),
                     onChanged: (text) {
                       builder.orientation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
+                      setState(() {});
                     },
                   ),
                 ),

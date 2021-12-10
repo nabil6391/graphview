@@ -1,8 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:graphview/GraphView.dart';
 
 class DecisionTreeScreen extends StatefulWidget {
@@ -51,7 +49,7 @@ class _DecisionTreeScreenState extends State<DecisionTreeScreen> {
           builder: (node) {
             final id = node.key!.value as int;
 
-            final text = List.generate(id == 1 || id == 4 ? 500 : 10, (index) => "X").join(" ");
+            final text = List.generate(id == 1 || id == 4 ? 500 : 10, (index) => 'X').join(' ');
 
             return Container(
               width: 180,
@@ -60,7 +58,7 @@ class _DecisionTreeScreenState extends State<DecisionTreeScreen> {
                 border: Border.all(width: 2),
               ),
               padding: const EdgeInsets.all(16),
-              child: Text("$id $text"),
+              child: Text('$id $text'),
             );
           },
         ),

@@ -22,7 +22,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.siblingSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Sibling Separation"),
+                    decoration: InputDecoration(labelText: 'Sibling Separation'),
                     onChanged: (text) {
                       builder.siblingSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -33,7 +33,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.levelSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Level Separation"),
+                    decoration: InputDecoration(labelText: 'Level Separation'),
                     onChanged: (text) {
                       builder.levelSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -44,7 +44,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.subtreeSeparation.toString(),
-                    decoration: InputDecoration(labelText: "Subtree separation"),
+                    decoration: InputDecoration(labelText: 'Subtree separation'),
                     onChanged: (text) {
                       builder.subtreeSeparation = int.tryParse(text) ?? 100;
                       this.setState(() {});
@@ -55,14 +55,14 @@ class _TreeViewPageState extends State<TreeViewPage> {
                   width: 100,
                   child: TextFormField(
                     initialValue: builder.orientation.toString(),
-                    decoration: InputDecoration(labelText: "Orientation"),
+                    decoration: InputDecoration(labelText: 'Orientation'),
                     onChanged: (text) {
                       builder.orientation = int.tryParse(text) ?? 100;
                       this.setState(() {});
                     },
                   ),
                 ),
-                RaisedButton(
+                ElevatedButton(
                   onPressed: () {
                     final node12 = Node.Id(r.nextInt(100));
                     var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
@@ -70,7 +70,7 @@ class _TreeViewPageState extends State<TreeViewPage> {
                     graph.addEdge(edge, node12);
                     setState(() {});
                   },
-                  child: Text("Add"),
+                  child: Text('Add'),
                 )
               ],
             ),
