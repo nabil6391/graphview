@@ -162,7 +162,15 @@ class Node {
   bool operator ==(Object other) => identical(this, other) || other is Node && hashCode == other.hashCode;
 
   @override
-  int get hashCode => key.hashCode;
+  int get hashCode {
+    if (key?.value is int) {
+      return key?.value as int;
+    }
+    if (key?.value is String) {
+      return key?.value.hashCode ?? key.hashCode;
+    }
+    return key.hashCode;
+  }
 
   @override
   String toString() {
@@ -183,7 +191,7 @@ class Edge {
   bool operator ==(Object? other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
 
   @override
-  int get hashCode => key?.hashCode ?? source.hashCode ^ destination.hashCode;
+  int get hashCode => key?.hashCode ?? Object.hash(source, destination);
 }
 
 abstract class GraphObserver {
