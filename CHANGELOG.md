@@ -1,3 +1,9 @@
+## 1.1.0
+
+- Massive Sugiyama Algorithm Performance Improvements! (5x times faster)
+- Encourage usage of Node.id(int) for better performance
+- Added tests to better check regressions
+
 ## 1.0.0
 
 - Full Null Safety Support

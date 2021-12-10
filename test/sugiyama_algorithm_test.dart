@@ -226,4 +226,35 @@ void main() {
       expect(size, Size(560.0, 157.5));
     });
   });
+
+  test('Sugiyama Performance for 100 nodes to be less than 2.5s', () {
+    final graph  = Graph();
+
+    int rows = 100;
+
+    for(int i = 1; i <= rows; i++) {
+      for(int j = 1; j <= i; j++) {
+        graph.addEdge(Node.Id(i), Node.Id(j));
+      }
+    }
+
+    final _configuration = SugiyamaConfiguration()
+      ..nodeSeparation = 15
+      ..levelSeparation = 15
+      ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
+
+    var algorithm =  SugiyamaAlgorithm(_configuration);
+
+    for(var i = 0 ; i < graph.nodeCount(); i++ ) {
+      graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
+    }
+
+    var stopwatch = Stopwatch()..start();
+    var size = algorithm.run(graph, 10, 10);
+    var timeTaken = stopwatch.elapsed.inMilliseconds;
+
+    print('Timetaken $timeTaken ${graph.nodeCount()}');
+
+    expect(timeTaken < 2500, true);
+  });
 }
