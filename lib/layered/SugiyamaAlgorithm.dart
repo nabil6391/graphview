@@ -217,28 +217,33 @@ class SugiyamaAlgorithm extends Algorithm {
         var currentLayer = layers[i];
         var previousLayer = layers[i - 1];
 
+        // get the positions of adjacent vertices in adj_rank
         final positions = graph.edges
             .where((element) => previousLayer.contains(element.source))
             .map((e) => previousLayer.indexOf(e.source))
             .toList();
         positions.sort();
 
-        for (var node in currentLayer) {
-          final median = positions.length ~/ 2;
-          if (positions.isNotEmpty) {
-            if (positions.length == 1) {
-              nodeData[node!]!.median = -1;
-            } else if (positions.length == 2) {
-              nodeData[node!]!.median = (positions[0] + positions[1]) ~/ 2;
-            } else if (positions.length % 2 == 1) {
-              nodeData[node!]!.median = positions[median];
-            } else {
-              final left = positions[median - 1] - positions[0];
-              final right = positions[positions.length - 1] - positions[median];
-              if (left + right != 0) {
-                nodeData[node!]!.median = (positions[median - 1] * right + positions[median] * left) ~/ (left + right);
-              }
+        // set the position in terms of median based on adjacent values
+        if (positions.isNotEmpty) {
+          var median = positions.length ~/ 2;
+
+          if (positions.length == 1) {
+            median = -1;
+          } else if (positions.length == 2) {
+            median = (positions[0] + positions[1]) ~/ 2;
+          } else if (positions.length % 2 == 1) {
+            median = positions[median];
+          } else {
+            final left = positions[median - 1] - positions[0];
+            final right = positions[positions.length - 1] - positions[median];
+            if (left + right != 0) {
+              median = (positions[median - 1] * right + positions[median] * left) ~/ (left + right);
             }
+          }
+
+          for (var node in currentLayer) {
+            nodeData[node!]!.median = median;
           }
         }
 
@@ -255,15 +260,18 @@ class SugiyamaAlgorithm extends Algorithm {
             .toList();
         positions.sort();
 
-        for (var i = currentLayer.length - 1; i > 1; i--) {
-          final node = currentLayer[i];
-          if (positions.isNotEmpty) {
-            if (positions.length == 1) {
-              nodeData[node!]!.median = positions[0];
-            } else {
-              nodeData[node!]!.median =
-                  (positions[(positions.length / 2.0).ceil()] + positions[(positions.length / 2.0).ceil() - 1]) ~/ 2;
-            }
+        if (positions.isNotEmpty) {
+          var median = 0;
+
+          if (positions.length == 1) {
+            median = positions[0];
+          } else {
+            median = (positions[(positions.length / 2.0).ceil()] + positions[(positions.length / 2.0).ceil() - 1]) ~/ 2;
+          }
+
+          for (var i = currentLayer.length - 1; i > 1; i--) {
+            final node = currentLayer[i];
+            nodeData[node!]!.median = median;
           }
         }
 
@@ -310,8 +318,8 @@ class SugiyamaAlgorithm extends Algorithm {
     final indexOf = (Node node) => indexMap[node]!;
 
     var crossing = 0;
-    final parentNodesN1 = graph.edges.where((element) => element.destination == n1).map((e) => e.source);
-    final parentNodesN2 = graph.edges.where((element) => element.destination == n2).map((e) => e.source);
+    final Iterable<Node> parentNodesN1 = graph.predecessorsOf(n1);
+    final Iterable<Node> parentNodesN2 = graph.predecessorsOf(n2);
     parentNodesN2.forEach((pn2) {
       final indexOfPn2 = indexOf(pn2);
       parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) => crossing++);
