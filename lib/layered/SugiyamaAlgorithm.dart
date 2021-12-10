@@ -698,16 +698,7 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   int getLayerIndex(Node? node) {
-    var l = -1;
-    for (var layer in layers) {
-      l++;
-      for (var n in layer) {
-        if (node == n) {
-          return l;
-        }
-      }
-    }
-    return l; // or exception?;
+    return nodeData[node]?.layer ?? -1;
   }
 
   bool isLongEdgeDummy(Node? v) {
