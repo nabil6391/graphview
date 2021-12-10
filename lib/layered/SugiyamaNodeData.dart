@@ -5,6 +5,9 @@ class SugiyamaNodeData {
   bool isDummy = false;
   int median = -1;
   int layer = -1;
+  int position = -1;
+  List<Node> predecessorNodes = [];
+  List<Node> successorNodes = [];
 
   bool get isReversed => reversed.isNotEmpty;
 
