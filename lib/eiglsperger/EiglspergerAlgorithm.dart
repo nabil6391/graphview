@@ -1,8 +1,8 @@
 part of graphview;
 
 class EiglspergerAlgorithm extends Algorithm {
-  Map<Node, SugiyamaNodeData> nodeData = {};
-  Map<Edge, SugiyamaEdgeData> edgeData = {};
+  Map<Node, EiglspergerNodeData> nodeData = {};
+  Map<Edge, EiglspergerEdgeData> edgeData = {};
   Set<Node> stack = {};
   Set<Node> visited = {};
   List<List<Node>> layers = [];
@@ -50,13 +50,13 @@ class EiglspergerAlgorithm extends Algorithm {
   /// @param splitVertexPredicate nodes to split from Containers
   /// @param neighborFunction predecessors or successors in the Graph
   // EiglspergerSteps(
-  // Graph<LV<V>, LE<V, E>> svGraph,
-  //     LV<V>[][] layersArray,
-  // Predicate<LV<V>> joinVertexPredicate,
-  //     Predicate<LV<V>> splitVertexPredicate,
-  // Function<LE<V, E>, LV<V>> edgeSourceFunction,
-  //     Function<LE<V, E>, LV<V>> edgeTargetFunction,
-  // Function<LV<V>, Set<LV<V>>> neighborFunction,
+  // Graph<Node, LE<V, E>> svGraph,
+  //     Node[][] layersArray,
+  // Predicate<Node> joinVertexPredicate,
+  //     Predicate<Node> splitVertexPredicate,
+  // Function<LE<V, E>, Node> edgeSourceFunction,
+  //     Function<LE<V, E>, Node> edgeTargetFunction,
+  // Function<Node, Set<Node>> neighborFunction,
   //     Function<List<LE<V, E>>, List<LE<V, E>>> edgeEndpointSwapOrNot,
   // boolean transpose) {
   // this.svGraph = svGraph;
@@ -151,11 +151,11 @@ class EiglspergerAlgorithm extends Algorithm {
   void initData() {
     graph.nodes.forEach((node) {
       node.position = Offset(0, 0);
-      nodeData[node] = SugiyamaNodeData();
+      nodeData[node] = EiglspergerNodeData();
     });
 
     graph.edges.forEach((edge) {
-      edgeData[edge] = SugiyamaEdgeData();
+      edgeData[edge] = EiglspergerEdgeData();
     });
   }
 
@@ -206,23 +206,14 @@ class EiglspergerAlgorithm extends Algorithm {
       var nextLayer = layers[indexNextLayer];
 
       for (var node in currentLayer) {
-        // if (v instanceof PVertex) {
-        //   continue;
-        // }
+        if (nodeData[node]?.isPNode ?? false) {
+          continue;
+        }
         //Find edges whose whose source and destination is more than 1 layer
         final edges = graph.edges
             .where((element) =>
         element.source == node && ((nodeData[element.destination]!.layer - nodeData[node!]!.layer).abs() > 1))
             .toList();
-
-        //filter edges which already are segment edges
-        // List<LE<V, E>> outgoingMulti = new ArrayList<>();
-        // edges
-        //     .stream()
-        //     .filter(e -> !(e instanceof SegmentEdge))
-        // .filter(e -> e.getSource().equals(v))
-        // .filter(e -> Math.abs(e.getTarget().getRank() - v.getRank()) > 1)
-        // .forEach(outgoingMulti::add);
 
         final iterator = edges.iterator;
 
@@ -232,10 +223,10 @@ class EiglspergerAlgorithm extends Algorithm {
           final edge = iterator.current;
 
           // if the edge has a source and target rank that are only 2 levels apart,
-          // make just one sytheticVertex between them.
+          // make just one dummyNode between them.
           if ((nodeData[edge.destination]!.layer - nodeData[edge.source]!.layer).abs() == 2) {
             final dummy = Node.Id(dummyId.hashCode);
-            final dummyNodeData = SugiyamaNodeData();
+            final dummyNodeData = EiglspergerNodeData();
             dummyNodeData.isDummy = true;
             dummyNodeData.layer = indexNextLayer;
             nextLayer.add(dummy);
@@ -243,12 +234,12 @@ class EiglspergerAlgorithm extends Algorithm {
             dummy.size = Size(edge.source.width, 0); // calc TODO avg layer height;
 
             //replace one edge with 2 dummy edges
-            // create 2 virtual edges spanning from source -> syntheticvertex -> target
+            // create 2 virtual edges spanning from source -> dummy node -> target
             final dummyEdge1 = graph.addEdge(edge.source, dummy);
             final dummyEdge2 = graph.addEdge(dummy, edge.destination);
-            // add the 2 new edges and the new synthetic vertex, remove the original edge
-            edgeData[dummyEdge1] = SugiyamaEdgeData();
-            edgeData[dummyEdge2] = SugiyamaEdgeData();
+            // add the 2 new edges and the new dummy node, remove the original edge
+            edgeData[dummyEdge1] = EiglspergerEdgeData();
+            edgeData[dummyEdge2] = EiglspergerEdgeData();
           } else {
             // Otherwise, make a segment
             final pDummy = Node.Id(dummyId.hashCode);
@@ -258,28 +249,28 @@ class EiglspergerAlgorithm extends Algorithm {
 
             var pNodeLayer = nodeData[edge.source]!.layer + 1;
 
-            final pDummyNodeData = SugiyamaNodeData()
+            final pDummyNodeData = EiglspergerNodeData()
               ..isDummy = true
+              ..isPNode = true
               ..layer = pNodeLayer;
             nodeData[pDummy] = pDummyNodeData;
             layers[pNodeLayer].add(pDummy);
 
             var qNodeLayer = nodeData[edge.destination]!.layer - 1;
-            final qDummyNodeData = SugiyamaNodeData()
+            final qDummyNodeData = EiglspergerNodeData()
               ..isDummy = true
               ..layer = qNodeLayer;
             nodeData[qDummy] = qDummyNodeData;
             layers[qNodeLayer].add(qDummy);
 
             //Add SEgment TODO
-            // add the 3 new edges and the 2 new synthetic nodes, remove the loser edge
+            // add the 3 new edges and the 2 new dummy nodes, remove the original edge
             final dummyEdge1 = graph.addEdge(edge.source, pDummy);
             final dummyEdge2 = graph.addEdge(pDummy, qDummy); // THIS IS SEGMENT BASICALLY
             final dummyEdge3 = graph.addEdge(qDummy, edge.destination);
-            // add the 2 new edges and the new synthetic vertex, remove the original edge
-            edgeData[dummyEdge1] = SugiyamaEdgeData();
-            edgeData[dummyEdge2] = SugiyamaEdgeData();
-            edgeData[dummyEdge3] = SugiyamaEdgeData();
+            edgeData[dummyEdge1] = EiglspergerEdgeData();
+            edgeData[dummyEdge2] = EiglspergerEdgeData();
+            edgeData[dummyEdge3] = EiglspergerEdgeData();
           }
           graph.removeEdge(edge);
         }
@@ -317,7 +308,7 @@ class EiglspergerAlgorithm extends Algorithm {
 //           // create 2 virtual edges spanning from source -> syntheticvertex -> target
 //           final dummyEdge1 = graph.addEdge(edge.source, dummy);
 //           final dummyEdge2 = graph.addEdge(dummy, edge.destination);
-//           // add the 2 new edges and the new synthetic vertex, remove the original edge
+//           // add the 2 new edges and the new dummy node, remove the original edge
 //           edgeData[dummyEdge1] = SugiyamaEdgeData();
 //           edgeData[dummyEdge2] = SugiyamaEdgeData();
 //           graph.removeEdge(edge);
@@ -372,16 +363,159 @@ class EiglspergerAlgorithm extends Algorithm {
     }
   }
 
+  List<Node> scan(List<Node?> list) {
+    var outList = <Node>[];
+    for (var i = 0; i < list.length; i++) {
+      var v = list[i]!;
+      if (outList.isEmpty) {
+        if (v is ContainerNode) {
+          outList.add(v);
+        } else {
+          // outList.add(Container());
+          outList.add(v);
+        }
+      } else {
+        var previous = outList[outList.length - 1];
+        if (previous is ContainerNode && v is ContainerNode) {
+          // join them
+          var previousContainer = previous;
+          var thisContainer = v;
+          // previousContainer.join(thisContainer);
+          // previous container is already in the outList
+        } else if (!(previous is ContainerNode) && !(v is ContainerNode)) {
+          // ad empty container between 2 non containers
+          // outList.add(Container());
+          outList.add(v);
+        } else {
+          outList.add(v);
+        }
+      }
+    }
+    if (outList.isNotEmpty && !(outList[outList.length - 1] is ContainerNode)) {
+      // outList.add(Container());
+    }
+    return outList;
+  }
+
   void median(List<List<Node?>> layers, int currentIteration) {
     if (currentIteration % 2 == 0) {
-
       // stepsForward
+      //  createListOfVertices : Creates and returns a list of the vertices in a rank of the sparse layering array.<br>
+      //    * No Containers are inserted in the list, they will be inserted as needed in stepSix of the
+      //    * algorithm Arrays.stream(rank).collect(Collectors.toList());
+      //   }
+      // scan Iterate over the supplied list, creating an alternating list of vertices and Containers
+
+      List<Node>? layerEye;
+      var compactionGraph = Graph();
+
+      for (var i = 1; i < layers.length; i++) {
+        if (layerEye == null) {
+          layerEye = scan(layers[i]); // first rank
+          Node? pred;
+          for (var v in layerEye) {
+            // if (v is Container) {
+            //   var container = v as Container;
+            //   for (Segment segment in container.segments()) {
+            //     compactionGraph.addNode(segment);
+            //     if (pred != null) {
+            //       compactionGraph.addEdge(pred, segment);
+            //     }
+            //     pred = segment;
+            //   }
+            // } else if (v is SegmentVertex) {
+            //   compactionGraph.addNode(v);
+            //   if (pred != null) {
+            //     compactionGraph.addEdge(pred, v);
+            //   }
+            //   pred = v;
+            // } else {
+            //   compactionGraph.addNode(v);
+            //   if (pred != null) {
+            //     compactionGraph.addEdge(pred, v);
+            //   }
+            //   pred = v;
+            // }
+          }
+        }
+        var currentLayer = layers[i];
+
+        //step one
+        // step two
+        //step three
+        // step four
+        // step five
+
+        stepOne(layerEye);
+        // handled PVertices by merging them into containers
+        // if (log.isTraceEnabled()) {
+        //   log.trace("stepOneOut:{}", layerEye);
+        // }
+        //
+        // var currentLayer = layerEye;
+        // List<Node> downstreamLayer = EiglspergerUtil.createListOfVertices(layersArray[i + 1]);
+        // stepTwo(currentLayer, downstreamLayer);
+        // if (log.isTraceEnabled()) {
+        //   log.trace("stepTwoOut:{}", downstreamLayer);
+        // }
+        //
+        // stepThree(downstreamLayer);
+        // if (log.isTraceEnabled()) {
+        //   log.trace("stepThreeOut:{}", downstreamLayer);
+        // }
+        // EiglspergerUtil.fixIndices(downstreamLayer);
+        //
+        // stepFour(downstreamLayer, i + 1);
+        // if (log.isTraceEnabled()) {
+        //   log.trace("stepFourOut:{}", downstreamLayer);
+        // }
+        //
+        // if (transpose) {
+        //   crossCount += stepFive(currentLayer, downstreamLayer, i, i + 1);
+        // }
+        // stepSix(downstreamLayer);
+        // Node pred = null;
+        // for (var v in downstreamLayer) {
+        //   if (v is Container) {
+        //     Container<V> container = (Container<V>) v;
+        //     List<Segment<V>> segments = container.segments();
+        //     for (Segment<V> segment : segments) {
+        //       compactionGraph.addVertex(segment);
+        //       if (pred != null) {
+        //         compactionGraph.addEdge(pred, segment);
+        //       }
+        //       pred = segment;
+        //     }
+        //   } else if (v is SegmentVertex) {
+        //     SegmentVertex<V> segmentVertex = (SegmentVertex<V>) v;
+        //     Segment<V> segment = segmentVertex.getSegment();
+        //     compactionGraph.addVertex(segment);
+        //     if (pred != null) {
+        //       compactionGraph.addEdge(pred, segment);
+        //     }
+        //     pred = segment;
+        //   } else {
+        //     compactionGraph.addVertex(v);
+        //     if (pred != null) {
+        //       compactionGraph.addEdge(pred, v);
+        //     }
+        //     pred = v;
+        //   }
+        // }
+        // if (log.isTraceEnabled()) {
+        //   log.trace("stepSixOut:{}", downstreamLayer);
+        // }
+        //
+        // Arrays.sort(layersArray[i], Comparator.comparingInt(LV::getIndex));
+        // EiglspergerUtil.fixIndices(layersArray[i]);
+        // Arrays.sort(layersArray[i + 1], Comparator.comparingInt(LV::getIndex));
+        // EiglspergerUtil.fixIndices(layersArray[i + 1]);
+        // layerEye = downstreamLayer;
+      }
+
+
       // compact
       // check sweep count
-
-
-
-
 
 
       for (var i = 1; i < layers.length; i++) {
@@ -784,7 +918,15 @@ class EiglspergerAlgorithm extends Algorithm {
       // Do an initial placement for all blocks
       for (var v in nodes) {
         if (root[v] == v) {
-          placeBlock(v, sink, shift, x, align, blockWidth, root, leftToRight);
+          placeBlock(
+              v,
+              sink,
+              shift,
+              x,
+              align,
+              blockWidth,
+              root,
+              leftToRight);
         }
       }
     }
@@ -832,7 +974,15 @@ class EiglspergerAlgorithm extends Algorithm {
             /* Get the root of u (proceeding all the way upwards in the block) */
             final u = root[pred];
             /* Place the block of u recursively */
-            placeBlock(u, sink, shift, x, align, blockWidth, root, leftToRight);
+            placeBlock(
+                u,
+                sink,
+                shift,
+                x,
+                align,
+                blockWidth,
+                root,
+                leftToRight);
             /* If v is its own sink yet, set its sink to the sink of u */
             if (sink[v] == v) {
               sink[v] = sink[u];
@@ -945,8 +1095,8 @@ class EiglspergerAlgorithm extends Algorithm {
         var h = nodeData[node]!.isDummy
             ? 0
             : isVertical()
-                ? node.height
-                : node.width;
+            ? node.height
+            : node.width;
         if (h > maxHeight) {
           maxHeight = h.toInt();
         }
@@ -993,7 +1143,7 @@ class EiglspergerAlgorithm extends Algorithm {
           graph.removeEdgeFromPredecessor(current, successor);
 
           final edge = graph.addEdge(predecessor, successor);
-          final sugiyamaEdgeData = SugiyamaEdgeData();
+          final sugiyamaEdgeData = EiglspergerEdgeData();
           sugiyamaEdgeData.bendPoints = bendPoints;
           edgeData[edge] = sugiyamaEdgeData;
 
@@ -1012,7 +1162,7 @@ class EiglspergerAlgorithm extends Algorithm {
           graph.removeEdgeFromPredecessor(target, n);
           final edge = graph.addEdge(n, target);
 
-          final edgeData = SugiyamaEdgeData();
+          final edgeData = EiglspergerEdgeData();
           edgeData.bendPoints = bendPoints;
           this.edgeData[edge] = edgeData;
         });
@@ -1113,116 +1263,108 @@ class EiglspergerAlgorithm extends Algorithm {
   ///
   /// @param currentLayer the rank of nodes to operate over
   /// @return layerI modified so that PVertices are gone (added to previous containers)
-  // void stepOne(List<Node> currentLayer) {
-  //   if (kReleaseMode) log("stepOne currentLayer in", currentLayer);
+  void stepOne(List<Node> currentLayer) {
+    if (kReleaseMode) log("stepOne currentLayer in", currentLayer);
+
+    var outList = <Node>[];
+
+    for (var v in currentLayer) {
+      // for each PVertex/QVertex, add it to the list's adjacent container
+      // if v is pVertex (for forward, but q node for backward)
+      if (nodeData[v]!.isPNode) {
+        // if (outList.isEmpty) {
+        //   outList.add(Container());
+        // }
+        // var lastContainer =  outList[outList.length - 1] as Container;
+        // SegmentVertex segmentVertex = v;
+        // Segment segment = segmentVertex.getSegment();
+        // lastContainer.append(segment);
+      } else {
+        outList.add(v);
+      }
+    }
+    var scannedList = scan(outList);
+    currentLayer.clear();
+    currentLayer.addAll(scannedList);
+
+    if (kReleaseMode)
+    log("stepOne currentLayer out (merged pnodes into containers)",currentLayer);
+  }
+
+  void log(String s, dynamic a) {
+    print(s);
+  }
+
+
+/**
+ * "In the second step we compute the measure values for the elements in L i+1 . First we assign a
+ * position value pos(v i j ) to all nodes v i j in L i . pos(v i 0 ) = size(S i 0 ) and pos(v
+ * i j ) = pos(v i j−1 ) + size(S i j ) + 1. Note that the pos values are the same as they would
+ * be in the median or barycenter heuristic if each segment was represented as dummy node. Each
+ * non- empty container S i j has pos value pos(v i j −1 ) + 1. If container S i 0 is non- empty
+ * it has pos value 0. Now we assign the measure to all non-q-nodes and containers in L i+1 .
+ * The initial containers in L i+1 are the resulting containers of the first step. Recall that the
+ * measure of a container in L i+1 is its position in L i ." Assign positions to the
+ * currentLayerVertices and use those posisions to calculate the measure for nodes in the
+ * downstreamLayer. The measure here is the median of the positions of neghbor nodes
+ *
+ * @param currentLayer
+ * @param downstreamLayer
+ */
+void stepTwo(List<Node> currentLayer, List<Node> downstreamLayer) {
+  if (kReleaseMode) log("stepTwo currentLayer in", currentLayer);
+  if (kReleaseMode) log("stepTwo downstreamLayer in", downstreamLayer);
+
+  // assignPositions(currentLayer);
   //
-  //   List<Node> outList = [];
-  //
-  //   for (Node v in currentLayer) {
-  //     // for each PVertex/QVertex, add it to the list's adjacent container
-  //     // if v is pVertex (for forward, but q vertex for backward)
-  //     if (joinVertexPredicate.test(v)) {
-  //       if (outList.isEmpty) {
-  //         outList.add(Container.createSubContainer());
-  //       }
-  //       Container<V> lastContainer = (Container<V>) outList.get(outList.size() - 1);
-  //       SegmentVertex<V> segmentVertex = (SegmentVertex<V>) v;
-  //       Segment<V> segment = segmentVertex.getSegment();
-  //       lastContainer.append(segment);
-  //     } else {
-  //       outList.add(v);
-  //     }
-  //   }
-  //   List<Node> scannedList = EiglspergerUtil.scan(outList);
-  //   currentLayer.clear();
-  //   currentLayer.addAll(scannedList);
-  //
-  //   IntStream.range(0, currentLayer.size()).forEach(i -> currentLayer. get (i).setIndex(i));
-  //
-  //   if (kReleaseMode)
-  //   log("stepOne currentLayer out (merged pnodes into containers)",currentLayer);
+  // if (updatePositions(currentLayer)) {
+  //   log.error("positions were off for {}", currentLayer);
   // }
-
-void log(String s, dynamic a){
-  print(s);
+  //
+  // List<Container<V>> containersFromCurrentLayer =
+  // currentLayer
+  //     .stream()
+  //     .filter(v -> v is Container)
+  //     .map(v -> (Container<V>) v)
+  //     .filter(c -> c.size() > 0)
+  //     .collect(Collectors.toList());
+  //
+  // // add to downstreamLayer, any currentLayer containers that are not already present
+  // containersFromCurrentLayer
+  //     .stream()
+  //     .filter(c -> !downstreamLayer.contains(c))
+  //     .forEach(downstreamLayer::add);
+  //
+  // assignMeasures(downstreamLayer);
+  // if (kReleaseMode)
+  // log("stepTwo currentLayer out (computed pos for currentLayer)", currentLayer);
+  // if (kReleaseMode)
+  // log("stepTwo downstreamLayer out (computed measures for downstreamLayer)", downstreamLayer);
 }
-//
-//  <V> void updateIndices(List<Node> layer) {
-//   IntStream.range(0, layer.size()).forEach(i -> layer.get(i).setIndex(i));
-// }
-//
-// /**
-//  * "In the second step we compute the measure values for the elements in L i+1 . First we assign a
-//  * position value pos(v i j ) to all nodes v i j in L i . pos(v i 0 ) = size(S i 0 ) and pos(v
-//  * i j ) = pos(v i j−1 ) + size(S i j ) + 1. Note that the pos values are the same as they would
-//  * be in the median or barycenter heuristic if each segment was represented as dummy node. Each
-//  * non- empty container S i j has pos value pos(v i j −1 ) + 1. If container S i 0 is non- empty
-//  * it has pos value 0. Now we assign the measure to all non-q-nodes and containers in L i+1 .
-//  * The initial containers in L i+1 are the resulting containers of the first step. Recall that the
-//  * measure of a container in L i+1 is its position in L i ." Assign positions to the
-//  * currentLayerVertices and use those posisions to calculate the measure for nodes in the
-//  * downstreamLayer. The measure here is the median of the positions of neghbor nodes
-//  *
-//  * @param currentLayer
-//  * @param downstreamLayer
-//  */
-// void stepTwo(List<Node> currentLayer, List<Node> downstreamLayer) {
-//
-//   if (kReleaseMode) log("stepTwo currentLayer in", currentLayer);
-//   if (kReleaseMode) log("stepTwo downstreamLayer in", downstreamLayer);
-//
-//   assignPositions(currentLayer);
-//
-//   if (updatePositions(currentLayer)) {
-//     log.error("positions were off for {}", currentLayer);
-//   }
-//
-//   List<Container<V>> containersFromCurrentLayer =
-//   currentLayer
-//       .stream()
-//       .filter(v -> v instanceof Container)
-//       .map(v -> (Container<V>) v)
-//       .filter(c -> c.size() > 0)
-//       .collect(Collectors.toList());
-//
-//   // add to downstreamLayer, any currentLayer containers that are not already present
-//   containersFromCurrentLayer
-//       .stream()
-//       .filter(c -> !downstreamLayer.contains(c))
-//       .forEach(downstreamLayer::add);
-//
-//   assignMeasures(downstreamLayer);
-//   if (kReleaseMode)
-//   log("stepTwo currentLayer out (computed pos for currentLayer)", currentLayer);
-//   if (kReleaseMode)
-//   log("stepTwo downstreamLayer out (computed measures for downstreamLayer)", downstreamLayer);
-// }
-//
 
-//
-//
-// /**
-//  * "In the third step we calculate an initial ordering of L i+1 . We sort all non-q-nodes in L
-//  * i+1 according to their measure in a list L V . We do the same for the containers and store them
-//  * in a list L S . We use the following operations on these sorted lists:"
-//  *
-//  * <ul>
-//  *   <li>◦ l = pop(L) : Removes the first element l from list L and returns it.
-//  *   <li>◦ push(L, l) : Inserts element l at the head of list L.
-//  * </ul>
-//  *
-//  * We merge both lists in the following way: <code>
-//  * if m(head(L V )) ≤ pos(head(L S ))
-//  *    then v = pop(L V ), append(L i+1 , v)
-//  * if m(head(L V )) ≥ (pos(head(L S )) + size(head(L S )) − 1)
-//  *    then S = pop(L S ), append(L i+1 , S)
-//  * else S = pop(L S ), v = pop(L V ), k = ⌈m(v) − pos(S)⌉,
-//  *    (S 1 ,S 2 ) = split(S, k), append(L i+1 ,S 1 ), append(L i+1 , v),
-//  *    pos(S 2 ) = pos(S) + k, push(L S ,S 2 ).
-//  * </code>
-//  *
-//  * @param downstreamLayer
-//  */
+
+/**
+ * "In the third step we calculate an initial ordering of L i+1 . We sort all non-q-nodes in L
+ * i+1 according to their measure in a list L V . We do the same for the containers and store them
+ * in a list L S . We use the following operations on these sorted lists:"
+ *
+ * <ul>
+ *   <li>◦ l = pop(L) : Removes the first element l from list L and returns it.
+ *   <li>◦ push(L, l) : Inserts element l at the head of list L.
+ * </ul>
+ *
+ * We merge both lists in the following way: <code>
+ * if m(head(L V )) ≤ pos(head(L S ))
+ *    then v = pop(L V ), append(L i+1 , v)
+ * if m(head(L V )) ≥ (pos(head(L S )) + size(head(L S )) − 1)
+ *    then S = pop(L S ), append(L i+1 , S)
+ * else S = pop(L S ), v = pop(L V ), k = ⌈m(v) − pos(S)⌉,
+ *    (S 1 ,S 2 ) = split(S, k), append(L i+1 ,S 1 ), append(L i+1 , v),
+ *    pos(S 2 ) = pos(S) + k, push(L S ,S 2 ).
+ * </code>
+ *
+ * @param downstreamLayer
+ */
 // void stepThree(List<Node> downstreamLayer) {
 //
 //   if (kReleaseMode) log("stepThree downstreamLayer in", downstreamLayer);
@@ -1234,7 +1376,7 @@ void log(String s, dynamic a){
 //   for (Node v : downstreamLayer) {
 //     if (splitVertexPredicate.test(v)) { // skip any QVertex for top to bottom
 //       segmentVertexList.add((SegmentVertex<V>) v);
-//     } else if (v instanceof Container) {
+//     } else if (v is Container) {
 //       Container<V> container = (Container<V>) v;
 //       if (container.size() > 0) {
 //         listS.add(container);
@@ -1332,15 +1474,15 @@ void log(String s, dynamic a){
 //   log("stepThree downstreamLayer out (initial ordering for downstreamLayer)", downstreamLayer);
 // }
 //
-// /**
-//  * In the fourth step we place each q-node v of L i+1 according to the position of its
-//  * corresponding segment s(v). We do this by calling split(S, s(v)) for each q-node v in layer L
-//  * i+1 and placing v between the resulting containers (S denotes the container that includes
-//  * s(v)).
-//  *
-//  * @param downstreamLayer
-//  * @param downstreamRank
-//  */
+/**
+ * In the fourth step we place each q-node v of L i+1 according to the position of its
+ * corresponding segment s(v). We do this by calling split(S, s(v)) for each q-node v in layer L
+ * i+1 and placing v between the resulting containers (S denotes the container that includes
+ * s(v)).
+ *
+ * @param downstreamLayer
+ * @param downstreamRank
+ */
 // void stepFour(List<Node> downstreamLayer, int downstreamRank) {
 //   if (kReleaseMode) log("stepFour downstreamLayer in", downstreamLayer);
 //
@@ -1358,7 +1500,7 @@ void log(String s, dynamic a){
 //   List<Container<V>> containerList =
 //   downstreamLayer
 //       .stream()
-//       .filter(v -> v instanceof Container)
+//       .filter(v -> v is Container)
 //       .map(v -> (Container<V>) v)
 //       .collect(Collectors.toList());
 //   // find its container
@@ -1416,25 +1558,25 @@ void log(String s, dynamic a){
 //   log("layersArray[" + downstreamRank + "] out", layers[downstreamRank]);
 // }
 //
-// /**
-//  * In the fifth step we perform cross counting according to the scheme pro- posed by Barth et al
-//  * (see Section 1.2). During the cross counting step between layer L i and L i+1 we therefore
-//  * consider all layer elements as ver- tices. Beside the common edges between both layers, we also
-//  * have to handle virtual edges, which are imaginary edges between a container ele- ment in L i
-//  * and the resulting container elements or q-nodes in L i+1 (see Figure 5). In terms of the
-//  * common approach each virtual edge represents at least one edge between two dummy nodes. The
-//  * number of represented edges is equal to the size of the container element in L i+1 . We have to
-//  * consider this fact to get the right number of edge crossings. We therefore introduce edge
-//  * weights. The weight of a virtual edge ending with a con- tainer element S is equal to size(S).
-//  * The weight of the other edges is one. So a crossing between two edges e 1 and e 2 counts as
-//  * weight(e 1 )·weight(e 2 ) crossings.
-//  *
-//  * @param currentLayer the Li layer
-//  * @param downstreamLayer the Li+1 (or Li-1 for backwards) layer
-//  * @param currentRank the value of i for Li
-//  * @param downstreamRank the value of i+1 (or i-1 for backwards)
-//  * @return count of edge crossing weight
-//  */
+/**
+ * In the fifth step we perform cross counting according to the scheme pro- posed by Barth et al
+ * (see Section 1.2). During the cross counting step between layer L i and L i+1 we therefore
+ * consider all layer elements as ver- tices. Beside the common edges between both layers, we also
+ * have to handle virtual edges, which are imaginary edges between a container ele- ment in L i
+ * and the resulting container elements or q-nodes in L i+1 (see Figure 5). In terms of the
+ * common approach each virtual edge represents at least one edge between two dummy nodes. The
+ * number of represented edges is equal to the size of the container element in L i+1 . We have to
+ * consider this fact to get the right number of edge crossings. We therefore introduce edge
+ * weights. The weight of a virtual edge ending with a con- tainer element S is equal to size(S).
+ * The weight of the other edges is one. So a crossing between two edges e 1 and e 2 counts as
+ * weight(e 1 )·weight(e 2 ) crossings.
+ *
+ * @param currentLayer the Li layer
+ * @param downstreamLayer the Li+1 (or Li-1 for backwards) layer
+ * @param currentRank the value of i for Li
+ * @param downstreamRank the value of i+1 (or i-1 for backwards)
+ * @return count of edge crossing weight
+ */
 // int stepFive(
 //     List<Node> currentLayer, List<Node> downstreamLayer, int currentRank, int downstreamRank) {
 //   return transpose(currentLayer, downstreamLayer, currentRank, downstreamRank);
@@ -1460,7 +1602,7 @@ void log(String s, dynamic a){
 //   Set<LE<V, E>> virtualEdges = new HashSet<>();
 //   for (Node v : downstreamLayer) {
 //
-//   if (v instanceof Container) {
+//   if (v is Container) {
 //   Container<V> container = (Container<V>) v;
 //   if (container.size() > 0) {
 //   virtualEdges.add(VirtualEdge.of(container, container));
@@ -1512,7 +1654,7 @@ void log(String s, dynamic a){
 //       i -> {
 //   LE<V, E> edge = biLayerEdges.get(i);
 //   Node target = edge.getTarget();
-//   if (target instanceof Container) {
+//   if (target is Container) {
 //   return ((Container<V>) target).size();
 //   }
 //   return 1;
@@ -1585,7 +1727,7 @@ void log(String s, dynamic a){
 //   }
 //   Set<LE<V, E>> typeOneConflictEdges = new HashSet<>();
 //   for (LE<V, E> edge : biLayerEdges) {
-//     if (edge instanceof VirtualEdge) continue;
+//     if (edge is VirtualEdge) continue;
 //     List<Integer> sortedIndices = [];
 //     sortedIndices.add(edge.getSource().getIndex());
 //     sortedIndices.add(edge.getTarget().getIndex());
@@ -1635,14 +1777,14 @@ void log(String s, dynamic a){
 //   array.get(j).setIndex(j);
 //   updatePositions(array);
 // }
-//
-// /**
-//  * In the sixth step we perform a scan on L i+1 and insert empty containers between two
-//  * consecutive nodes, and call join(S 1 , S 2 ) on two consecutive containers in the list. This
-//  * ensures that L i+1 is an alternating layer.
-//  *
-//  * @param downstreamLayer
-//  */
+
+/**
+ * In the sixth step we perform a scan on L i+1 and insert empty containers between two
+ * consecutive nodes, and call join(S 1 , S 2 ) on two consecutive containers in the list. This
+ * ensures that L i+1 is an alternating layer.
+ *
+ * @param downstreamLayer
+ */
 // void stepSix(List<Node> downstreamLayer) {
 //
 //   if (kReleaseMode) log("stepSix downstreamLayer in", downstreamLayer);
@@ -1661,7 +1803,7 @@ void log(String s, dynamic a){
 //  * @return the segment for v or else v
 //  */
 // <V> Node s(Node v) {
-// if (v instanceof SegmentVertex) {
+// if (v is SegmentVertex) {
 // SegmentVertex<V> pVertex = (SegmentVertex<V>) v;
 // return pVertex.getSegment();
 // } else {
@@ -1678,14 +1820,14 @@ void log(String s, dynamic a){
 // bool changed = false;
 // int currentPos = 0;
 // for (Node v : layer) {
-// if (v instanceof Container && ((Container<V>) v).size() == 0) {
+// if (v is Container && ((Container<V>) v).size() == 0) {
 // continue;
 // }
 // if (v.getPos() != currentPos) {
 // changed = true;
 // }
 // v.setPos(currentPos);
-// if (v instanceof Container) {
+// if (v is Container) {
 // currentPos += ((Container<V>) v).size();
 // } else {
 // currentPos++;
@@ -1732,7 +1874,7 @@ void log(String s, dynamic a){
 // void assignMeasures(List<Node> downstreamLayer) {
 // downstreamLayer
 //     .stream()
-//     .filter(v -> v instanceof Container)
+//     .filter(v -> v is Container)
 //     .map(v -> (Container<V>) v)
 //     .filter(c -> c.size() > 0)
 //     .forEach(
@@ -1745,7 +1887,7 @@ void log(String s, dynamic a){
 // if (splitVertexPredicate.test(v)) { // QVertex for top to bottom
 // continue;
 // }
-// if (v instanceof Container) {
+// if (v is Container) {
 // Container<V> container = (Container<V>) v;
 // double measure = container.getPos();
 // container.setMeasure(measure);

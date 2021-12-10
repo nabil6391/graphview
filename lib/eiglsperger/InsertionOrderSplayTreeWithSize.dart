@@ -1,3 +1,4 @@
+part of graphview;
 
 /**
  * A splay tree for items that are not Comparable. There is no 'insert' method, any new item is
@@ -607,7 +608,7 @@ typedef CompareFunc = bool Function(int a, int b);
 /// Custom Splay Tree for Piece Table
 /// It can be used as normal
 /// @see splay_tree_test.dart
-class SplayTree<T> {
+abstract class SplayTree<T> {
   final CompareFunc _compareFunc;
 
   int _len = 0;
@@ -623,7 +624,7 @@ class SplayTree<T> {
   /// `n` can be null
   void _updateNode(_SplayTreeNode<T>? n) {
     n?.count =
-        (n.left?.count ?? 0) + (n.right?.count ?? 0) + (n.weight ?? 0);
+        (n.left?.count ?? 0) + (n.right?.count ?? 0) + (n.weight);
   }
 
   /// Left Rotation

@@ -25,9 +25,13 @@ part 'layered/SugiyamaConfiguration.dart';
 part 'layered/SugiyamaEdgeData.dart';
 
 part 'layered/SugiyamaEdgeRenderer.dart';
-part 'eiglsperger/EiglspergerAlgorithm.dart';
-
 part 'layered/SugiyamaNodeData.dart';
+
+part 'eiglsperger/EiglspergerAlgorithm.dart';
+part 'eiglsperger/Container.dart';
+part 'eiglsperger/InsertionOrderSplayTreeWithSize.dart';
+part 'eiglsperger/EiglspergerEdgeData.dart';
+part 'eiglsperger/EiglspergerNodeData.dart';
 
 part 'tree/BuchheimWalkerAlgorithm.dart';
 
