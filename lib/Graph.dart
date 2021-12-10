@@ -81,13 +81,11 @@ class Graph {
 
   bool hasSuccessor(Node? node) => _edges.any((element) => element.source == node);
 
-  List<Node> successorsOf(Node? node) =>
-      _edges.where((element) => element.source == node).map((e) => e.destination).toList();
+  List<Node> successorsOf(Node? node) => getOutEdges(node!).map((e) => e.destination).toList();
 
   bool hasPredecessor(Node node) => _edges.any((element) => element.destination == node);
 
-  List<Node> predecessorsOf(Node? node) =>
-      _edges.where((element) => element.destination == node).map((edge) => edge.source).toList();
+  List<Node> predecessorsOf(Node? node) => getInEdges(node!).map((edge) => edge.source).toList();
 
   bool contains({Node? node, Edge? edge}) =>
       node != null && _nodes.contains(node) || edge != null && _edges.contains(edge);
