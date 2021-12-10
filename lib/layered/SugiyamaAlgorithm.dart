@@ -384,7 +384,9 @@ class SugiyamaAlgorithm extends Algorithm {
       });
     }
 
-    // calc the layout for down/up and leftToRight/rightToLeft;
+    // Precalculate predecessor and successor info that we require during the following processes.
+    assignNeighboursInfo();
+
     for (var downward = 0; downward <= 1; downward++) {
       var isDownward = downward == 0;
       final type1Conflicts = markType1Conflicts(isDownward);
@@ -597,9 +599,7 @@ class SugiyamaAlgorithm extends Algorithm {
             }
           }
         }
-        k = leftToRight ? k + 1 : k - 1;
       }
-      i = downward ? i + 1 : i - 1;
     }
   }
 
@@ -719,8 +719,34 @@ class SugiyamaAlgorithm extends Algorithm {
     return adjNodes.isEmpty ? null : adjNodes[0];
   }
 
-  List<Node> getAdjNodes(Node? node, bool downward) {
-    return downward ? graph.predecessorsOf(node) : graph.successorsOf(node);
+  void assignNeighboursInfo() {
+    graph.edges.forEach((element) {
+      nodeData[element.source]?.successorNodes.add(element.destination);
+      nodeData[element.destination]?.predecessorNodes.add(element.source);
+    });
+
+    graph.nodes.asMap().forEach((i, value) {
+      type1Conflicts.add([]);
+      graph.edges.forEach((element) {
+        type1Conflicts[i].add(false);
+      });
+    });
+  }
+
+  List<Node> successorsOf(Node? node) {
+    return nodeData[node]?.successorNodes ?? [];
+  }
+
+  List<Node> predecessorsOf(Node? node) {
+    return nodeData[node]?.predecessorNodes ?? [];
+  }
+
+  List<Node> getAdjNodes(Node node, bool downward) {
+    if (downward) {
+      return predecessorsOf(node);
+    } else {
+      return successorsOf(node);
+    }
   }
 
   // get node index in layer;
@@ -733,7 +759,7 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   bool isLongEdgeDummy(Node? v) {
-    final successors = graph.successorsOf(v);
+    final successors = successorsOf(v);
     return nodeData[v!]!.isDummy && successors.length == 1 && nodeData[successors[0]]!.isDummy;
   }
 
