@@ -201,6 +201,14 @@ class SugiyamaAlgorithm extends Algorithm {
         break;
       }
     }
+    var pos = 0;
+    for (var currentLayer in layers) {
+      pos = 0;
+      for (var node in currentLayer) {
+        nodeData[node]!.position = pos;
+        pos++;
+      }
+    }
   }
 
   void median(List<List<Node?>> layers, int currentIteration) {
@@ -709,14 +717,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
   // get node index in layer;
   int positionOfNode(Node? node) {
-    for (var l in layers) {
-      for (var n in l) {
-        if (node == n) {
-          return l.indexOf(node);
-        }
-      }
-    }
-    return -1; // or exception?
+    return nodeData[node]?.position ?? -1;
   }
 
   int getLayerIndex(Node? node) {
