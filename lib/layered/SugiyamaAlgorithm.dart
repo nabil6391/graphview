@@ -537,6 +537,7 @@ class SugiyamaAlgorithm extends Algorithm {
               }
               firstIndex++;
             }
+
             k0 = k1;
           }
         }
@@ -549,14 +550,15 @@ class SugiyamaAlgorithm extends Algorithm {
   void verticalAlignment(Map<Node?, Node?> root, Map<Node?, Node?> align, List<List<bool>> type1Conflicts,
       bool downward, bool leftToRight) {
     // for all Level;
-    var i = downward ? 0 : layers.length - 1;
-    while (downward && i <= layers.length - 1 || !downward && i >= 0) {
-      final currentLevel = layers[i];
+
+    var layersa = downward ? this.layers : this.layers.reversed;
+
+    for (var layer in layersa) {
+      // As with layers, we need a reversed iterator for blocks for different directions
+      var nodes = leftToRight ? layer : layer.reversed;
+      // Do an initial placement for all blocks
       var r = leftToRight ? -1 : double.infinity;
-      // for all nodes on Level i (with direction leftToRight);
-      var k = leftToRight ? 0 : currentLevel.length - 1;
-      while (leftToRight && k <= currentLevel.length - 1 || !leftToRight && k >= 0) {
-        final v = currentLevel[k];
+      for (var v in nodes) {
         final adjNodes = getAdjNodes(v, downward);
         if (adjNodes.isNotEmpty) {
           // the first median;
@@ -588,35 +590,36 @@ class SugiyamaAlgorithm extends Algorithm {
   void horizontalCompactation(Map<Node?, Node?> align, Map<Node?, Node?> root, Map<Node?, Node?> sink,
       Map<Node?, double> shift, Map<Node?, double> blockWidth, Map<Node?, double?> x, bool leftToRight, bool downward) {
     // calculate class relative coordinates for all roots;
-    var i = downward ? 0 : layers.length - 1;
-    while (downward && i <= layers.length - 1 || !downward && i >= 0) {
-      final currentLevel = layers[i];
-      var j = leftToRight ? 0 : currentLevel.length - 1;
-      while (leftToRight && j <= currentLevel.length - 1 || !leftToRight && j >= 0) {
-        final v = currentLevel[j];
+    // If the layers are traversed from right to left, a reverse iterator is needed (note that this does not change the original list of layers)
+    var layersa = leftToRight ? this.layers : this.layers.reversed;
+
+    for (var layer in layersa) {
+      // As with layers, we need a reversed iterator for blocks for different directions
+      var nodes = downward ? layer : layer.reversed;
+      // Do an initial placement for all blocks
+      for (var v in nodes) {
         if (root[v] == v) {
           placeBlock(v, sink, shift, x, align, blockWidth, root, leftToRight);
         }
-        j = (leftToRight) ? j + 1 : j - 1;
       }
-      i = (downward) ? i + 1 : i - 1;
     }
+
     var d = 0;
-    i = downward ? 0 : layers.length - 1;
-    while (downward && i <= layers.length - 1 || !downward && i >= 0) {
-      final currentLevel = layers[i];
-      final v = currentLevel[leftToRight ? 0 : currentLevel.length - 1];
-      if (v == sink[root[v]]) {
-        final oldShift = shift[v]!;
-        if (oldShift < double.infinity) {
-          shift[v] = oldShift + d;
-          d += oldShift.toInt();
-        } else {
-          shift[v] = 0;
+    for (var layer in layersa) {
+      var nodes = downward ? layer : layer.reversed;
+      for (var v in nodes) {
+        if (v == sink[root[v]]) {
+          final oldShift = shift[v]!;
+          if (oldShift < double.infinity) {
+            shift[v] = oldShift + d;
+            d += oldShift.toInt();
+          } else {
+            shift[v] = 0;
+          }
         }
       }
-      i = downward ? i + 1 : i - 1;
     }
+
     // apply root coordinates for all aligned nodes;
     // (place block did this only for the roots)+;
     graph.nodes.forEach((v) {
