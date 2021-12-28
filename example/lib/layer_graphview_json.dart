@@ -93,7 +93,7 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
                 BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
               ],
             ),
-            child: Text('${a}asdasads${a}')),
+            child: Text('${a}')),
       ),
     );
   }
