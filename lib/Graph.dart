@@ -47,14 +47,21 @@ class Graph {
   }
 
   void addEdgeS(Edge edge) {
-    if (_nodes.contains(edge.source)) {
-      edge.source = _nodes.firstWhere((element) => element == edge.source);
-    } else {
+    var sourceSet = false;
+    var destinationSet = false;
+    _nodes.forEach((node) {
+      if (!sourceSet && node == edge.source) {
+        edge.source = node;
+        sourceSet = true;
+      } else if (!destinationSet && node == edge.destination) {
+        edge.destination = node;
+        destinationSet = true;
+      }
+    });
+    if (!sourceSet) {
       _nodes.add(edge.source);
     }
-    if (_nodes.contains(edge.destination)) {
-      edge.destination = _nodes.firstWhere((element) => element == edge.destination);
-    } else {
+    if (!destinationSet) {
       _nodes.add(edge.destination);
     }
 
