@@ -6,7 +6,7 @@ class SugiyamaAlgorithm extends Algorithm {
   Set<Node> stack = {};
   Set<Node> visited = {};
   List<List<Node>> layers = [];
-  final type1Conflicts = <List<bool>>[];
+  final type1Conflicts = <int, int>{};
   late Graph graph;
   SugiyamaConfiguration configuration;
 
@@ -167,22 +167,17 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   List<Node> getRootNodes(Graph graph) {
-    var roots = <Node>[];
-    graph.nodes.forEach((node) {
-      var inDegree = 0;
-      graph.edges.forEach((edge) {
-        var destination = edge.destination;
-
-        if (destination == node) {
-          inDegree++;
-        }
-      });
-      if (inDegree == 0) {
-        roots.add(node);
-        nodeData[node]!.layer = layers.length;
-      }
+    final predecessors = <Node, bool>{};
+    graph.edges.forEach((element) {
+      predecessors[element.destination] = true;
     });
-    return roots;
+
+    var roots = graph.nodes.where((node) => predecessors[node] == null);
+    roots.forEach((node) {
+      nodeData[node]?.layer = layers.length;
+    });
+
+    return roots.toList();
   }
 
   Graph copyGraph(Graph graph) {
@@ -194,6 +189,13 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void nodeOrdering() {
     final best = <List<Node>>[...layers];
+
+    // Precalculate predecessor and successor info that we require during the following processes.
+    graph.edges.forEach((element) {
+      nodeData[element.source]?.successorNodes.add(element.destination);
+      nodeData[element.destination]?.predecessorNodes.add(element.source);
+    });
+
     for (var i = 0; i < configuration.iterations; i++) {
       median(best, i);
       var changed = transpose(best);
@@ -206,7 +208,7 @@ class SugiyamaAlgorithm extends Algorithm {
     for (var currentLayer in layers) {
       pos = 0;
       for (var node in currentLayer) {
-        nodeData[node]!.position = pos;
+        nodeData[node]?.position = pos;
         pos++;
       }
     }
@@ -219,10 +221,14 @@ class SugiyamaAlgorithm extends Algorithm {
         var previousLayer = layers[i - 1];
 
         // get the positions of adjacent vertices in adj_rank
-        final positions = graph.edges
-            .where((element) => previousLayer.contains(element.source))
-            .map((e) => previousLayer.indexOf(e.source))
-            .toList();
+        var positions = <int>[];
+        var pos = 0;
+        previousLayer.forEach((node) {
+          successorsOf(node).forEach((element) {
+            positions.add(pos);
+          });
+          pos++;
+        });
         positions.sort();
 
         // set the position in terms of median based on adjacent values
@@ -255,10 +261,14 @@ class SugiyamaAlgorithm extends Algorithm {
         var currentLayer = layers[l];
         var previousLayer = layers[l - 1];
 
-        final positions = graph.edges
-            .where((element) => previousLayer.contains(element.source))
-            .map((e) => previousLayer.indexOf(e.source))
-            .toList();
+        var positions = <int>[];
+        var pos = 0;
+        previousLayer.forEach((node) {
+          successorsOf(node).forEach((element) {
+            positions.add(pos);
+          });
+          pos++;
+        });
         positions.sort();
 
         if (positions.isNotEmpty) {
@@ -285,14 +295,6 @@ class SugiyamaAlgorithm extends Algorithm {
     var changed = false;
     var improved = true;
 
-    final nodeData = <Node, List<Node>>{};
-    graph.edges.forEach((element) {
-      if (nodeData[element.destination] == null) {
-        nodeData[element.destination] = [];
-      }
-      nodeData[element.destination]?.add(element.source);
-    });
-
     while (improved) {
       improved = false;
       for (var l = 0; l < layers.length - 1; l++) {
@@ -305,7 +307,7 @@ class SugiyamaAlgorithm extends Algorithm {
         for (var i = 0; i < southernNodes.length - 1; i++) {
           final v = southernNodes[i];
           final w = southernNodes[i + 1];
-          if (crossingCount(indexMap, v, w, nodeData) > crossingCount(indexMap, w, v, nodeData)) {
+          if (crossingCount(indexMap, v, w) > crossingCount(indexMap, w, v)) {
             improved = true;
             exchange(southernNodes, v, w);
             changed = true;
@@ -325,11 +327,11 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
-  int crossingCount(HashMap<Node, int> northernNodes, Node? n1, Node? n2, Map<Node, Iterable<Node>> nodeData) {
+  int crossingCount(HashMap<Node, int> northernNodes, Node? n1, Node? n2) {
     final indexOf = (Node node) => northernNodes[node]!;
     var crossing = 0;
-    final parentNodesN1 = nodeData[n1]!;
-    final parentNodesN2 = nodeData[n2]!;
+    final parentNodesN1 = nodeData[n1]!.predecessorNodes;
+    final parentNodesN2 = nodeData[n2]!.predecessorNodes;
     parentNodesN2.forEach((pn2) {
       final indexOfPn2 = indexOf(pn2);
       parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) {
@@ -343,19 +345,19 @@ class SugiyamaAlgorithm extends Algorithm {
   int crossing(List<List<Node>> layers) {
     var crossinga = 0;
 
-    // for (var l = 0; l < layers.length - 1; l++) {
-    //   final southernNodes = layers[l];
-    //   final northernNodes = layers[l + 1];
-    //
-    //   final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
-    //
-    //   for (var i = 0; i < southernNodes.length - 2; i++) {
-    //     final v = southernNodes[i];
-    //     final w = southernNodes[i + 1];
-    //
-    //     crossinga += crossingCount(indexMap, v, w);
-    //   }
-    // }
+    for (var l = 0; l < layers.length - 1; l++) {
+      final southernNodes = layers[l];
+      final northernNodes = layers[l + 1];
+
+      final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
+
+      for (var i = 0; i < southernNodes.length - 2; i++) {
+        final v = southernNodes[i];
+        final w = southernNodes[i + 1];
+
+        crossinga += crossingCount(indexMap, v, w);
+      }
+    }
     return crossinga;
   }
 
@@ -398,9 +400,6 @@ class SugiyamaAlgorithm extends Algorithm {
         blockWidth[i][n] = 0;
       });
     }
-
-    // Precalculate predecessor and successor info that we require during the following processes.
-    assignNeighboursInfo();
 
     for (var downward = 0; downward <= 1; downward++) {
       var isDownward = downward == 0;
@@ -511,7 +510,7 @@ class SugiyamaAlgorithm extends Algorithm {
     });
   }
 
-  List<List<bool>> markType1Conflicts(bool downward) {
+  Map<int, int> markType1Conflicts(bool downward) {
     if (layers.length >= 4) {
       int upper;
       int lower; // iteration bounds;
@@ -556,7 +555,7 @@ class SugiyamaAlgorithm extends Algorithm {
                 final currentNeighbourIndex = positionOfNode(currentNeighbour);
 
                 if (currentNeighbourIndex < k0 || currentNeighbourIndex > k1) {
-                  type1Conflicts[l1][currentNeighbourIndex] = true;
+                  type1Conflicts[l1] = currentNeighbourIndex;
                 }
               }
               firstIndex++;
@@ -571,7 +570,7 @@ class SugiyamaAlgorithm extends Algorithm {
     return type1Conflicts;
   }
 
-  void verticalAlignment(Map<Node?, Node?> root, Map<Node?, Node?> align, List<List<bool>> type1Conflicts,
+  void verticalAlignment(Map<Node?, Node?> root, Map<Node?, Node?> align, Map<int,int> type1Conflicts,
       bool downward, bool leftToRight) {
     // for all Level;
 
@@ -596,7 +595,7 @@ class SugiyamaAlgorithm extends Algorithm {
             if (align[v] == v
                 // if segment (u,v) not marked by type1 conflicts AND ...;
                 &&
-                !type1Conflicts[positionOfNode(v)][posM] &&
+                type1Conflicts[positionOfNode(v)] != posM &&
                 (leftToRight && r < posM || !leftToRight && r > posM)) {
               align[m] = v;
               root[v] = root[m];
@@ -704,20 +703,6 @@ class SugiyamaAlgorithm extends Algorithm {
         print(e);
       }
     }
-  }
-
-  void assignNeighboursInfo() {
-    graph.edges.forEach((element) {
-      nodeData[element.source]?.successorNodes.add(element.destination);
-      nodeData[element.destination]?.predecessorNodes.add(element.source);
-    });
-
-    graph.nodes.asMap().forEach((i, value) {
-      type1Conflicts.add([]);
-      graph.edges.forEach((element) {
-        type1Conflicts[i].add(false);
-      });
-    });
   }
 
   List<Node> successorsOf(Node? node) {
