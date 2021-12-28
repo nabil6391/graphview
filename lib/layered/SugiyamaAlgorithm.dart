@@ -142,8 +142,7 @@ class SugiyamaAlgorithm extends Algorithm {
       for (var node in currentLayer) {
         final edges = graph.edges
             .where((element) =>
-                element.source == node && ((nodeData[element.destination]!.layer - nodeData[node]!.layer).abs() > 1))
-            .toList();
+                element.source == node && (nodeData[element.destination]!.layer - nodeData[node]!.layer).abs() > 1).toList();
 
         final iterator = edges.iterator;
 
@@ -194,7 +193,7 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   void nodeOrdering() {
-    final best = <List<Node?>>[...layers];
+    final best = <List<Node>>[...layers];
     for (var i = 0; i < configuration.iterations; i++) {
       median(best, i);
       var changed = transpose(best);
@@ -282,19 +281,31 @@ class SugiyamaAlgorithm extends Algorithm {
     }
   }
 
-  bool transpose(List<List<Node?>> layers) {
+  bool transpose(List<List<Node>> layers) {
     var changed = false;
     var improved = true;
+
+    final nodeData = <Node, List<Node>>{};
+    graph.edges.forEach((element) {
+      if (nodeData[element.destination] == null) {
+        nodeData[element.destination] = [];
+      }
+      nodeData[element.destination]?.add(element.source);
+    });
+
     while (improved) {
       improved = false;
       for (var l = 0; l < layers.length - 1; l++) {
         final northernNodes = layers[l];
         final southernNodes = layers[l + 1];
 
+        // Create a map that holds the index of every [Node]. Key is the [Node] and value is the index of the item.
+        final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
+
         for (var i = 0; i < southernNodes.length - 1; i++) {
           final v = southernNodes[i];
           final w = southernNodes[i + 1];
-          if (crossingCount(northernNodes, v, w) > crossingCount(northernNodes, w, v)) {
+          if (crossingCount(indexMap, v, w, nodeData) > crossingCount(indexMap, w, v, nodeData)) {
             improved = true;
             exchange(southernNodes, v, w);
             changed = true;
@@ -305,7 +316,7 @@ class SugiyamaAlgorithm extends Algorithm {
     return changed;
   }
 
-  void exchange(List<Node?> nodes, Node? v, Node? w) {
+  void exchange(List<Node> nodes, Node v, Node w) {
     var i = nodes.indexOf(v);
     var j = nodes.indexOf(w);
     var temp = nodes[i];
@@ -314,35 +325,37 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
-  int crossingCount(List<Node?> northernNodes, Node? n1, Node? n2) {
-    // Create a map that holds the index of every [Node]. Key is the [Node] and value is the index of the item.
-    final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
-    final indexOf = (Node node) => indexMap[node]!;
-
+  int crossingCount(HashMap<Node, int> northernNodes, Node? n1, Node? n2, Map<Node, Iterable<Node>> nodeData) {
+    final indexOf = (Node node) => northernNodes[node]!;
     var crossing = 0;
-    final Iterable<Node> parentNodesN1 = graph.predecessorsOf(n1);
-    final Iterable<Node> parentNodesN2 = graph.predecessorsOf(n2);
+    final parentNodesN1 = nodeData[n1]!;
+    final parentNodesN2 = nodeData[n2]!;
     parentNodesN2.forEach((pn2) {
       final indexOfPn2 = indexOf(pn2);
-      parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) => crossing++);
+      parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) {
+        crossing++;
+      });
     });
 
     return crossing;
   }
 
-  int crossing(List<List<Node?>> layers) {
+  int crossing(List<List<Node>> layers) {
     var crossinga = 0;
 
-    for (var l = 0; l < layers.length - 1; l++) {
-      final southernNodes = layers[l];
-      final northernNodes = layers[l + 1];
-
-      for (var i = 0; i < southernNodes.length - 2; i++) {
-        final v = southernNodes[i];
-        final w = southernNodes[i + 1];
-        crossinga += crossingCount(northernNodes, v, w);
-      }
-    }
+    // for (var l = 0; l < layers.length - 1; l++) {
+    //   final southernNodes = layers[l];
+    //   final northernNodes = layers[l + 1];
+    //
+    //   final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
+    //
+    //   for (var i = 0; i < southernNodes.length - 2; i++) {
+    //     final v = southernNodes[i];
+    //     final w = southernNodes[i + 1];
+    //
+    //     crossinga += crossingCount(indexMap, v, w);
+    //   }
+    // }
     return crossinga;
   }
 
