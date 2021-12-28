@@ -202,6 +202,7 @@ class SugiyamaAlgorithm extends Algorithm {
         break;
       }
     }
+    // Set the final position of the nodes in memory
     var pos = 0;
     for (var currentLayer in layers) {
       pos = 0;
@@ -613,19 +614,20 @@ class SugiyamaAlgorithm extends Algorithm {
     }
 
     var d = 0;
-    for (var layer in layersa) {
-      var nodes = downward ? layer : layer.reversed;
-      for (var v in nodes) {
-        if (v == sink[root[v]]) {
-          final oldShift = shift[v]!;
-          if (oldShift < double.infinity) {
-            shift[v] = oldShift + d;
-            d += oldShift.toInt();
-          } else {
-            shift[v] = 0;
-          }
+    var i = downward ? 0 : layers.length - 1;
+    while (downward && i <= layers.length - 1 || !downward && i >= 0) {
+      final currentLevel = layers[i];
+      final v = currentLevel[leftToRight ? 0 : currentLevel.length - 1];
+      if (v == sink[root[v]]) {
+        final oldShift = shift[v]!;
+        if (oldShift < double.infinity) {
+          shift[v] = oldShift + d;
+          d += oldShift.toInt();
+        } else {
+          shift[v] = 0;
         }
       }
+      i = downward ? i + 1 : i - 1;
     }
 
     // apply root coordinates for all aligned nodes;
@@ -691,26 +693,6 @@ class SugiyamaAlgorithm extends Algorithm {
     }
   }
 
-  // predecessor;
-  Node? predecessor(Node? v, bool leftToRight) {
-    final pos = positionOfNode(v);
-    final rank = getLayerIndex(v);
-    final level = layers[rank];
-    if (leftToRight && pos != 0 || !leftToRight && pos != level.length - 1) {
-      return level[(leftToRight) ? pos - 1 : pos + 1];
-    } else {
-      return null;
-    }
-  }
-
-  Node? virtualTwinNode(Node node, bool downward) {
-    if (!isLongEdgeDummy(node)) {
-      return null;
-    }
-    final adjNodes = getAdjNodes(node, downward);
-    return adjNodes.isEmpty ? null : adjNodes[0];
-  }
-
   void assignNeighboursInfo() {
     graph.edges.forEach((element) {
       nodeData[element.source]?.successorNodes.add(element.destination);
@@ -739,6 +721,26 @@ class SugiyamaAlgorithm extends Algorithm {
     } else {
       return successorsOf(node);
     }
+  }
+
+  // predecessor;
+  Node? predecessor(Node? v, bool leftToRight) {
+    final pos = positionOfNode(v);
+    final rank = getLayerIndex(v);
+    final level = layers[rank];
+    if (leftToRight && pos != 0 || !leftToRight && pos != level.length - 1) {
+      return level[(leftToRight) ? pos - 1 : pos + 1];
+    } else {
+      return null;
+    }
+  }
+
+  Node? virtualTwinNode(Node node, bool downward) {
+    if (!isLongEdgeDummy(node)) {
+      return null;
+    }
+    final adjNodes = getAdjNodes(node, downward);
+    return adjNodes.isEmpty ? null : adjNodes[0];
   }
 
   // get node index in layer;
