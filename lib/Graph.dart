@@ -47,14 +47,21 @@ class Graph {
   }
 
   void addEdgeS(Edge edge) {
-    if (_nodes.contains(edge.source)) {
-      edge.source = _nodes.firstWhere((element) => element == edge.source);
-    } else {
+    var sourceSet = false;
+    var destinationSet = false;
+    _nodes.forEach((node) {
+      if (!sourceSet && node == edge.source) {
+        edge.source = node;
+        sourceSet = true;
+      } else if (!destinationSet && node == edge.destination) {
+        edge.destination = node;
+        destinationSet = true;
+      }
+    });
+    if (!sourceSet) {
       _nodes.add(edge.source);
     }
-    if (_nodes.contains(edge.destination)) {
-      edge.destination = _nodes.firstWhere((element) => element == edge.destination);
-    } else {
+    if (!destinationSet) {
       _nodes.add(edge.destination);
     }
 
@@ -121,6 +128,20 @@ class Graph {
   void notifyGraphObserver() => graphObserver.forEach((element) {
         element.notifyGraphInvalidated();
       });
+
+  String toJson() {
+    var jsonString = {
+      'nodes': [
+       ..._nodes.map((e) => e.hashCode.toString())
+      ],
+      'edges': [
+        ..._edges.map((e) =>   {'from': e.source.hashCode.toString(), 'to': e.destination.hashCode.toString()})
+      ]
+    };
+
+    return json.encode(jsonString);
+  }
+
 }
 
 class Node {
@@ -163,13 +184,7 @@ class Node {
 
   @override
   int get hashCode {
-    if (key?.value is int) {
-      return key?.value as int;
-    }
-    if (key?.value is String) {
-      return key?.value.hashCode ?? key.hashCode;
-    }
-    return key.hashCode;
+    return key?.value.hashCode ?? key.hashCode;
   }
 
   @override

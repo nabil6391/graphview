@@ -7,6 +7,7 @@ import 'package:graphview/GraphView.dart';
 
 import 'directed_graphview.dart';
 import 'graph_cluster_animated.dart';
+import 'layer_graphview_json.dart';
 import 'tree_graphview.dart';
 
 void main() {
@@ -119,6 +120,24 @@ class Home extends StatelessWidget {
                     ),
                 child: Text(
                   'Tree View From Json(BuchheimWalker)',
+                  style: TextStyle(fontSize: 30),
+                )),
+            SizedBox(
+              height: 20,
+            ),
+            MaterialButton(
+                color: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LayerGraphPageFromJson(),
+                  ),
+                ),
+                child: Text(
+                  'Layer Graph From Json ',
                   style: TextStyle(fontSize: 30),
                 )),
             SizedBox(

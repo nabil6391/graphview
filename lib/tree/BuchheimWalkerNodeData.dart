@@ -9,4 +9,6 @@ class BuchheimWalkerNodeData {
   double modifier = 0.toDouble();
   double shift = 0.toDouble();
   double change = 0.toDouble();
+  List<Node> predecessorNodes = [];
+  List<Node> successorNodes = [];
 }

@@ -1,3 +1,8 @@
+## 1.1.1
+
+- Fixed bug for SugiyamaAlgorithm where horizontal placement was overlapping
+- Buchheim Algorithm Performance Improvements
+
 ## 1.1.0
 
 - Massive Sugiyama Algorithm Performance Improvements! (5x times faster)
