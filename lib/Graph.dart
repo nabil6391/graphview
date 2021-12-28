@@ -177,13 +177,7 @@ class Node {
 
   @override
   int get hashCode {
-    if (key?.value is int) {
-      return key?.value as int;
-    }
-    if (key?.value is String) {
-      return key?.value.hashCode ?? key.hashCode;
-    }
-    return key.hashCode;
+    return key?.value.hashCode ?? key.hashCode;
   }
 
   @override
