@@ -319,22 +319,17 @@ class EiglspergerAlgorithm extends Algorithm {
   }
 
   List<Node> getRootNodes(Graph graph) {
-    var roots = <Node>[];
-    graph.nodes.forEach((node) {
-      var inDegree = 0;
-      graph.edges.forEach((edge) {
-        var destination = edge.destination;
-
-        if (destination == node) {
-          inDegree++;
-        }
-      });
-      if (inDegree == 0) {
-        roots.add(node);
-        nodeData[node]!.layer = layers.length;
-      }
+    final predecessors = <Node, bool>{};
+    graph.edges.forEach((element) {
+      predecessors[element.destination] = true;
     });
-    return roots;
+
+    var roots = graph.nodes.where((node) => predecessors[node] == null);
+    roots.forEach((node) {
+      nodeData[node]?.layer = layers.length;
+    });
+
+    return roots.toList();
   }
 
   Graph copyGraph(Graph graph) {
@@ -345,7 +340,14 @@ class EiglspergerAlgorithm extends Algorithm {
   }
 
   void nodeOrdering() {
-    final best = <List<Node?>>[...layers];
+    final best = <List<Node>>[...layers];
+
+    // Precalculate predecessor and successor info that we require during the following processes.
+    graph.edges.forEach((element) {
+      nodeData[element.source]?.successorNodes.add(element.destination);
+      nodeData[element.destination]?.predecessorNodes.add(element.source);
+    });
+
     for (var i = 0; i < configuration.iterations; i++) {
       median(best, i);
       var changed = transpose(best);
@@ -353,11 +355,12 @@ class EiglspergerAlgorithm extends Algorithm {
         break;
       }
     }
+    // Set the final position of the nodes in memory
     var pos = 0;
     for (var currentLayer in layers) {
       pos = 0;
       for (var node in currentLayer) {
-        nodeData[node]!.position = pos;
+        nodeData[node]?.position = pos;
         pos++;
       }
     }
@@ -522,10 +525,14 @@ class EiglspergerAlgorithm extends Algorithm {
         var currentLayer = layers[i];
         var previousLayer = layers[i - 1];
         // get the positions of adjacent vertices in adj_rank
-        final positions = graph.edges
-            .where((element) => previousLayer.contains(element.source))
-            .map((e) => previousLayer.indexOf(e.source))
-            .toList();
+        var positions = <int>[];
+        var pos = 0;
+        previousLayer.forEach((node) {
+          successorsOf(node).forEach((element) {
+            positions.add(pos);
+          });
+          pos++;
+        });
         positions.sort();
 
         // set the position in terms of median based on adjacent values
@@ -558,10 +565,15 @@ class EiglspergerAlgorithm extends Algorithm {
         var currentLayer = layers[l];
         var previousLayer = layers[l - 1];
 
-        final positions = graph.edges
-            .where((element) => previousLayer.contains(element.source))
-            .map((e) => previousLayer.indexOf(e.source))
-            .toList();
+        // get the positions of adjacent vertices in adj_rank
+        var positions = <int>[];
+        var pos = 0;
+        previousLayer.forEach((node) {
+          successorsOf(node).forEach((element) {
+            positions.add(pos);
+          });
+          pos++;
+        });
         positions.sort();
 
         if (positions.isNotEmpty) {
@@ -584,19 +596,23 @@ class EiglspergerAlgorithm extends Algorithm {
     }
   }
 
-  bool transpose(List<List<Node?>> layers) {
+  bool transpose(List<List<Node>> layers) {
     var changed = false;
     var improved = true;
+
     while (improved) {
       improved = false;
       for (var l = 0; l < layers.length - 1; l++) {
         final northernNodes = layers[l];
         final southernNodes = layers[l + 1];
 
+        // Create a map that holds the index of every [Node]. Key is the [Node] and value is the index of the item.
+        final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
+
         for (var i = 0; i < southernNodes.length - 1; i++) {
           final v = southernNodes[i];
           final w = southernNodes[i + 1];
-          if (crossingCount(northernNodes, v, w) > crossingCount(northernNodes, w, v)) {
+          if (crossingCount(indexMap, v, w) > crossingCount(indexMap, w, v)) {
             improved = true;
             exchange(southernNodes, v, w);
             changed = true;
@@ -607,7 +623,7 @@ class EiglspergerAlgorithm extends Algorithm {
     return changed;
   }
 
-  void exchange(List<Node?> nodes, Node? v, Node? w) {
+  void exchange(List<Node> nodes, Node v, Node w) {
     var i = nodes.indexOf(v);
     var j = nodes.indexOf(w);
     var temp = nodes[i];
@@ -616,33 +632,35 @@ class EiglspergerAlgorithm extends Algorithm {
   }
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
-  int crossingCount(List<Node?> northernNodes, Node? n1, Node? n2) {
-    // Create a map that holds the index of every [Node]. Key is the [Node] and value is the index of the item.
-    final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
-    final indexOf = (Node node) => indexMap[node]!;
-
+  int crossingCount(HashMap<Node, int> northernNodes, Node? n1, Node? n2) {
+    final indexOf = (Node node) => northernNodes[node]!;
     var crossing = 0;
-    final Iterable<Node> parentNodesN1 = graph.predecessorsOf(n1);
-    final Iterable<Node> parentNodesN2 = graph.predecessorsOf(n2);
+    final parentNodesN1 = nodeData[n1]!.predecessorNodes;
+    final parentNodesN2 = nodeData[n2]!.predecessorNodes;
     parentNodesN2.forEach((pn2) {
       final indexOfPn2 = indexOf(pn2);
-      parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) => crossing++);
+      parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) {
+        crossing++;
+      });
     });
 
     return crossing;
   }
 
-  int crossing(List<List<Node?>> layers) {
+  int crossing(List<List<Node>> layers) {
     var crossinga = 0;
 
     for (var l = 0; l < layers.length - 1; l++) {
       final southernNodes = layers[l];
       final northernNodes = layers[l + 1];
 
+      final indexMap = HashMap.of(northernNodes.asMap().map((key, value) => MapEntry(value, key)));
+
       for (var i = 0; i < southernNodes.length - 2; i++) {
         final v = southernNodes[i];
         final w = southernNodes[i + 1];
-        crossinga += crossingCount(northernNodes, v, w);
+
+        crossinga += crossingCount(indexMap, v, w);
       }
     }
     return crossinga;
@@ -687,9 +705,6 @@ class EiglspergerAlgorithm extends Algorithm {
         blockWidth[i][n] = 0;
       });
     }
-
-    // Precalculate predecessor and successor info that we require during the following processes.
-    assignNeighboursInfo();
 
     for (var downward = 0; downward <= 1; downward++) {
       var isDownward = downward == 0;
@@ -932,19 +947,20 @@ class EiglspergerAlgorithm extends Algorithm {
     }
 
     var d = 0;
-    for (var layer in layersa) {
-      var nodes = downward ? layer : layer.reversed;
-      for (var v in nodes) {
-        if (v == sink[root[v]]) {
-          final oldShift = shift[v]!;
-          if (oldShift < double.infinity) {
-            shift[v] = oldShift + d;
-            d += oldShift.toInt();
-          } else {
-            shift[v] = 0;
-          }
+    var i = downward ? 0 : layers.length - 1;
+    while (downward && i <= layers.length - 1 || !downward && i >= 0) {
+      final currentLevel = layers[i];
+      final v = currentLevel[leftToRight ? 0 : currentLevel.length - 1];
+      if (v == sink[root[v]]) {
+        final oldShift = shift[v]!;
+        if (oldShift < double.infinity) {
+          shift[v] = oldShift + d;
+          d += oldShift.toInt();
+        } else {
+          shift[v] = 0;
         }
       }
+      i = downward ? i + 1 : i - 1;
     }
 
     // apply root coordinates for all aligned nodes;
@@ -1036,20 +1052,6 @@ class EiglspergerAlgorithm extends Algorithm {
     }
     final adjNodes = getAdjNodes(node, downward);
     return adjNodes.isEmpty ? null : adjNodes[0];
-  }
-
-  void assignNeighboursInfo() {
-    graph.edges.forEach((element) {
-      nodeData[element.source]?.successorNodes.add(element.destination);
-      nodeData[element.destination]?.predecessorNodes.add(element.source);
-    });
-
-    graph.nodes.asMap().forEach((i, value) {
-      type1Conflicts.add([]);
-      graph.edges.forEach((element) {
-        type1Conflicts[i].add(false);
-      });
-    });
   }
 
   List<Node> successorsOf(Node? node) {
