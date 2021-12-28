@@ -121,6 +121,20 @@ class Graph {
   void notifyGraphObserver() => graphObserver.forEach((element) {
         element.notifyGraphInvalidated();
       });
+
+  String toJson() {
+    var jsonString = {
+      'nodes': [
+       ..._nodes.map((e) => e.hashCode.toString())
+      ],
+      'edges': [
+        ..._edges.map((e) =>   {'from': e.source.hashCode.toString(), 'to': e.destination.hashCode.toString()})
+      ]
+    };
+
+    return json.encode(jsonString);
+  }
+
 }
 
 class Node {

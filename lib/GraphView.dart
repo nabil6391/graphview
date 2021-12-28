@@ -3,6 +3,7 @@ library graphview;
 import 'dart:collection';
 import 'dart:math';
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -211,7 +212,7 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
 
-    algorithm.renderer!.render(context.canvas, graph, edgePaint);
+    algorithm.renderer?.render(context.canvas, graph, edgePaint);
 
     context.canvas.restore();
 
