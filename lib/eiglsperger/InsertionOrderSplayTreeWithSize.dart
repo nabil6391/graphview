@@ -876,6 +876,55 @@ abstract class SplayTree<T> {
     _len--;
   }
 
+  void append(T value) {
+    if (_len == 0) {
+      _len = 1;
+      _root = _SplayTreeNode<T>(value, 1);
+      _updateNode(_root);
+      return;
+    }
+
+  }
+
+  // /   void append(T key) {
+//     Node z = new Node<>(key);
+//     z.size = 1;
+//     if (root == null) {
+//       root = z;
+//       return;
+//     }
+//     Node max = max();
+//     splay(max);
+//
+//     max.right = z;
+//     max.size += z.size;
+//     z.parent = max;
+//   }
+
+
+  //   void erase(T key) {
+//     Node z = find(key);
+//     if (null == z) return;
+//
+//     splay(z);
+//
+//     if (null == z.left) replace(z, z.right);
+//     else if (null == z.right) replace(z, z.left);
+//     else {
+//       Node y = subtree_minimum(z.right);
+//       if (y.parent != z) {
+//         replace(y, y.right);
+//         y.right = z.right;
+//         y.right.parent = y;
+//       }
+//       replace(z, y);
+//       y.left = z.left;
+//       y.left.parent = y;
+//     }
+//   }
+//
+
+
   void updateNode(SplayTreeIterator<T> iterator, {T? value, int? weight}) {
     if (iterator._current == null) throw 'updating null';
     if (value == null && weight == null) throw 'new values are null';
@@ -890,7 +939,7 @@ abstract class SplayTree<T> {
     }
   }
 
-  int position(SplayTreeIterator<T> iterator) {
+  int splayPosition(SplayTreeIterator<T> iterator) {
     if (iterator._current == null) throw 'removing null';
     var n = iterator._current;
     _splay(n);

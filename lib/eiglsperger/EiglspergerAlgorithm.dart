@@ -366,15 +366,15 @@ class EiglspergerAlgorithm extends Algorithm {
     }
   }
 
-  List<Node> scan(List<Node?> list) {
+  List<Node> scan(List<Node> list) {
     var outList = <Node>[];
     for (var i = 0; i < list.length; i++) {
-      var v = list[i]!;
+      var v = list[i];
       if (outList.isEmpty) {
         if (v is ContainerNode) {
           outList.add(v);
         } else {
-          // outList.add(Container());
+          outList.add(ContainerNode());
           outList.add(v);
         }
       } else {
@@ -387,7 +387,7 @@ class EiglspergerAlgorithm extends Algorithm {
           // previous container is already in the outList
         } else if (!(previous is ContainerNode) && !(v is ContainerNode)) {
           // ad empty container between 2 non containers
-          // outList.add(Container());
+          // outList.add(ContainerNode());
           outList.add(v);
         } else {
           outList.add(v);
@@ -395,12 +395,12 @@ class EiglspergerAlgorithm extends Algorithm {
       }
     }
     if (outList.isNotEmpty && !(outList[outList.length - 1] is ContainerNode)) {
-      // outList.add(Container());
+      // outList.add(ContainerNode());
     }
     return outList;
   }
 
-  void median(List<List<Node?>> layers, int currentIteration) {
+  void median(List<List<Node>> layers, int currentIteration) {
     if (currentIteration % 2 == 0) {
       // stepsForward
       //  createListOfVertices : Creates and returns a list of the vertices in a rank of the sparse layering array.<br>
@@ -1274,10 +1274,11 @@ class EiglspergerAlgorithm extends Algorithm {
       // for each PVertex/QVertex, add it to the list's adjacent container
       // if v is pVertex (for forward, but q node for backward)
       if (nodeData[v]!.isPNode) {
-        // if (outList.isEmpty) {
-        //   outList.add(Container());
-        // }
-        // var lastContainer =  outList[outList.length - 1] as Container;
+        if (outList.isEmpty) {
+          outList.add(ContainerNode());
+        }
+
+        var lastContainer = outList.last as Container;
         // SegmentVertex segmentVertex = v;
         // Segment segment = segmentVertex.getSegment();
         // lastContainer.append(segment);

@@ -3,18 +3,19 @@ part of graphview;
 /// Extension of the {@link InsertionOrderSplayTree} to hold Nodes of {@link Segment<V>}
 ///
 /// @param <Node> the node type
-class ContainerNode extends SplayTree<Node> {
+class ContainerNode extends SplayTree<Node> implements Node {
 
   double measure = -1;
   int pos = -1;
   int index = 0;
 
-  ContainerNode(CompareFunc compareFunc) : super(compareFunc);
+  ContainerNode();
 
   // static <Node> Pair<Container<V>> split(Container<Node> tree, Segment<Node> key) {
   // Container<Node> right = tree.split(key);
   // return Pair.of(tree, right);
   // }
+
   // static <Node> Container<Node> createSubContainer(Node<Segment<V>> root) {
   //   Container<Node> tree = new Container<>(root);
   //   tree.validate();
@@ -150,5 +151,37 @@ class ContainerNode extends SplayTree<Node> {
     // return buf.toString();
     return "";
   }
+
+  @override
+  Widget? data;
+
+  @override
+  ValueKey? key;
+
+  @override
+  Size size;
+
+  @override
+  double x;
+
+  @override
+  double y;
+
+  @override
+  // TODO: implement height
+  double get height => throw UnimplementedError();
+
+  @override
+  set position(Offset _position) {
+    // TODO: implement position
+  }
+
+  @override
+  // TODO: implement width
+  double get width => throw UnimplementedError();
+
+  @override
+  // TODO: implement position
+  Offset get position => throw UnimplementedError();
 
 }
