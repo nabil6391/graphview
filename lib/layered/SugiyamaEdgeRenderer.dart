@@ -56,8 +56,52 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         path.reset();
         path.moveTo(bendPoints[0], bendPoints[1]);
 
-        for (var i = 3; i < size - 2; i = i + 2) {
-          path.lineTo(bendPoints[i - 1], bendPoints[i]);
+        final bendPointsWithoutDuplication = <Offset>[];
+
+        for (var i = 0; i < bendPoints.length; i += 2) {
+          final isLastPoint = i == bendPoints.length - 2;
+
+          final x = bendPoints[i];
+          final y = bendPoints[i + 1];
+          final x2 = isLastPoint ? -1 : bendPoints[i + 2];
+          final y2 = isLastPoint ? -1 : bendPoints[i + 3];
+          if (x == x2 && y == y2) {
+            continue; // Duplication bug, skip
+          }
+          bendPointsWithoutDuplication
+              .add(Offset(bendPoints[i], bendPoints[i + 1]));
+        }
+
+        for (var i = 1; i < bendPointsWithoutDuplication.length - 1; i++) {
+          final previousNode =
+              i == 1 ? null : bendPointsWithoutDuplication[i - 2];
+          final currentNode = bendPointsWithoutDuplication[i - 1];
+          final nextNode = bendPointsWithoutDuplication[i];
+          final afterNextNode = bendPointsWithoutDuplication[i + 1];
+
+          const distanceBetweenControlPointAndCurveEdges = 20.0;
+          final arcStartPointRadians =
+              atan2(nextNode.dy - currentNode.dy, nextNode.dx - currentNode.dx);
+          final arcStartPoint = nextNode -
+              Offset.fromDirection(arcStartPointRadians,
+                  distanceBetweenControlPointAndCurveEdges);
+          final arcEndPointRadians = atan2(
+              nextNode.dy - afterNextNode.dy, nextNode.dx - afterNextNode.dx);
+          final arcEndPoint = nextNode -
+              Offset.fromDirection(
+                  arcEndPointRadians, distanceBetweenControlPointAndCurveEdges);
+
+          if (previousNode != null &&
+              ((currentNode.dx == nextNode.dx &&
+                      nextNode.dx == afterNextNode.dx) ||
+                  (currentNode.dy == nextNode.dy &&
+                      nextNode.dy == afterNextNode.dy))) {
+            path.lineTo(nextNode.dx, nextNode.dy);
+          } else {
+            path.lineTo(arcStartPoint.dx, arcStartPoint.dy);
+            path.quadraticBezierTo(
+                nextNode.dx, nextNode.dy, arcEndPoint.dx, arcEndPoint.dy);
+          }
         }
 
         path.lineTo(triangleCentroid[0], triangleCentroid[1]);
