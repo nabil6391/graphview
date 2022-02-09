@@ -3,8 +3,9 @@ part of graphview;
 class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Node, SugiyamaNodeData> nodeData;
   Map<Edge, SugiyamaEdgeData> edgeData;
+  BendPointShape bendPointShape;
 
-  SugiyamaEdgeRenderer(this.nodeData, this.edgeData);
+  SugiyamaEdgeRenderer(this.nodeData, this.edgeData, this.bendPointShape);
 
   var path = Path();
 
@@ -46,8 +47,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         if (nodeData[source]!.isReversed) {
           clippedLine = clipLine(bendPoints[2], bendPoints[3], bendPoints[0], bendPoints[1], destination);
         } else {
-          clippedLine = clipLine(
-              bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
+          clippedLine =
+              clipLine(bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
         }
 
         final triangleCentroid = drawTriangle(
@@ -68,40 +69,16 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           if (x == x2 && y == y2) {
             continue; // Duplication bug, skip
           }
-          bendPointsWithoutDuplication
-              .add(Offset(bendPoints[i], bendPoints[i + 1]));
+          bendPointsWithoutDuplication.add(Offset(bendPoints[i], bendPoints[i + 1]));
         }
 
-        for (var i = 1; i < bendPointsWithoutDuplication.length - 1; i++) {
-          final previousNode =
-              i == 1 ? null : bendPointsWithoutDuplication[i - 2];
-          final currentNode = bendPointsWithoutDuplication[i - 1];
-          final nextNode = bendPointsWithoutDuplication[i];
-          final afterNextNode = bendPointsWithoutDuplication[i + 1];
-
-          const distanceBetweenControlPointAndCurveEdges = 20.0;
-          final arcStartPointRadians =
-              atan2(nextNode.dy - currentNode.dy, nextNode.dx - currentNode.dx);
-          final arcStartPoint = nextNode -
-              Offset.fromDirection(arcStartPointRadians,
-                  distanceBetweenControlPointAndCurveEdges);
-          final arcEndPointRadians = atan2(
-              nextNode.dy - afterNextNode.dy, nextNode.dx - afterNextNode.dx);
-          final arcEndPoint = nextNode -
-              Offset.fromDirection(
-                  arcEndPointRadians, distanceBetweenControlPointAndCurveEdges);
-
-          if (previousNode != null &&
-              ((currentNode.dx == nextNode.dx &&
-                      nextNode.dx == afterNextNode.dx) ||
-                  (currentNode.dy == nextNode.dy &&
-                      nextNode.dy == afterNextNode.dy))) {
-            path.lineTo(nextNode.dx, nextNode.dy);
-          } else {
-            path.lineTo(arcStartPoint.dx, arcStartPoint.dy);
-            path.quadraticBezierTo(
-                nextNode.dx, nextNode.dy, arcEndPoint.dx, arcEndPoint.dy);
-          }
+        if (bendPointShape is MaxCurvedBendPointShape) {
+          _drawMaxCurvedBendPointsEdge(bendPointsWithoutDuplication);
+        } else if (bendPointShape is CurvedBendPointShape) {
+          final shape = bendPointShape as CurvedBendPointShape;
+          _drawCurvedBendPointsEdge(bendPointsWithoutDuplication, shape.curveLength);
+        } else {
+          _drawSharpBendPointsEdge(bendPointsWithoutDuplication);
         }
 
         path.lineTo(triangleCentroid[0], triangleCentroid[1]);
@@ -121,5 +98,43 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
             Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
       }
     });
+  }
+
+  void _drawSharpBendPointsEdge(List<Offset> bendPoints) {
+    for (var i = 1; i < bendPoints.length - 1; i++) {
+      path.lineTo(bendPoints[i].dx, bendPoints[i].dy);
+    }
+  }
+
+  void _drawMaxCurvedBendPointsEdge(List<Offset> bendPoints) {
+    for (var i = 1; i < bendPoints.length - 1; i++) {
+      final nextNode = bendPoints[i];
+      final afterNextNode = bendPoints[i + 1];
+      final curveEndPoint = Offset((nextNode.dx + afterNextNode.dx) / 2, (nextNode.dy + afterNextNode.dy) / 2);
+      path.quadraticBezierTo(nextNode.dx, nextNode.dy, curveEndPoint.dx, curveEndPoint.dy);
+    }
+  }
+
+  void _drawCurvedBendPointsEdge(List<Offset> bendPoints, double curveLength) {
+    for (var i = 1; i < bendPoints.length - 1; i++) {
+      final previousNode = i == 1 ? null : bendPoints[i - 2];
+      final currentNode = bendPoints[i - 1];
+      final nextNode = bendPoints[i];
+      final afterNextNode = bendPoints[i + 1];
+
+      final arcStartPointRadians = atan2(nextNode.dy - currentNode.dy, nextNode.dx - currentNode.dx);
+      final arcStartPoint = nextNode - Offset.fromDirection(arcStartPointRadians, curveLength);
+      final arcEndPointRadians = atan2(nextNode.dy - afterNextNode.dy, nextNode.dx - afterNextNode.dx);
+      final arcEndPoint = nextNode - Offset.fromDirection(arcEndPointRadians, curveLength);
+
+      if (previousNode != null &&
+          ((currentNode.dx == nextNode.dx && nextNode.dx == afterNextNode.dx) ||
+              (currentNode.dy == nextNode.dy && nextNode.dy == afterNextNode.dy))) {
+        path.lineTo(nextNode.dx, nextNode.dy);
+      } else {
+        path.lineTo(arcStartPoint.dx, arcStartPoint.dy);
+        path.quadraticBezierTo(nextNode.dx, nextNode.dy, arcEndPoint.dx, arcEndPoint.dy);
+      }
+    }
   }
 }

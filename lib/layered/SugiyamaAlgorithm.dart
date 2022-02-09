@@ -16,7 +16,7 @@ class SugiyamaAlgorithm extends Algorithm {
   var nodeCount = 1;
 
   SugiyamaAlgorithm(this.configuration) {
-    renderer = SugiyamaEdgeRenderer(nodeData, edgeData);
+    renderer = SugiyamaEdgeRenderer(nodeData, edgeData, configuration.bendPointShape);
   }
 
   int get dummyId => 'Dummy ${nodeCount++}'.hashCode;
