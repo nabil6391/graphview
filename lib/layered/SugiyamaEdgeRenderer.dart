@@ -67,7 +67,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           final x2 = isLastPoint ? -1 : bendPoints[i + 2];
           final y2 = isLastPoint ? -1 : bendPoints[i + 3];
           if (x == x2 && y == y2) {
-            continue; // Duplication bug, skip
+            continue; // Skip when two consecutive points are identical
+            // because drawing a line between would be redundant in this case.
           }
           bendPointsWithoutDuplication.add(Offset(bendPoints[i], bendPoints[i + 1]));
         }
