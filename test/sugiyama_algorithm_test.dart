@@ -291,7 +291,45 @@ void main() {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
+      var stopwatch = Stopwatch()..start();
+
       SugiyamaAlgorithm(SugiyamaConfiguration())..run(graph, 10, 10);
+
+      var timeTaken = stopwatch.elapsed.inMilliseconds;
+
+      print('Timetaken $timeTaken ${graph.nodeCount()}');
+
+      for (var i = 0; i < graph.nodeCount(); i++) {
+        final currentNode = graph.getNodeAtPosition(i);
+        for (var j = 0; j < graph.nodeCount(); j++) {
+          final otherNode = graph.getNodeAtPosition(j);
+
+          if (currentNode.key == otherNode.key) continue;
+          final currentRect = currentNode.toRect();
+          final otherRect = otherNode.toRect();
+
+          final overlaps = currentRect.overlaps(otherRect);
+          expect(false, overlaps, reason: "$currentNode overlaps $otherNode");
+        }
+      }
+    }
+  });
+
+  test("Sugiyama old child nodes never overlaps", () {
+    for (final json in exampleTrees) {
+      final graph = Graph()..inflateWithJson(json);
+      for (var i = 0; i < graph.nodeCount(); i++) {
+        graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
+      }
+
+      var stopwatch = Stopwatch()..start();
+
+      SugiyamaAlgorithmOld(SugiyamaConfiguration())..run(graph, 10, 10);
+
+      var timeTaken = stopwatch.elapsed.inMilliseconds;
+
+      print('Timetaken $timeTaken ${graph.nodeCount()}');
+
 
       for (var i = 0; i < graph.nodeCount(); i++) {
         final currentNode = graph.getNodeAtPosition(i);

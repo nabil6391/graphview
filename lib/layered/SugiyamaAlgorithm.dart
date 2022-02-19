@@ -198,10 +198,15 @@ class SugiyamaAlgorithm extends Algorithm {
 
     for (var i = 0; i < configuration.iterations; i++) {
       median(best, i);
-      var changed = transpose(best);
-      if (!changed) {
-        break;
-      }
+      transpose(best);
+      // if (!changed) {
+      //   break;
+      // }
+      // var c = crossing(best);
+      // var l = crossing(layers);
+      // if (c < l) {
+        // layers = best;
+      // }
     }
     // Set the final position of the nodes in memory
     var pos = 0;
@@ -411,7 +416,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
         graph.nodes.forEach((v) {
           final r = root[k][v];
-          blockWidth[k][r] = max(blockWidth[k][r]!, isVertical() ? v.width : v.height);
+          blockWidth[k][r] = max(blockWidth[k][r]!, isVertical() ? v.width + configuration.nodeSeparation * 8: v.height);
         });
         horizontalCompactation(align[k], root[k], sink[k], shift[k], blockWidth[k], x[k], isLeftToRight, isDownward);
       }
@@ -473,17 +478,6 @@ class SugiyamaAlgorithm extends Algorithm {
       }
     }
 
-    // get the minimum coordinate value
-    double? minValue = double.infinity;
-
-    x.forEach((element) {
-      element.forEach((key, value) {
-        if (value < minValue!) {
-          minValue = value;
-        }
-      });
-    });
-
     // get the average median of each coordinate
     var values = List.filled(4, 0.0);
     graph.nodes.forEach((n) {
@@ -496,12 +490,12 @@ class SugiyamaAlgorithm extends Algorithm {
     });
 
     // get the minimum coordinate value
-    minValue = coordinates.values.reduce(min);
+    var minValue = coordinates.values.reduce(min);
 
     // set left border to 0
     if (minValue != 0) {
       coordinates.keys.forEach((n) {
-        coordinates[n] = coordinates[n]! - minValue!;
+        coordinates[n] = coordinates[n]! - minValue;
       });
     }
 
@@ -609,7 +603,7 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   void horizontalCompactation(Map<Node?, Node?> align, Map<Node?, Node?> root, Map<Node?, Node?> sink,
-      Map<Node?, double> shift, Map<Node?, double> blockWidth, Map<Node?, double?> x, bool leftToRight, bool downward) {
+      Map<Node?, double> shift, Map<Node?, double> blockWidth, Map<Node?, double> x, bool leftToRight, bool downward) {
     // calculate class relative coordinates for all roots;
     // If the layers are traversed from right to left, a reverse iterator is needed (note that this does not change the original list of layers)
     var layersa = leftToRight ? layers : layers.reversed;
@@ -645,7 +639,7 @@ class SugiyamaAlgorithm extends Algorithm {
     // apply root coordinates for all aligned nodes;
     // (place block did this only for the roots)+;
     graph.nodes.forEach((v) {
-      x[v] = x[root[v]];
+      x[v] = x[root[v]]!;
       final shiftVal = shift[sink[root[v]]]!;
       if (shiftVal < double.infinity) {
         x[v] = x[v]! + shiftVal; // apply shift for each class;
@@ -653,10 +647,9 @@ class SugiyamaAlgorithm extends Algorithm {
     });
   }
 
-  void placeBlock(Node? v, Map<Node?, Node?> sink, Map<Node?, double> shift, Map<Node?, double?> x,
+  void placeBlock(Node? v, Map<Node?, Node?> sink, Map<Node?, double> shift, Map<Node?, double> x,
       Map<Node?, Node?> align, Map<Node?, double> blockWidth, Map<Node?, Node?> root, bool leftToRight) {
     if (x[v] == double.negativeInfinity) {
-      var nodeSeparation = configuration.nodeSeparation;
       x[v] = 0;
       var currentNode = v;
 
@@ -678,22 +671,21 @@ class SugiyamaAlgorithm extends Algorithm {
              * shift the sink of u so that the two blocks are separated by the
              * preferred gap
              */
+            var gap = configuration.nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!);
             if (sink[v] != sink[u]) {
               if (leftToRight) {
-                shift[sink[u]] = min(shift[sink[u]]!,
-                    x[v]! - x[u]! - nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                shift[sink[u]] = min(shift[sink[u]]!, x[v]! - x[u]! - gap);
               } else {
-                shift[sink[u]] = max(shift[sink[u]]!,
-                    x[v]! - x[u]! + nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                shift[sink[u]] = max(shift[sink[u]]!, x[v]! - x[u]! + gap);
               }
             } else {
-              /* v and u have the same sink, i.e. they are in the same class. Make sure
+              /* v and u have the same sink, i.e. they are in the same level. Make sure
                  * that v is separated from u by at least gap.
                  */
               if (leftToRight) {
-                x[v] = max(x[v]!, x[u]! + nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                x[v] = max(x[v]!, x[u]! + gap);
               } else {
-                x[v] = min(x[v]!, x[u]! - nodeSeparation - 0.5 * (blockWidth[u]! + blockWidth[v]!));
+                x[v] = min(x[v]!, x[u]! - gap);
               }
             }
           }
