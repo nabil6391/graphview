@@ -47,8 +47,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         if (nodeData[source]!.isReversed) {
           clippedLine = clipLine(bendPoints[2], bendPoints[3], bendPoints[0], bendPoints[1], destination);
         } else {
-          clippedLine =
-              clipLine(bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
+          clippedLine = clipLine(
+              bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
         }
 
         final triangleCentroid = drawTriangle(
@@ -67,10 +67,11 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           final x2 = isLastPoint ? -1 : bendPoints[i + 2];
           final y2 = isLastPoint ? -1 : bendPoints[i + 3];
           if (x == x2 && y == y2) {
-            continue; // Skip when two consecutive points are identical
+            // Skip when two consecutive points are identical
             // because drawing a line between would be redundant in this case.
+            continue;
           }
-          bendPointsWithoutDuplication.add(Offset(bendPoints[i], bendPoints[i + 1]));
+          bendPointsWithoutDuplication.add(Offset(x, y));
         }
 
         if (bendPointShape is MaxCurvedBendPointShape) {
