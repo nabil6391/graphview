@@ -103,10 +103,12 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
 
   final Graph graph = Graph();
 
-  SugiyamaConfiguration builder = SugiyamaConfiguration();
+  SugiyamaConfiguration builder = SugiyamaConfiguration()
+    ..bendPointShape = CurvedBendPointShape(curveLength: 20);
 
   @override
   void initState() {
+    super.initState();
     final node1 = Node.Id(1);
     final node2 = Node.Id(2);
     final node3 = Node.Id(3);
