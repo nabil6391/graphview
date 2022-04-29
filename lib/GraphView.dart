@@ -20,7 +20,6 @@ part 'edgerenderer/EdgeRenderer.dart';
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
 
 part 'layered/SugiyamaAlgorithm.dart';
-part 'layered/SugiyamaAlgorithmOld.dart';
 
 part 'layered/SugiyamaConfiguration.dart';
 

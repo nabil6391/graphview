@@ -198,15 +198,19 @@ class SugiyamaAlgorithm extends Algorithm {
 
     for (var i = 0; i < configuration.iterations; i++) {
       median(best, i);
-      transpose(best);
+      // transpose(best);
       // if (!changed) {
       //   break;
       // }
       // var c = crossing(best);
       // var l = crossing(layers);
       // if (c < l) {
-        // layers = best;
+      // layers = best;
       // }
+      var changed = transpose(best);
+      if (!changed) {
+        break;
+      }
     }
     // Set the final position of the nodes in memory
     var pos = 0;
@@ -386,7 +390,7 @@ class SugiyamaAlgorithm extends Algorithm {
     // minimal separation between the roots of different classes.;
     final shift = <Map<Node, double>>[];
     // the width of each block (max width of node in block);
-    final blockWidth = <Map<Node?, double>>[];
+    final blockWidth = <Map<Node, double>>[];
 
     for (var i = 0; i < 4; i++) {
       root.add({});
@@ -406,6 +410,7 @@ class SugiyamaAlgorithm extends Algorithm {
       });
     }
 
+    var vertical = isVertical();
     for (var downward = 0; downward <= 1; downward++) {
       var isDownward = downward == 0;
       final type1Conflicts = markType1Conflicts(isDownward);
@@ -415,8 +420,8 @@ class SugiyamaAlgorithm extends Algorithm {
         verticalAlignment(root[k], align[k], type1Conflicts, isDownward, isLeftToRight);
 
         graph.nodes.forEach((v) {
-          final r = root[k][v];
-          blockWidth[k][r] = max(blockWidth[k][r]!, isVertical() ? v.width + configuration.nodeSeparation * 8: v.height);
+          final r = root[k][v]!;
+          blockWidth[k][r] = max(blockWidth[k][r]!, vertical ? v.width: v.height);
         });
         horizontalCompactation(align[k], root[k], sink[k], shift[k], blockWidth[k], x[k], isLeftToRight, isDownward);
       }
@@ -602,8 +607,9 @@ class SugiyamaAlgorithm extends Algorithm {
     }
   }
 
-  void horizontalCompactation(Map<Node?, Node?> align, Map<Node?, Node?> root, Map<Node?, Node?> sink,
-      Map<Node?, double> shift, Map<Node?, double> blockWidth, Map<Node?, double> x, bool leftToRight, bool downward) {
+  void horizontalCompactation(Map<Node, Node> align, Map<Node, Node> root, Map<Node, Node> sink,
+      Map<Node, double> shift, Map<Node, double> blockWidth, Map<Node, double> x, bool leftToRight,
+      bool downward) {
     // calculate class relative coordinates for all roots;
     // If the layers are traversed from right to left, a reverse iterator is needed (note that this does not change the original list of layers)
     var layersa = leftToRight ? layers : layers.reversed;
@@ -647,8 +653,8 @@ class SugiyamaAlgorithm extends Algorithm {
     });
   }
 
-  void placeBlock(Node? v, Map<Node?, Node?> sink, Map<Node?, double> shift, Map<Node?, double> x,
-      Map<Node?, Node?> align, Map<Node?, double> blockWidth, Map<Node?, Node?> root, bool leftToRight) {
+  void placeBlock(Node v, Map<Node, Node> sink, Map<Node, double> shift, Map<Node, double> x,
+      Map<Node, Node> align, Map<Node, double> blockWidth, Map<Node, Node> root, bool leftToRight) {
     if (x[v] == double.negativeInfinity) {
       x[v] = 0;
       var currentNode = v;
@@ -656,40 +662,41 @@ class SugiyamaAlgorithm extends Algorithm {
       try {
         do {
           // if not first node on layer;
-          if (leftToRight && positionOfNode(currentNode) > 0 ||
-              !leftToRight && positionOfNode(currentNode) < layers[getLayerIndex(currentNode)].length - 1) {
+          final hasPredecessor = leftToRight && positionOfNode(currentNode) > 0 ||
+              !leftToRight &&
+                  positionOfNode(currentNode) < layers[getLayerIndex(currentNode)].length - 1;
+          // print("Pred  $hasPredecessor ${getLayerIndex(currentNode)>0} ${positionOfNode(currentNode)>0}");
+          if (hasPredecessor) {
             final pred = predecessor(currentNode, leftToRight);
             /* Get the root of u (proceeding all the way upwards in the block) */
-            final u = root[pred];
+            final u = root[pred]!;
             /* Place the block of u recursively */
             placeBlock(u, sink, shift, x, align, blockWidth, root, leftToRight);
             /* If v is its own sink yet, set its sink to the sink of u */
             if (sink[v] == v) {
-              sink[v] = sink[u];
+              sink[v] = sink[u]!;
             }
             /* If v and u have different sinks (i.e. they are in different classes),
-             * shift the sink of u so that the two blocks are separated by the
-             * preferred gap
-             */
+             * shift the sink of u so that the two blocks are separated by the preferred gap  */
             var gap = configuration.nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!);
             if (sink[v] != sink[u]) {
               if (leftToRight) {
                 shift[sink[u]] = min(shift[sink[u]]!, x[v]! - x[u]! - gap);
               } else {
-                shift[sink[u]] = max(shift[sink[u]]!, x[v]! - x[u]! + gap);
+                shift[sink[u]!] = max(shift[sink[u]]!, x[v]! - x[u]! + gap);
               }
             } else {
-              /* v and u have the same sink, i.e. they are in the same level. Make sure
-                 * that v is separated from u by at least gap.
-                 */
+              /* v and u have the same sink, i.e. they are in the same level.
+              Make sure that v is separated from u by at least gap.*/
               if (leftToRight) {
                 x[v] = max(x[v]!, x[u]! + gap);
               } else {
                 x[v] = min(x[v]!, x[u]! - gap);
               }
+              //3114232,1056219149, 9786946, 1759426, 481786088
             }
           }
-          currentNode = align[currentNode];
+          currentNode = align[currentNode]!;
         } while (currentNode != v);
       } catch (e) {
         print(e);
@@ -753,13 +760,14 @@ class SugiyamaAlgorithm extends Algorithm {
 
     // assign y-coordinates
     var yPos = 0.0;
+    var vertical = isVertical();
     for (var i = 0; i < k; i++) {
       var level = layers[i];
       var maxHeight = 0;
       level.forEach((node) {
         var h = nodeData[node]!.isDummy
             ? 0
-            : isVertical()
+            : vertical
                 ? node.height
                 : node.width;
         if (h > maxHeight) {

@@ -324,7 +324,7 @@ void main() {
 
       var stopwatch = Stopwatch()..start();
 
-      SugiyamaAlgorithmOld(SugiyamaConfiguration())..run(graph, 10, 10);
+      SugiyamaAlgorithm(SugiyamaConfiguration())..run(graph, 10, 10);
 
       var timeTaken = stopwatch.elapsed.inMilliseconds;
 
