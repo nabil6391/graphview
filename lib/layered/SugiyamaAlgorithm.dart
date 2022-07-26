@@ -409,6 +409,7 @@ class SugiyamaAlgorithm extends Algorithm {
         blockWidth[i][n] = 0;
       });
     }
+    var separation = configuration.nodeSeparation;
 
     var vertical = isVertical();
     for (var downward = 0; downward <= 1; downward++) {
@@ -418,12 +419,21 @@ class SugiyamaAlgorithm extends Algorithm {
         final k = 2 * downward + leftToRight;
         var isLeftToRight = leftToRight == 0;
         verticalAlignment(root[k], align[k], type1Conflicts, isDownward, isLeftToRight);
-
         graph.nodes.forEach((v) {
           final r = root[k][v]!;
-          blockWidth[k][r] = max(blockWidth[k][r]!, vertical ? v.width: v.height);
+          blockWidth[k][r] = max(blockWidth[k][r]!, vertical ? v.width + separation : v.height);
         });
-        horizontalCompactation(align[k], root[k], sink[k], shift[k], blockWidth[k], x[k], isLeftToRight, isDownward);
+          horizontalCompactation(
+              align[k],
+              root[k],
+              sink[k],
+              shift[k],
+              blockWidth[k],
+              x[k],
+              isLeftToRight,
+              isDownward,
+              layers,
+              separation);
       }
     }
 
@@ -609,7 +619,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void horizontalCompactation(Map<Node, Node> align, Map<Node, Node> root, Map<Node, Node> sink,
       Map<Node, double> shift, Map<Node, double> blockWidth, Map<Node, double> x, bool leftToRight,
-      bool downward) {
+      bool downward, List<List<Node>> layers, int separation) {
     // calculate class relative coordinates for all roots;
     // If the layers are traversed from right to left, a reverse iterator is needed (note that this does not change the original list of layers)
     var layersa = leftToRight ? layers : layers.reversed;
@@ -620,7 +630,7 @@ class SugiyamaAlgorithm extends Algorithm {
       // Do an initial placement for all blocks
       for (var v in nodes) {
         if (root[v] == v) {
-          placeBlock(v, sink, shift, x, align, blockWidth, root, leftToRight);
+          placeBlock(v, sink, shift, x, align, blockWidth, root, leftToRight, layers, separation);
         }
       }
     }
@@ -654,7 +664,7 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   void placeBlock(Node v, Map<Node, Node> sink, Map<Node, double> shift, Map<Node, double> x,
-      Map<Node, Node> align, Map<Node, double> blockWidth, Map<Node, Node> root, bool leftToRight) {
+      Map<Node, Node> align, Map<Node, double> blockWidth, Map<Node, Node> root, bool leftToRight, List<List<Node>> layers, int separation) {
     if (x[v] == double.negativeInfinity) {
       x[v] = 0;
       var currentNode = v;
@@ -671,17 +681,17 @@ class SugiyamaAlgorithm extends Algorithm {
             /* Get the root of u (proceeding all the way upwards in the block) */
             final u = root[pred]!;
             /* Place the block of u recursively */
-            placeBlock(u, sink, shift, x, align, blockWidth, root, leftToRight);
+            placeBlock(u, sink, shift, x, align, blockWidth, root, leftToRight, layers, separation);
             /* If v is its own sink yet, set its sink to the sink of u */
             if (sink[v] == v) {
               sink[v] = sink[u]!;
             }
             /* If v and u have different sinks (i.e. they are in different classes),
              * shift the sink of u so that the two blocks are separated by the preferred gap  */
-            var gap = configuration.nodeSeparation + 0.5 * (blockWidth[u]! + blockWidth[v]!);
+            var gap = separation + 0.5 * (blockWidth[u]! + blockWidth[v]!);
             if (sink[v] != sink[u]) {
               if (leftToRight) {
-                shift[sink[u]] = min(shift[sink[u]]!, x[v]! - x[u]! - gap);
+                shift[sink[u]!] = min(shift[sink[u]]!, x[v]! - x[u]! - gap);
               } else {
                 shift[sink[u]!] = max(shift[sink[u]]!, x[v]! - x[u]! + gap);
               }
