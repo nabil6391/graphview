@@ -54,7 +54,8 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                 ElevatedButton(
                   onPressed: () {
                     final node12 = Node.Id(r.nextInt(100));
-                    var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
+                    var edge =
+                        graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
                     print(edge);
                     graph.addEdge(edge, node12);
                     setState(() {});
@@ -104,7 +105,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
   final Graph graph = Graph();
 
   SugiyamaConfiguration builder = SugiyamaConfiguration()
-    ..bendPointShape = CurvedBendPointShape(curveLength: 20);
+    ..bendPointShape = CurvedBendPointShape(curveLength: 40);
 
   @override
   void initState() {
@@ -173,6 +174,6 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     builder
       ..nodeSeparation = (15)
       ..levelSeparation = (15)
-      ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
+      ..orientation = SugiyamaConfiguration.ORIENTATION_LEFT_RIGHT;
   }
 }
