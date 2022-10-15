@@ -47,8 +47,7 @@ class GraphView extends StatefulWidget {
   final bool animated;
 
   GraphView(
-      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder, this.animated = true})
-      : super(key: key);
+      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder, this.animated = true});
 
   @override
   _GraphViewState createState() => _GraphViewState();
