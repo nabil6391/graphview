@@ -1,5 +1,6 @@
 part of graphview;
 
+
 class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Node, SugiyamaNodeData> nodeData;
   Map<Edge, SugiyamaEdgeData> edgeData;
@@ -15,7 +16,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     var trianglePaint = Paint()
       ..color = paint.color
       ..style = PaintingStyle.fill;
-
+      
     graph.edges.forEach((edge) {
       final source = edge.source;
 
@@ -51,6 +52,9 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           clippedLine = clipLine(
               bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
         }
+
+        // final triangleCentroid = drawTriangle(
+        //     canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
 
         path.reset();
         path.moveTo(bendPoints[0], bendPoints[1]);
@@ -91,6 +95,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           final stopY = y1 + destination.height / 2;
           path.lineTo(stopX, stopY);
         }
+        // path.lineTo(triangleCentroid[0], triangleCentroid[1]);
         canvas.drawPath(path, currentPaint);
       } else {
         final startX = x + source.width / 2;
@@ -110,9 +115,19 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         } else {
           canvas.drawLine(
               Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
+        switch (nodeData[destination]?.lineType.toUpperCase()) {
+          case 'DASHEDONE':
+            _drawDashedLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint, 0.6);
+            break;
+          case 'DASHEDTWO':
+            _drawDashedLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint, 0.3);
+            break;
+          default:
+            canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
+            break;
         }
       }
-    });
+    }});
   }
 
   void _drawSharpBendPointsEdge(List<Offset> bendPoints) {
@@ -152,4 +167,28 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       }
     }
   }
+
+  void _drawDashedLine(Canvas canvas, Offset source, Offset destination, Paint paint, double lineLength) {
+    var numLines = 14;
+
+    // Calculate the distance between the source and destination points
+    var dx = destination.dx - source.dx;
+    var dy = destination.dy - source.dy;
+    
+    // Calculate the step size for each line
+    var stepX = dx / (numLines - 1);
+    var stepY = dy / (numLines - 1);
+
+    // Draw the lines between the two points
+    Iterable<int>.generate(numLines).map((i) {
+      var startX = source.dx + (i * stepX);
+      var startY = source.dy + (i * stepY);
+      var endX = startX + (stepX * lineLength);
+      var endY = startY + (stepY * lineLength);
+      return [Offset(startX, startY), Offset(endX, endY)];
+    }).forEach((points) => canvas.drawLine(points[0], points[1], paint));
+    
+  }
+
+
 }

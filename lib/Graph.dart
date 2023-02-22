@@ -163,6 +163,8 @@ class Node {
 
   Offset position = Offset(0, 0);
 
+  String lineType = 'default';
+
   double get height => size.height;
 
   double get width => size.width;
@@ -189,7 +191,7 @@ class Node {
 
   @override
   String toString() {
-    return 'Node{position: $position, key: $key, _size: $size}';
+    return 'Node{position: $position, key: $key, _size: $size, lineType: $lineType}';
   }
 }
 
