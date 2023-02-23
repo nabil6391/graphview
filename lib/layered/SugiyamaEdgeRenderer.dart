@@ -1,6 +1,5 @@
 part of graphview;
 
-
 class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Node, SugiyamaNodeData> nodeData;
   Map<Edge, SugiyamaEdgeData> edgeData;
@@ -17,6 +16,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       ..color = paint.color
       ..style = PaintingStyle.fill;
       
+
     graph.edges.forEach((edge) {
       final source = edge.source;
 
@@ -53,8 +53,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
               bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
         }
 
-        // final triangleCentroid = drawTriangle(
-        //     canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+        final triangleCentroid = drawTriangle(
+            canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
 
         path.reset();
         path.moveTo(bendPoints[0], bendPoints[1]);
@@ -96,6 +96,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           path.lineTo(stopX, stopY);
         }
         // path.lineTo(triangleCentroid[0], triangleCentroid[1]);
+        path.lineTo(triangleCentroid[0], triangleCentroid[1]);
         canvas.drawPath(path, currentPaint);
       } else {
         final startX = x + source.width / 2;
@@ -115,12 +116,21 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         } else {
           canvas.drawLine(
               Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
+        // final triangleCentroid = drawTriangle(
+        //     canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+
+        // canvas.drawLine(
+        //     Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
+
         switch (nodeData[destination]?.lineType.toUpperCase()) {
-          case 'DASHEDONE':
+          case 'DASHEDLINE':
             _drawDashedLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint, 0.6);
             break;
-          case 'DASHEDTWO':
-            _drawDashedLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint, 0.3);
+          case 'DOTTEDLINE':
+            _drawDashedLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint, 0.0);
+            break;
+          case 'SINELINE':
+            _drawSineLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
             break;
           default:
             canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
@@ -171,13 +181,18 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   void _drawDashedLine(Canvas canvas, Offset source, Offset destination, Paint paint, double lineLength) {
     var numLines = 14;
 
+    // lineLength == 0.0 to use dotted lines
+    if (lineLength == 0.0) {
+      numLines = 40;
+    }
+
     // Calculate the distance between the source and destination points
     var dx = destination.dx - source.dx;
     var dy = destination.dy - source.dy;
-    
+
     // Calculate the step size for each line
-    var stepX = dx / (numLines - 1);
-    var stepY = dy / (numLines - 1);
+    var stepX = dx / numLines;
+    var stepY = dy / numLines;
 
     // Draw the lines between the two points
     Iterable<int>.generate(numLines).map((i) {
@@ -187,8 +202,48 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       var endY = startY + (stepY * lineLength);
       return [Offset(startX, startY), Offset(endX, endY)];
     }).forEach((points) => canvas.drawLine(points[0], points[1], paint));
-    
   }
 
+  void _drawSineLine(Canvas canvas, Offset source, Offset destination, Paint paint) {
+    paint..strokeWidth = 1.5;
 
+    final dx = destination.dx - source.dx;
+    final dy = destination.dy - source.dy;
+    final distance = sqrt(dx * dx + dy * dy);
+    final lineLength = 6;
+    var phaseOffset = 2;
+
+    // Verify dx and dy to avoid NaN to Offset()
+    if (dx != 0 || dy != 0) {
+      var distanceTraveled = 0.0;
+      var phase = 0.0;
+      final path = Path()..moveTo(source.dx, source.dy);
+
+      while (distanceTraveled < distance) {
+        final segmentLength = min(lineLength, distance - distanceTraveled);
+        final segmentFraction = segmentLength / distance;
+        final segmentDestination = Offset(
+          source.dx + dx * segmentFraction,
+          source.dy + dy * segmentFraction,
+        );
+
+        final y = sin(phase + phaseOffset) * segmentLength;
+
+        num x;
+        if ((dx > 0 && dy < 0) || (dx < 0 && dy > 0)) {
+          x = sin(phase + phaseOffset) * segmentLength;
+        } else { // dx < 0 && dy < 0
+          x = -sin(phase + phaseOffset) * segmentLength;
+        }
+
+        path.lineTo(segmentDestination.dx + x, segmentDestination.dy + y);
+
+        distanceTraveled += segmentLength;
+        source = segmentDestination;
+        phase += pi * segmentLength / lineLength;
+      }
+
+      canvas.drawPath(path, paint);
+    }
+  }
 }
