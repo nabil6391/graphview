@@ -51,6 +51,28 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                     },
                   ),
                 ),
+                Container(
+                  width: 100,
+                  child: Column(
+                    children: [
+                      Text('Alignment'),
+                      DropdownButton<CoordinateAssignment>(
+                        value: builder.coordinateAssignment,
+                        items: CoordinateAssignment.values.map((coordinateAssignment) {
+                          return DropdownMenuItem<CoordinateAssignment>(
+                            value: coordinateAssignment,
+                            child: Text(coordinateAssignment.name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            builder.coordinateAssignment = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 ElevatedButton(
                   onPressed: () {
                     final node12 = Node.Id(r.nextInt(100));

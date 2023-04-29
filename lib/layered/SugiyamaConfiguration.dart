@@ -16,6 +16,7 @@ class SugiyamaConfiguration {
   int orientation = DEFAULT_ORIENTATION;
   int iterations = DEFAULT_ITERATIONS;
   BendPointShape bendPointShape = SharpBendPointShape();
+  CoordinateAssignment coordinateAssignment = CoordinateAssignment.Average;
 
   int getLevelSeparation() {
     return levelSeparation;
@@ -28,6 +29,14 @@ class SugiyamaConfiguration {
   int getOrientation() {
     return orientation;
   }
+}
+
+enum CoordinateAssignment {
+  DownRight, // 0
+  DownLeft, // 1
+  UpRight, // 2
+  UpLeft, // 3
+  Average, // 4
 }
 
 abstract class BendPointShape {}

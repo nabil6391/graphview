@@ -442,75 +442,94 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void balance(List<Map<Node, double>> x, List<Map<Node?, double>> blockWidth) {
     final coordinates = <Node, double>{};
-    var minWidth = double.infinity;
-    var smallestWidthLayout = 0;
-    final minArray = List.filled(4, 0.0);
-    final maxArray = List.filled(4, 0.0);
 
-    var minSmallestWidthLayout = double.infinity;
-    var maxSmallestWidthLayout = 0.0;
+    switch (configuration.coordinateAssignment) {
+      case CoordinateAssignment.Average:
+        var minWidth = double.infinity;
 
-    // Get the layout with the smallest width and set minimum and maximum value for each direction;
-    for (var i = 0; i < 4; i++) {
-      minArray[i] = double.infinity;
-      maxArray[i] = 0;
+        var smallestWidthLayout = 0;
+        final minArray = List.filled(4, 0.0);
+        final maxArray = List.filled(4, 0.0);
 
-      graph.nodes.forEach((v) {
-        final bw = 0.5 * blockWidth[i][v]!;
-        var xp = x[i][v]! - bw;
-        if (xp < minArray[i]) {
-          minArray[i] = xp;
-        }
-        xp = x[i][v]! + bw;
-        if (xp > maxArray[i]) {
-          maxArray[i] = xp;
-        }
-      });
+        // Get the layout with the smallest width and set minimum and maximum value for each direction;
+        for (var i = 0; i < 4; i++) {
+          minArray[i] = double.infinity;
+          maxArray[i] = 0;
 
-      final width = maxArray[i] - minArray[i];
-      if (width < minWidth) {
-        minWidth = width;
-        smallestWidthLayout = i;
-
-        // Cache the values for the smallest width layout
-        minSmallestWidthLayout = minArray[i];
-        maxSmallestWidthLayout = maxArray[i];
-      }
-    }
-
-    // Align the layouts to the one with the smallest width
-    for (var layout = 0; layout < 4; layout++) {
-      if (layout != smallestWidthLayout) {
-        // Align the left to right layouts to the left border of the smallest layout
-        var diff = 0.0;
-        if (layout < 2) {
-          diff = minArray[layout] - minSmallestWidthLayout;
-        } else {
-          // Align the right to left layouts to the right border of the smallest layout
-          diff = maxArray[layout] - maxSmallestWidthLayout;
-        }
-        if (diff > 0) {
-          x[layout].keys.forEach((n) {
-            x[layout][n] = x[layout][n]! - diff;
+          graph.nodes.forEach((v) {
+            final bw = 0.5 * blockWidth[i][v]!;
+            var xp = x[i][v]! - bw;
+            if (xp < minArray[i]) {
+              minArray[i] = xp;
+            }
+            xp = x[i][v]! + bw;
+            if (xp > maxArray[i]) {
+              maxArray[i] = xp;
+            }
           });
-        } else {
-          x[layout].keys.forEach((n) {
-            x[layout][n] = x[layout][n]! + diff;
-          });
-        }
-      }
-    }
 
-    // Get the average median of each coordinate
-    var values = List.filled(4, 0.0);
-    graph.nodes.forEach((n) {
-      for (var i = 0; i < 4; i++) {
-        values[i] = x[i][n]!;
-      }
-      values.sort();
-      var average = (values[1] + values[2]) * 0.5;
-      coordinates[n] = average;
-    });
+          final width = maxArray[i] - minArray[i];
+          if (width < minWidth) {
+            minWidth = width;
+            smallestWidthLayout = i;
+          }
+        }
+
+        // Align the layouts to the one with the smallest width
+        for (var layout = 0; layout < 4; layout++) {
+          if (layout != smallestWidthLayout) {
+            // Align the left to right layouts to the left border of the smallest layout
+            var diff = 0.0;
+            if (layout < 2) {
+              diff = minArray[layout] - minArray[smallestWidthLayout];
+            } else {
+              // Align the right to left layouts to the right border of the smallest layout
+              diff = maxArray[layout] - maxArray[smallestWidthLayout];
+            }
+            if (diff > 0) {
+              x[layout].keys.forEach((n) {
+                x[layout][n] = x[layout][n]! - diff;
+              });
+            } else {
+              x[layout].keys.forEach((n) {
+                x[layout][n] = x[layout][n]! + diff;
+              });
+            }
+          }
+        }
+
+        // Get the average median of each coordinate
+        var values = List.filled(4, 0.0);
+        graph.nodes.forEach((n) {
+          for (var i = 0; i < 4; i++) {
+            values[i] = x[i][n]!;
+          }
+          values.sort();
+          var average = (values[1] + values[2]) * 0.5;
+          coordinates[n] = average;
+        });
+        break;
+      case CoordinateAssignment.DownRight:
+        graph.nodes.forEach((n) {
+          coordinates[n] = x[0][n] ?? 0.0;
+        });
+        break;
+      case CoordinateAssignment.DownLeft:
+        graph.nodes.forEach((n) {
+          coordinates[n] = x[1][n] ?? 0.0;
+        });
+        break;
+      case CoordinateAssignment.UpRight:
+        graph.nodes.forEach((n) {
+          coordinates[n] = x[2][n] ?? 0.0;
+        });
+        break;
+      case CoordinateAssignment.UpLeft:
+        graph.nodes.forEach((n) {
+          coordinates[n] = x[3][n] ?? 0.0;
+        });
+        break;
+    }
 
     // Get the minimum coordinate value
     var minValue = coordinates.values.reduce(min);
