@@ -1,7 +1,7 @@
 ## 1.2.0
 
 - Resolved Overlaping for Sugiyama Algorithm (#56, #93, #87)
-- 
+- Added Enum for Coordinate Assignment in Sugiyama : DownRight, DownLeft, UpRight, UpLeft, Average(Default)
 ## 1.1.1
 
 - Fixed bug for SugiyamaAlgorithm where horizontal placement was overlapping
