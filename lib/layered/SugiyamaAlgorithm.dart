@@ -512,7 +512,7 @@ class SugiyamaAlgorithm extends Algorithm {
       coordinates[n] = average;
     });
 
-    // get the minimum coordinate value
+    // Get the minimum coordinate value
     var minValue = coordinates.values.reduce(min);
 
     // Set left border to 0
@@ -522,9 +522,53 @@ class SugiyamaAlgorithm extends Algorithm {
       });
     }
 
+    resolveOverlaps(coordinates);
+
+
     graph.nodes.forEach((v) {
       v.x = coordinates[v]!;
     });
+  }
+
+  void resolveOverlaps(Map<Node, double> coordinates) {
+     for (var layer in layers) {
+      var layerNodes = List<Node>.from(layer);
+      layerNodes.sort((a, b) => nodeData[a]!.position.compareTo(nodeData[b]!.position));
+
+      var data = nodeData[layerNodes.first];
+      if (data?.layer != 0) {
+        var leftCoordinate = 0.0;
+        for (var i = 1; i < layerNodes.length; i++) {
+          var currentNode = layerNodes[i];
+          if(!nodeData[currentNode]!.isDummy) {
+            var previousNode = getPreviousNonDummyNode(layerNodes, i);
+
+            if (previousNode != null) {
+              leftCoordinate = coordinates[previousNode]! + previousNode.width + configuration.nodeSeparation;
+            } else {
+              leftCoordinate = 0.0;
+            }
+
+            if (leftCoordinate > coordinates[currentNode]!) {
+              var adjustment = leftCoordinate - coordinates[currentNode]!;
+              if (coordinates[currentNode] != null) {
+                coordinates[currentNode] = coordinates[currentNode]! + adjustment;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Node? getPreviousNonDummyNode(List<Node> layerNodes, int currentIndex) {
+    for (var i = currentIndex - 1; i >= 0; i--) {
+      var previousNode = layerNodes[i];
+      if (!nodeData[previousNode]!.isDummy) {
+        return previousNode;
+      }
+    }
+    return null;
   }
 
   Map<int, int> markType1Conflicts(bool downward) {
@@ -543,8 +587,7 @@ class SugiyamaAlgorithm extends Algorithm {
              * iterate level[2..h-2] in the given direction;
              * available 1 levels to h;
              */
-      var i = lower;
-      while (downward && i <= upper || !downward && i >= upper) {
+      for (var i = lower; downward ? i <= upper : i >= upper; i += downward ? 1 : -1) {
         var k0 = 0;
         var firstIndex = 0; // index of first node on layer;
         final currentLevel = layers[i];
@@ -581,7 +624,6 @@ class SugiyamaAlgorithm extends Algorithm {
             k0 = k1;
           }
         }
-        i = downward ? i + 1 : i - 1;
       }
     }
     return type1Conflicts;
@@ -711,7 +753,6 @@ class SugiyamaAlgorithm extends Algorithm {
               } else {
                 x[v] = min(x[v]!, x[u]! - gap);
               }
-              //3114232,1056219149, 9786946, 1759426, 481786088
             }
           }
           currentNode = align[currentNode]!;
