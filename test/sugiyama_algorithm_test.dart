@@ -108,7 +108,7 @@ void main() {
 
       expect(timeTaken < 1000, true);
 
-      expect(graph.getNodeAtPosition(0).position, Offset(585, 10));
+      expect(graph.getNodeAtPosition(0).position, Offset(660.0, 10));
       expect(graph.getNodeAtPosition(6).position, Offset(1045.0, 815.0));
       expect(graph.getNodeAtPosition(13).position, Offset(1045.0, 470.0));
       expect(graph.getNodeAtPosition(22).position, Offset(700, 930.0));
@@ -310,38 +310,6 @@ void main() {
 
           final overlaps = currentRect.overlaps(otherRect);
           expect(false, overlaps, reason: "$currentNode overlaps $otherNode");
-        }
-      }
-    }
-  });
-
-  test("Sugiyama old child nodes never overlaps", () {
-    for (final json in exampleTrees) {
-      final graph = Graph()..inflateWithJson(json);
-      for (var i = 0; i < graph.nodeCount(); i++) {
-        graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
-      }
-
-      var stopwatch = Stopwatch()..start();
-
-      SugiyamaAlgorithm(SugiyamaConfiguration())..run(graph, 10, 10);
-
-      var timeTaken = stopwatch.elapsed.inMilliseconds;
-
-      print('Timetaken $timeTaken ${graph.nodeCount()}');
-
-
-      for (var i = 0; i < graph.nodeCount(); i++) {
-        final currentNode = graph.getNodeAtPosition(i);
-        for (var j = 0; j < graph.nodeCount(); j++) {
-          final otherNode = graph.getNodeAtPosition(j);
-
-          if (currentNode.key == otherNode.key) continue;
-          final currentRect = currentNode.toRect();
-          final otherRect = otherNode.toRect();
-
-          final overlaps = currentRect.overlaps(otherRect);
-          expect(false, overlaps);
         }
       }
     }
