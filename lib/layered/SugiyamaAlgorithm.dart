@@ -593,7 +593,7 @@ class SugiyamaAlgorithm extends Algorithm {
       for (var v in nodes) {
         final adjNodes = getAdjNodes(v, downward);
         if (adjNodes.isNotEmpty) {
-          var midLevelValue =  adjNodes.length / 2;
+          var midLevelValue = adjNodes.length / 2;
           // Calculate medians
           final medians = adjNodes.length % 2 == 1
               ? [adjNodes[midLevelValue.floor()]]
@@ -602,11 +602,10 @@ class SugiyamaAlgorithm extends Algorithm {
           // For all median neighbours in direction of H
           for (var m in medians) {
             final posM = positionOfNode(m);
-            if (align[v] == v
-                // if segment (u,v) not marked by type1 conflicts AND ...;
-                &&
+            // if segment (u,v) not marked by type1 conflicts AND ...;
+            if (align[v] == v &&
                 type1Conflicts[positionOfNode(v)] != posM &&
-                (leftToRight && r < posM || !leftToRight && r > posM)) {
+                (leftToRight ? r < posM : r > posM)) {
               align[m] = v;
               root[v] = root[m];
               align[v] = root[v];
