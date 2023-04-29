@@ -447,7 +447,10 @@ class SugiyamaAlgorithm extends Algorithm {
     final minArray = List.filled(4, 0.0);
     final maxArray = List.filled(4, 0.0);
 
-    // get the layout with smallest width and set minimum and maximum value for each direction;
+    var minSmallestWidthLayout = double.infinity;
+    var maxSmallestWidthLayout = 0.0;
+
+    // Get the layout with the smallest width and set minimum and maximum value for each direction;
     for (var i = 0; i < 4; i++) {
       minArray[i] = double.infinity;
       maxArray[i] = 0;
@@ -463,23 +466,28 @@ class SugiyamaAlgorithm extends Algorithm {
           maxArray[i] = xp;
         }
       });
+
       final width = maxArray[i] - minArray[i];
       if (width < minWidth) {
         minWidth = width;
         smallestWidthLayout = i;
+
+        // Cache the values for the smallest width layout
+        minSmallestWidthLayout = minArray[i];
+        maxSmallestWidthLayout = maxArray[i];
       }
     }
 
-    // align the layouts to the one with smallest width
+    // Align the layouts to the one with the smallest width
     for (var layout = 0; layout < 4; layout++) {
       if (layout != smallestWidthLayout) {
-        // align the left to right layouts to the left border of the smallest layout
+        // Align the left to right layouts to the left border of the smallest layout
         var diff = 0.0;
         if (layout < 2) {
-          diff = minArray[layout] - minArray[smallestWidthLayout];
+          diff = minArray[layout] - minSmallestWidthLayout;
         } else {
-          // align the right to left layouts to the right border of the smallest layout
-          diff = maxArray[layout] - maxArray[smallestWidthLayout];
+          // Align the right to left layouts to the right border of the smallest layout
+          diff = maxArray[layout] - maxSmallestWidthLayout;
         }
         if (diff > 0) {
           x[layout].keys.forEach((n) {
@@ -493,7 +501,7 @@ class SugiyamaAlgorithm extends Algorithm {
       }
     }
 
-    // get the average median of each coordinate
+    // Get the average median of each coordinate
     var values = List.filled(4, 0.0);
     graph.nodes.forEach((n) {
       for (var i = 0; i < 4; i++) {
@@ -507,7 +515,7 @@ class SugiyamaAlgorithm extends Algorithm {
     // get the minimum coordinate value
     var minValue = coordinates.values.reduce(min);
 
-    // set left border to 0
+    // Set left border to 0
     if (minValue != 0) {
       coordinates.keys.forEach((n) {
         coordinates[n] = coordinates[n]! - minValue;
