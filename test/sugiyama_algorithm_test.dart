@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -284,7 +282,7 @@ void main() {
     expect(graph.getNodeAtPosition(122).position, Offset(1850.0, 3252.5));
   });
 
-  test("Sugiyama child nodes never overlaps", () {
+  test('Sugiyama child nodes never overlaps', () {
     for (final json in exampleTrees) {
       final graph = Graph()..inflateWithJson(json);
       for (var i = 0; i < graph.nodeCount(); i++) {
@@ -309,7 +307,7 @@ void main() {
           final otherRect = otherNode.toRect();
 
           final overlaps = currentRect.overlaps(otherRect);
-          expect(false, overlaps, reason: "$currentNode overlaps $otherNode");
+          expect(false, overlaps, reason: '$currentNode overlaps $otherNode');
         }
       }
     }
