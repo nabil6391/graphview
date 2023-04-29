@@ -1,5 +1,9 @@
 part of graphview;
 
+extension on Node {
+  Rect toRect() => Rect.fromLTRB(x, y, x + width, y + height);
+}
+
 class Graph {
   final List<Node> _nodes = [];
   final List<Edge> _edges = [];

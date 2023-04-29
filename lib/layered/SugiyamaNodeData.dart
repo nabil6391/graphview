@@ -13,6 +13,6 @@ class SugiyamaNodeData {
 
   @override
   String toString() {
-    return 'SugiyamaNodeData{reversed: $reversed, isDummy: $isDummy, median: $median, layer: $layer}';
+    return 'SugiyamaNodeData{reversed: $reversed, isDummy: $isDummy, median: $median, layer: $layer, position: $position';
   }
 }

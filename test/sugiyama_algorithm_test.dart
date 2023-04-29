@@ -108,7 +108,7 @@ void main() {
 
       expect(timeTaken < 1000, true);
 
-      expect(graph.getNodeAtPosition(0).position, Offset(585, 10));
+      expect(graph.getNodeAtPosition(0).position, Offset(660.0, 10));
       expect(graph.getNodeAtPosition(6).position, Offset(1045.0, 815.0));
       expect(graph.getNodeAtPosition(13).position, Offset(1045.0, 470.0));
       expect(graph.getNodeAtPosition(22).position, Offset(700, 930.0));
@@ -291,7 +291,13 @@ void main() {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
+      var stopwatch = Stopwatch()..start();
+
       SugiyamaAlgorithm(SugiyamaConfiguration())..run(graph, 10, 10);
+
+      var timeTaken = stopwatch.elapsed.inMilliseconds;
+
+      print('Timetaken $timeTaken ${graph.nodeCount()}');
 
       for (var i = 0; i < graph.nodeCount(); i++) {
         final currentNode = graph.getNodeAtPosition(i);
@@ -303,7 +309,7 @@ void main() {
           final otherRect = otherNode.toRect();
 
           final overlaps = currentRect.overlaps(otherRect);
-          expect(false, overlaps);
+          expect(false, overlaps, reason: "$currentNode overlaps $otherNode");
         }
       }
     }
