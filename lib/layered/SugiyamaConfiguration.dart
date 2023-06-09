@@ -18,6 +18,8 @@ class SugiyamaConfiguration {
   BendPointShape bendPointShape = SharpBendPointShape();
   CoordinateAssignment coordinateAssignment = CoordinateAssignment.Average;
 
+  bool addTriangleToEdge = true;
+
   int getLevelSeparation() {
     return levelSeparation;
   }
