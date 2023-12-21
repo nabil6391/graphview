@@ -4,8 +4,9 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Node, SugiyamaNodeData> nodeData;
   Map<Edge, SugiyamaEdgeData> edgeData;
   BendPointShape bendPointShape;
+  bool addTriangleToEdge;
 
-  SugiyamaEdgeRenderer(this.nodeData, this.edgeData, this.bendPointShape);
+  SugiyamaEdgeRenderer(this.nodeData, this.edgeData, this.bendPointShape, this.addTriangleToEdge);
 
   var path = Path();
 
@@ -51,9 +52,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
               bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
         }
 
-        final triangleCentroid = drawTriangle(
-            canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
-
         path.reset();
         path.moveTo(bendPoints[0], bendPoints[1]);
 
@@ -83,7 +81,16 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           _drawSharpBendPointsEdge(bendPointsWithoutDuplication);
         }
 
-        path.lineTo(triangleCentroid[0], triangleCentroid[1]);
+        if (addTriangleToEdge) {
+          final triangleCentroid = drawTriangle(
+              canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+
+          path.lineTo(triangleCentroid[0], triangleCentroid[1]);
+        } else {
+          final stopX = x1 + destination.width / 2;
+          final stopY = y1 + destination.height / 2;
+          path.lineTo(stopX, stopY);
+        }
         canvas.drawPath(path, currentPaint);
       } else {
         final startX = x + source.width / 2;
@@ -93,11 +100,17 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
         clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
-        final triangleCentroid = drawTriangle(
-            canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+        if (addTriangleToEdge) {
+          final triangleCentroid = drawTriangle(
+              canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0],
+              clippedLine[1], clippedLine[2], clippedLine[3]);
 
-        canvas.drawLine(
-            Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
+          canvas.drawLine(
+              Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
+        } else {
+          canvas.drawLine(
+              Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
+        }
       }
     });
   }
