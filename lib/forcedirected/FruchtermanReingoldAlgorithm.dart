@@ -3,7 +3,7 @@ part of graphview;
 const int DEFAULT_ITERATIONS = 1000;
 const double REPULSION_RATE = 0.5;
 const double REPULSION_PERCENTAGE = 0.4;
-const double ATTRACTION_RATE = 0.15;
+const double ATTRACTION_RATE = 0.15 * 0.5; // https://github.com/nabil6391/graphview/issues/111
 const double ATTRACTION_PERCENTAGE = 0.15;
 const int CLUSTER_PADDING = 15;
 const double EPSILON = 0.0001;
@@ -88,7 +88,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
       var deltaDistance = max(EPSILON, delta.distance);
       var maxAttractionDistance = min(graphWidth * attractionPercentage, graphHeight * attractionPercentage);
       var attractionForce = min(0, (maxAttractionDistance - deltaDistance)).abs() / (maxAttractionDistance * 2);
-      var attractionVector = delta * attractionForce * attractionRate * 0.5; // https://github.com/nabil6391/graphview/issues/111
+      var attractionVector = delta * attractionForce * attractionRate;
 
       displacement[source] = displacement[source]! - attractionVector;
       displacement[destination] = displacement[destination]! + attractionVector;
