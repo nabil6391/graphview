@@ -88,7 +88,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
       var deltaDistance = max(EPSILON, delta.distance);
       var maxAttractionDistance = min(graphWidth * attractionPercentage, graphHeight * attractionPercentage);
       var attractionForce = min(0, (maxAttractionDistance - deltaDistance)).abs() / (maxAttractionDistance * 2);
-      var attractionVector = delta * attractionForce * attractionRate;
+      var attractionVector = delta * attractionForce * attractionRate * 0.5; // https://github.com/nabil6391/graphview/issues/111
 
       displacement[source] = displacement[source]! - attractionVector;
       displacement[destination] = displacement[destination]! + attractionVector;
