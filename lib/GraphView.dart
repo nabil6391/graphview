@@ -239,14 +239,11 @@ class _GraphViewAnimated extends StatefulWidget {
   final Graph graph;
   final Algorithm algorithm;
   final Paint? paint;
-  final nodes = <Widget>[];
+  final NodeWidgetBuilder builder;
   final stepMilis = 25;
 
   _GraphViewAnimated(
-      {Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder}) {
-    graph.nodes.forEach((node) {
-      nodes.add(node.data ?? builder(node));
-    });
+      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder}) {
   }
 
   @override
@@ -296,7 +293,7 @@ class _GraphViewAnimatedState extends State<_GraphViewAnimated> {
         ...List<Widget>.generate(graph.nodeCount(), (index) {
           return Positioned(
             child: GestureDetector(
-              child: widget.nodes[index],
+              child: graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
               onPanUpdate: (details) {
                 graph.getNodeAtPosition(index).position += details.delta;
                 update();
