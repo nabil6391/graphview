@@ -53,9 +53,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
               bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
         }
 
-        final triangleCentroid = drawTriangle(
-            canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
-
         path.reset();
         path.moveTo(bendPoints[0], bendPoints[1]);
 
@@ -95,8 +92,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           final stopY = y1 + destination.height / 2;
           path.lineTo(stopX, stopY);
         }
-        // path.lineTo(triangleCentroid[0], triangleCentroid[1]);
-        path.lineTo(triangleCentroid[0], triangleCentroid[1]);
         canvas.drawPath(path, currentPaint);
       } else {
         final startX = x + source.width / 2;
@@ -106,37 +101,47 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
         clippedLine = clipLine(startX, startY, stopX, stopY, destination);
 
+        var destinationPoint = Offset(stopX, stopY);
+
         if (addTriangleToEdge) {
           final triangleCentroid = drawTriangle(
               canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0],
               clippedLine[1], clippedLine[2], clippedLine[3]);
 
-          canvas.drawLine(
-              Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
-        } else {
-          canvas.drawLine(
-              Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
-        // final triangleCentroid = drawTriangle(
-        //     canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+          destinationPoint = Offset(triangleCentroid[0], triangleCentroid[1]);
+        }
 
-        // canvas.drawLine(
-        //     Offset(clippedLine[0], clippedLine[1]), Offset(triangleCentroid[0], triangleCentroid[1]), currentPaint);
-
+        // Draw the line
         switch (nodeData[destination]?.lineType.toUpperCase()) {
           case 'DASHEDLINE':
-            _drawDashedLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint, 0.6);
+            _drawDashedLine(
+                canvas,
+                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
+                currentPaint, 0.6
+            );
             break;
           case 'DOTTEDLINE':
-            _drawDashedLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint, 0.0);
+            // dotted line uses the same method as dashed line, but with a lineLength of 0.0
+            _drawDashedLine(
+                canvas,
+                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
+                currentPaint, 0.0
+            );
             break;
           case 'SINELINE':
-            _drawSineLine(canvas, Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
+            _drawSineLine(
+                canvas,
+                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
+                currentPaint
+            );
             break;
           default:
-            canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), Offset(stopX, stopY), currentPaint);
+            canvas.drawLine(
+                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
+                currentPaint
+            );
             break;
         }
-      }
     }});
   }
 
@@ -242,7 +247,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         source = segmentDestination;
         phase += pi * segmentLength / lineLength;
       }
-
       canvas.drawPath(path, paint);
     }
   }
