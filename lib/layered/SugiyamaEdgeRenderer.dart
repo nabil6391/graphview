@@ -183,31 +183,46 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     }
   }
 
-  void _drawDashedLine(Canvas canvas, Offset source, Offset destination, Paint paint, double lineLength) {
-    var numLines = 14;
 
-    // lineLength == 0.0 to use dotted lines
+void _drawDashedLine(Canvas canvas, Offset source, Offset destination, Paint paint, double lineLength) {
+  // Calculate the distance between the source and destination points
+  var dx = destination.dx - source.dx;
+  var dy = destination.dy - source.dy;
+
+  // Calculate the Euclidean distance
+  var distance = sqrt(dx * dx + dy * dy);
+
+  var numLines = lineLength == 0.0 ? (distance / 5).ceil() : 14;
+
+  // Calculate the step size for each line
+  var stepX = dx / numLines;
+  var stepY = dy / numLines;
+
+  // Set a fixed radius for the circles
+  var circleRadius = 1.0;
+
+  // Set a fixed stroke width for the circles
+  var circleStrokeWidth = 1.0;
+  var circlePaint = Paint()
+    ..color = paint.color
+    ..strokeWidth = circleStrokeWidth
+    ..style = PaintingStyle.fill; // Change to fill style
+
+  // Draw the lines or dots between the two points
+  Iterable<int>.generate(numLines).forEach((i) {
+    var startX = source.dx + (i * stepX);
+    var startY = source.dy + (i * stepY);
     if (lineLength == 0.0) {
-      numLines = 40;
-    }
-
-    // Calculate the distance between the source and destination points
-    var dx = destination.dx - source.dx;
-    var dy = destination.dy - source.dy;
-
-    // Calculate the step size for each line
-    var stepX = dx / numLines;
-    var stepY = dy / numLines;
-
-    // Draw the lines between the two points
-    Iterable<int>.generate(numLines).map((i) {
-      var startX = source.dx + (i * stepX);
-      var startY = source.dy + (i * stepY);
+      // Draw a dot with a fixed radius and stroke width
+      canvas.drawCircle(Offset(startX, startY), circleRadius, circlePaint);
+    } else {
+      // Draw a dash
       var endX = startX + (stepX * lineLength);
       var endY = startY + (stepY * lineLength);
-      return [Offset(startX, startY), Offset(endX, endY)];
-    }).forEach((points) => canvas.drawLine(points[0], points[1], paint));
-  }
+      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+    }
+  });
+}
 
   void _drawSineLine(Canvas canvas, Offset source, Offset destination, Paint paint) {
     paint..strokeWidth = 1.5;
