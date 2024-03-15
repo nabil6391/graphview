@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'dart:ui';
 import 'package:collection/collection.dart' show IterableExtension;
 
 part 'Graph.dart';

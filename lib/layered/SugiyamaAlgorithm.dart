@@ -85,7 +85,7 @@ class SugiyamaAlgorithm extends Algorithm {
   void initSugiyamaData() {
     graph.nodes.forEach((node) {
       node.position = Offset(0, 0);
-      nodeData[node] = SugiyamaNodeData();
+      nodeData[node] = SugiyamaNodeData(node.lineType);
     });
 
     graph.edges.forEach((edge) {
@@ -149,7 +149,7 @@ class SugiyamaAlgorithm extends Algorithm {
         while (iterator.moveNext()) {
           final edge = iterator.current;
           final dummy = Node.Id(dummyId.hashCode);
-          final dummyNodeData = SugiyamaNodeData();
+          final dummyNodeData = SugiyamaNodeData(node.lineType);
           dummyNodeData.isDummy = true;
           dummyNodeData.layer = indexNextLayer;
           nextLayer.add(dummy);
