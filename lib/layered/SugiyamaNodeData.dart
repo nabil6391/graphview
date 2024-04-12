@@ -8,7 +8,7 @@ class SugiyamaNodeData {
   int position = -1;
   List<Node> predecessorNodes = [];
   List<Node> successorNodes = [];
-  String lineType;
+  LineType lineType;
 
   SugiyamaNodeData(this.lineType);
 

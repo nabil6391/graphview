@@ -144,6 +144,13 @@ class Graph {
 
 }
 
+enum LineType {
+  Default,
+  DottedLine,
+  DashedLine,
+  SineLine,
+}
+
 class Node {
   ValueKey? key;
 
@@ -163,7 +170,7 @@ class Node {
 
   Offset position = Offset(0, 0);
 
-  String lineType = 'default';
+  LineType lineType = LineType.Default;
 
   double get height => size.height;
 

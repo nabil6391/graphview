@@ -112,15 +112,15 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         }
 
         // Draw the line
-        switch (nodeData[destination]?.lineType.toUpperCase()) {
-          case 'DASHEDLINE':
+        switch (nodeData[destination]?.lineType) {
+          case LineType.DashedLine:
             _drawDashedLine(
                 canvas,
                 Offset(clippedLine[0], clippedLine[1]), destinationPoint,
                 currentPaint, 0.6
             );
             break;
-          case 'DOTTEDLINE':
+          case LineType.DottedLine:
             // dotted line uses the same method as dashed line, but with a lineLength of 0.0
             _drawDashedLine(
                 canvas,
@@ -128,7 +128,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
                 currentPaint, 0.0
             );
             break;
-          case 'SINELINE':
+          case LineType.SineLine:
             _drawSineLine(
                 canvas,
                 Offset(clippedLine[0], clippedLine[1]), destinationPoint,
