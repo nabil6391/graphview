@@ -144,6 +144,13 @@ class Graph {
 
 }
 
+enum LineType {
+  Default,
+  DottedLine,
+  DashedLine,
+  SineLine,
+}
+
 class Node {
   ValueKey? key;
 
@@ -162,6 +169,8 @@ class Node {
   Size size = Size(0, 0);
 
   Offset position = Offset(0, 0);
+
+  LineType lineType = LineType.Default;
 
   double get height => size.height;
 
@@ -189,7 +198,7 @@ class Node {
 
   @override
   String toString() {
-    return 'Node{position: $position, key: $key, _size: $size}';
+    return 'Node{position: $position, key: $key, _size: $size, lineType: $lineType}';
   }
 }
 

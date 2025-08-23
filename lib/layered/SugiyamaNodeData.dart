@@ -8,11 +8,14 @@ class SugiyamaNodeData {
   int position = -1;
   List<Node> predecessorNodes = [];
   List<Node> successorNodes = [];
+  LineType lineType;
+
+  SugiyamaNodeData(this.lineType);
 
   bool get isReversed => reversed.isNotEmpty;
 
   @override
   String toString() {
-    return 'SugiyamaNodeData{reversed: $reversed, isDummy: $isDummy, median: $median, layer: $layer, position: $position';
+    return 'SugiyamaNodeData{reversed: $reversed, isDummy: $isDummy, median: $median, layer: $layer, position: $position, lineType: $lineType}';
   }
 }
