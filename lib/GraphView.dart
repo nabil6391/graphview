@@ -1,5 +1,6 @@
 library graphview;
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 import 'dart:convert';
