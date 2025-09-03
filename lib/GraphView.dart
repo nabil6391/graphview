@@ -2,7 +2,6 @@ library graphview;
 
 import 'dart:collection';
 import 'dart:math';
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -40,42 +39,177 @@ part 'tree/TreeEdgeRenderer.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
 
+class GraphViewController {
+  _GraphViewState? _state;
+
+  void _attach(_GraphViewState state) => _state = state;
+  void _detach() => _state = null;
+
+  void animateToNode(int nodeId) => _state?.animateToNode(nodeId);
+  void animateToMatrix(Matrix4 targetMatrix) => _state?.animateToMatrix(targetMatrix);
+  void resetView() => _state?.resetView();
+  void zoomToFit() => _state?.zoomToFit();
+}
+
 class GraphView extends StatefulWidget {
   final Graph graph;
   final Algorithm algorithm;
   final Paint? paint;
   final NodeWidgetBuilder builder;
   final bool animated;
+  final GraphViewController? controller;
+  final bool _isBuilder;
 
-  GraphView(
-      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder, this.animated = true})
-      : super(key: key);
+  GraphView({
+    Key? key,
+    required this.graph,
+    required this.algorithm,
+    this.paint,
+    required this.builder,
+    this.animated = true,
+  }) : controller = null, _isBuilder = false, super(key: key);
+
+  GraphView.builder({
+    Key? key,
+    required this.graph,
+    required this.algorithm,
+    this.paint,
+    required this.builder,
+    this.controller,
+    this.animated = true,
+  }) : _isBuilder = true, super(key: key);
 
   @override
   _GraphViewState createState() => _GraphViewState();
 }
 
-class _GraphViewState extends State<GraphView> {
+class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
+  final TransformationController _transformationController = TransformationController();
+  Animation<Matrix4>? _animationMove;
+  late final AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    widget.controller?._attach(this);
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._detach();
+    _animationController.dispose();
+    _transformationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.algorithm is FruchtermanReingoldAlgorithm) {
-      return _GraphViewAnimated(
-        key: widget.key,
-        graph: widget.graph,
-        algorithm: widget.algorithm,
-        paint: widget.paint,
-        builder: widget.builder,
-      );
-    } else {
-      return _GraphView(
-        key: widget.key,
-        graph: widget.graph,
-        algorithm: widget.algorithm,
-        paint: widget.paint,
-        builder: widget.builder,
+    final graphView = _GraphView(
+      graph: widget.graph,
+      algorithm: widget.algorithm,
+      paint: widget.paint,
+      builder: widget.builder,
+    );
+
+    if (widget._isBuilder) {
+      return InteractiveViewer(
+        transformationController: _transformationController,
+        constrained: false,
+        boundaryMargin: EdgeInsets.all(double.infinity),
+        minScale: 0.01,
+        maxScale: 5.6,
+        child: graphView,
       );
     }
+
+    return graphView;
   }
+
+  void animateToNode(int nodeId) {
+    final node = widget.graph.nodes.cast<Node?>().firstWhere(
+          (n) => n?.key?.value == nodeId,
+      orElse: () => null,
+    );
+    if (node == null) return;
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final viewportSize = renderBox.size;
+    final centerX = viewportSize.width / 2;
+    final centerY = viewportSize.height / 2;
+    final nodeCenter = Offset(
+      node.position.dx + node.width / 2,
+      node.position.dy + node.height / 2,
+    );
+
+    final targetMatrix = Matrix4.identity()
+      ..translate(centerX - nodeCenter.dx, centerY - nodeCenter.dy);
+
+    animateToMatrix(targetMatrix);
+  }
+
+  void resetView() => animateToMatrix(Matrix4.identity());
+
+  void zoomToFit() {
+    if (widget.graph.nodes.isEmpty) return;
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final viewportSize = renderBox.size;
+    final bounds = _calculateGraphBounds();
+
+    final scale = (viewportSize.shortestSide * 0.8 / bounds.longestSide).clamp(0.01, 5.6);
+    final centerOffset = Offset(
+      viewportSize.width / 2 - bounds.center.dx * scale,
+      viewportSize.height / 2 - bounds.center.dy * scale,
+    );
+
+    final targetMatrix = Matrix4.identity()
+      ..translate(centerOffset.dx, centerOffset.dy)
+      ..scale(scale);
+
+    animateToMatrix(targetMatrix);
+  }
+
+  Rect _calculateGraphBounds() {
+    if (widget.graph.nodes.isEmpty) return Rect.zero;
+
+    final positions = widget.graph.nodes.map((n) => n.position);
+    final left = positions.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+    final top = positions.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+    final right = positions.map((p) => p.dx + 100).reduce((a, b) => a > b ? a : b);
+    final bottom = positions.map((p) => p.dy + 50).reduce((a, b) => a > b ? a : b);
+
+    return Rect.fromLTRB(left, top, right, bottom);
+  }
+
+  void animateToMatrix(Matrix4 targetMatrix) {
+    _animationController.reset();
+    _animationMove = Matrix4Tween(
+      begin: _transformationController.value,
+      end: targetMatrix,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    _animationMove!.addListener(_onAnimateMove);
+    _animationController.forward();
+  }
+
+  void _onAnimateMove() {
+    _transformationController.value = _animationMove!.value;
+    if (!_animationController.isAnimating) {
+      _animationMove!.removeListener(_onAnimateMove);
+      _animationMove = null;
+      _animationController.reset();
+    }
+  }
+
 }
 
 class _GraphView extends MultiChildRenderObjectWidget {
