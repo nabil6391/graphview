@@ -10,26 +10,17 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
   var path = Path();
 
+  bool hasBendEdges(Edge edge) => edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty;
+
   @override
   void render(Canvas canvas, Graph graph, Paint paint) {
     var trianglePaint = Paint()
       ..color = paint.color
       ..style = PaintingStyle.fill;
-      
 
     graph.edges.forEach((edge) {
       final source = edge.source;
-
-      var x = source.x;
-      var y = source.y;
-
-      var destination = edge.destination;
-
-      var x1 = destination.x;
-      var y1 = destination.y;
-      path.reset();
-
-      var clippedLine = <double>[];
+      final destination = edge.destination;
 
       Paint? edgeTrianglePaint;
       if (edge.paint != null) {
@@ -41,75 +32,83 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       var currentPaint = edge.paint ?? paint
         ..style = PaintingStyle.stroke;
 
-      if (edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty) {
-        // draw bend points
-        var bendPoints = edgeData[edge]!.bendPoints;
-        final size = bendPoints.length;
-
-        if (nodeData[source]!.isReversed) {
-          clippedLine = clipLine(bendPoints[2], bendPoints[3], bendPoints[0], bendPoints[1], destination);
-        } else {
-          clippedLine = clipLine(
-              bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
-        }
-
-        path.reset();
-        path.moveTo(bendPoints[0], bendPoints[1]);
-
-        final bendPointsWithoutDuplication = <Offset>[];
-
-        for (var i = 0; i < bendPoints.length; i += 2) {
-          final isLastPoint = i == bendPoints.length - 2;
-
-          final x = bendPoints[i];
-          final y = bendPoints[i + 1];
-          final x2 = isLastPoint ? -1 : bendPoints[i + 2];
-          final y2 = isLastPoint ? -1 : bendPoints[i + 3];
-          if (x == x2 && y == y2) {
-            // Skip when two consecutive points are identical
-            // because drawing a line between would be redundant in this case.
-            continue;
-          }
-          bendPointsWithoutDuplication.add(Offset(x, y));
-        }
-
-        if (bendPointShape is MaxCurvedBendPointShape) {
-          _drawMaxCurvedBendPointsEdge(bendPointsWithoutDuplication);
-        } else if (bendPointShape is CurvedBendPointShape) {
-          final shape = bendPointShape as CurvedBendPointShape;
-          _drawCurvedBendPointsEdge(bendPointsWithoutDuplication, shape.curveLength);
-        } else {
-          _drawSharpBendPointsEdge(bendPointsWithoutDuplication);
-        }
-
-        if (addTriangleToEdge) {
-          final triangleCentroid = drawTriangle(
-              canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
-
-          path.lineTo(triangleCentroid[0], triangleCentroid[1]);
-        } else {
-          final stopX = x1 + destination.width / 2;
-          final stopY = y1 + destination.height / 2;
-          path.lineTo(stopX, stopY);
-        }
-        canvas.drawPath(path, currentPaint);
+      if (hasBendEdges(edge)) {
+        _renderEdgeWithBendPoints(canvas, edge, source, destination, currentPaint, edgeTrianglePaint ?? trianglePaint);
       } else {
-        final startX = x + source.width / 2;
-        final startY = y + source.height / 2;
-        final stopX = x1 + destination.width / 2;
-        final stopY = y1 + destination.height / 2;
+        _renderStraightEdge(canvas, edge, source, destination, currentPaint, edgeTrianglePaint ?? trianglePaint);
+      }
+    });
+  }
 
-        clippedLine = clipLine(startX, startY, stopX, stopY, destination);
+  void _renderEdgeWithBendPoints(Canvas canvas, Edge edge, Node source,
+      Node destination, Paint currentPaint, Paint trianglePaint) {
+    var clippedLine = <double>[];
+    var bendPoints = edgeData[edge]!.bendPoints;
+    final size = bendPoints.length;
 
-        var destinationPoint = Offset(stopX, stopY);
+    if (nodeData[source]!.isReversed) {
+      clippedLine = clipLine(bendPoints[2], bendPoints[3], bendPoints[0], bendPoints[1], destination);
+    } else {
+      clippedLine = clipLine(bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
+    }
 
-        if (addTriangleToEdge) {
-          final triangleCentroid = drawTriangle(
-              canvas, edgeTrianglePaint ?? trianglePaint, clippedLine[0],
-              clippedLine[1], clippedLine[2], clippedLine[3]);
+    path.reset();
+    path.moveTo(bendPoints[0], bendPoints[1]);
 
-          destinationPoint = Offset(triangleCentroid[0], triangleCentroid[1]);
-        }
+    final bendPointsWithoutDuplication = <Offset>[];
+
+    for (var i = 0; i < bendPoints.length; i += 2) {
+      final isLastPoint = i == bendPoints.length - 2;
+
+      final x = bendPoints[i];
+      final y = bendPoints[i + 1];
+      final x2 = isLastPoint ? -1 : bendPoints[i + 2];
+      final y2 = isLastPoint ? -1 : bendPoints[i + 3];
+      if (x == x2 && y == y2) {
+        // Skip when two consecutive points are identical
+        // because drawing a line between would be redundant in this case.
+        continue;
+      }
+      bendPointsWithoutDuplication.add(Offset(x, y));
+    }
+
+    if (bendPointShape is MaxCurvedBendPointShape) {
+      _drawMaxCurvedBendPointsEdge(bendPointsWithoutDuplication);
+    } else if (bendPointShape is CurvedBendPointShape) {
+      final shape = bendPointShape as CurvedBendPointShape;
+      _drawCurvedBendPointsEdge(
+          bendPointsWithoutDuplication, shape.curveLength);
+    } else {
+      _drawSharpBendPointsEdge(bendPointsWithoutDuplication);
+    }
+
+    if (addTriangleToEdge) {
+      final triangleCentroid = drawTriangle(canvas, trianglePaint,
+          clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+      path.lineTo(triangleCentroid[0], triangleCentroid[1]);
+    } else {
+      final stopX = destination.x + destination.width / 2;
+      final stopY = destination.y + destination.height / 2;
+      path.lineTo(stopX, stopY);
+    }
+    canvas.drawPath(path, currentPaint);
+  }
+
+  void _renderStraightEdge(Canvas canvas, Edge edge, Node source,
+      Node destination, Paint currentPaint, Paint trianglePaint) {
+    final startX = source.x + source.width / 2;
+    final startY = source.y + source.height / 2;
+    final stopX = destination.x + destination.width / 2;
+    final stopY = destination.y + destination.height / 2;
+
+    var clippedLine = clipLine(startX, startY, stopX, stopY, destination);
+    var destinationPoint = Offset(stopX, stopY);
+
+    if (addTriangleToEdge) {
+      final triangleCentroid = drawTriangle(canvas, trianglePaint,
+          clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+      destinationPoint = Offset(triangleCentroid[0], triangleCentroid[1]);
+    }
 
         // Draw the line
         switch (nodeData[destination]?.lineType) {
@@ -183,46 +182,46 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     }
   }
 
+  void _drawDashedLine(Canvas canvas, Offset source, Offset destination,
+      Paint paint, double lineLength) {
+    // Calculate the distance between the source and destination points
+    var dx = destination.dx - source.dx;
+    var dy = destination.dy - source.dy;
 
-void _drawDashedLine(Canvas canvas, Offset source, Offset destination, Paint paint, double lineLength) {
-  // Calculate the distance between the source and destination points
-  var dx = destination.dx - source.dx;
-  var dy = destination.dy - source.dy;
+    // Calculate the Euclidean distance
+    var distance = sqrt(dx * dx + dy * dy);
 
-  // Calculate the Euclidean distance
-  var distance = sqrt(dx * dx + dy * dy);
+    var numLines = lineLength == 0.0 ? (distance / 5).ceil() : 14;
 
-  var numLines = lineLength == 0.0 ? (distance / 5).ceil() : 14;
+    // Calculate the step size for each line
+    var stepX = dx / numLines;
+    var stepY = dy / numLines;
 
-  // Calculate the step size for each line
-  var stepX = dx / numLines;
-  var stepY = dy / numLines;
+    // Set a fixed radius for the circles
+    var circleRadius = 1.0;
 
-  // Set a fixed radius for the circles
-  var circleRadius = 1.0;
+    // Set a fixed stroke width for the circles
+    var circleStrokeWidth = 1.0;
+    var circlePaint = Paint()
+      ..color = paint.color
+      ..strokeWidth = circleStrokeWidth
+      ..style = PaintingStyle.fill; // Change to fill style
 
-  // Set a fixed stroke width for the circles
-  var circleStrokeWidth = 1.0;
-  var circlePaint = Paint()
-    ..color = paint.color
-    ..strokeWidth = circleStrokeWidth
-    ..style = PaintingStyle.fill; // Change to fill style
-
-  // Draw the lines or dots between the two points
-  Iterable<int>.generate(numLines).forEach((i) {
-    var startX = source.dx + (i * stepX);
-    var startY = source.dy + (i * stepY);
-    if (lineLength == 0.0) {
-      // Draw a dot with a fixed radius and stroke width
-      canvas.drawCircle(Offset(startX, startY), circleRadius, circlePaint);
-    } else {
-      // Draw a dash
-      var endX = startX + (stepX * lineLength);
-      var endY = startY + (stepY * lineLength);
-      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+    // Draw the lines or dots between the two points
+    for (var i = 0; i < numLines; i++) {
+      var startX = source.dx + (i * stepX);
+      var startY = source.dy + (i * stepY);
+      if (lineLength == 0.0) {
+        // Draw a dot with a fixed radius and stroke width
+        canvas.drawCircle(Offset(startX, startY), circleRadius, circlePaint);
+      } else {
+        // Draw a dash
+        var endX = startX + (stepX * lineLength);
+        var endY = startY + (stepY * lineLength);
+        canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+      }
     }
-  });
-}
+  }
 
   void _drawSineLine(Canvas canvas, Offset source, Offset destination, Paint paint) {
     paint..strokeWidth = 1.5;
