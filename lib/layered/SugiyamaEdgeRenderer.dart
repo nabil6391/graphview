@@ -5,10 +5,9 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Edge, SugiyamaEdgeData> edgeData;
   BendPointShape bendPointShape;
   bool addTriangleToEdge;
+  var path = Path();
 
   SugiyamaEdgeRenderer(this.nodeData, this.edgeData, this.bendPointShape, this.addTriangleToEdge);
-
-  var path = Path();
 
   bool hasBendEdges(Edge edge) => edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty;
 
@@ -42,28 +41,28 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
   void _renderEdgeWithBendPoints(Canvas canvas, Edge edge, Node source,
       Node destination, Paint currentPaint, Paint trianglePaint) {
-    var clippedLine = <double>[];
     var bendPoints = edgeData[edge]!.bendPoints;
-    final size = bendPoints.length;
 
-    if (nodeData[source]!.isReversed) {
-      clippedLine = clipLine(bendPoints[2], bendPoints[3], bendPoints[0], bendPoints[1], destination);
-    } else {
-      clippedLine = clipLine(bendPoints[size - 4], bendPoints[size - 3], bendPoints[size - 2], bendPoints[size - 1], destination);
-    }
+    var sourceCenter = _getNodeCenter(source);
+
+    // Calculate the transition/offset from the original bend point to animated position
+    final transitionDx = sourceCenter.dx - bendPoints[0];
+    final transitionDy = sourceCenter.dy - bendPoints[1];
 
     path.reset();
-    path.moveTo(bendPoints[0], bendPoints[1]);
+    path.moveTo(sourceCenter.dx, sourceCenter.dy);
 
     final bendPointsWithoutDuplication = <Offset>[];
 
     for (var i = 0; i < bendPoints.length; i += 2) {
       final isLastPoint = i == bendPoints.length - 2;
 
-      final x = bendPoints[i];
-      final y = bendPoints[i + 1];
-      final x2 = isLastPoint ? -1 : bendPoints[i + 2];
-      final y2 = isLastPoint ? -1 : bendPoints[i + 3];
+      // Apply the same transition to all bend points
+      final x = bendPoints[i] + transitionDx;
+      final y = bendPoints[i + 1] + transitionDy;
+      final x2 = isLastPoint ? -1 : bendPoints[i + 2] + transitionDx;
+      final y2 = isLastPoint ? -1 : bendPoints[i + 3] + transitionDy;
+
       if (x == x2 && y == y2) {
         // Skip when two consecutive points are identical
         // because drawing a line between would be redundant in this case.
@@ -76,19 +75,29 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       _drawMaxCurvedBendPointsEdge(bendPointsWithoutDuplication);
     } else if (bendPointShape is CurvedBendPointShape) {
       final shape = bendPointShape as CurvedBendPointShape;
-      _drawCurvedBendPointsEdge(
-          bendPointsWithoutDuplication, shape.curveLength);
+      _drawCurvedBendPointsEdge(bendPointsWithoutDuplication, shape.curveLength);
     } else {
       _drawSharpBendPointsEdge(bendPointsWithoutDuplication);
     }
 
+    var descOffset = getNodePosition(destination);
+    var stopX = descOffset.dx + destination.width * 0.5;
+    var stopY = descOffset.dy + destination.height * 0.5;
+
     if (addTriangleToEdge) {
-      final triangleCentroid = drawTriangle(canvas, trianglePaint,
-          clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
-      path.lineTo(triangleCentroid[0], triangleCentroid[1]);
+      var clippedLine = <double>[];
+      final size = bendPoints.length;
+      if (nodeData[source]!.isReversed) {
+        clippedLine = clipLineEnd(bendPoints[2], bendPoints[3],  stopX, stopY, destination.x ,
+            destination.y, destination.width, destination.height);
+      } else {
+        clippedLine = clipLineEnd(bendPoints[size - 4], bendPoints[size - 3],
+            stopX, stopY, descOffset.dx,
+            descOffset.dy, destination.width, destination.height);
+      }
+      final triangleCentroid = drawTriangle(canvas, trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
+      path.lineTo(triangleCentroid.dx, triangleCentroid.dy);
     } else {
-      final stopX = destination.x + destination.width / 2;
-      final stopY = destination.y + destination.height / 2;
       path.lineTo(stopX, stopY);
     }
     canvas.drawPath(path, currentPaint);
@@ -96,52 +105,33 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
   void _renderStraightEdge(Canvas canvas, Edge edge, Node source,
       Node destination, Paint currentPaint, Paint trianglePaint) {
-    final startX = source.x + source.width / 2;
-    final startY = source.y + source.height / 2;
-    final stopX = destination.x + destination.width / 2;
-    final stopY = destination.y + destination.height / 2;
-
-    var clippedLine = clipLine(startX, startY, stopX, stopY, destination);
-    var destinationPoint = Offset(stopX, stopY);
+    final sourceCenter = _getNodeCenter(source);
+    var destCenter = _getNodeCenter(destination);
 
     if (addTriangleToEdge) {
-      final triangleCentroid = drawTriangle(canvas, trianglePaint,
-          clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
-      destinationPoint = Offset(triangleCentroid[0], triangleCentroid[1]);
+      final clippedLine = clipLineEnd(sourceCenter.dx, sourceCenter.dy,
+          destCenter.dx, destCenter.dy, destination.x,
+          destination.y, destination.width, destination.height);
+
+      destCenter = drawTriangle(canvas, trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
     }
 
-        // Draw the line
-        switch (nodeData[destination]?.lineType) {
-          case LineType.DashedLine:
-            _drawDashedLine(
-                canvas,
-                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
-                currentPaint, 0.6
-            );
-            break;
-          case LineType.DottedLine:
-            // dotted line uses the same method as dashed line, but with a lineLength of 0.0
-            _drawDashedLine(
-                canvas,
-                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
-                currentPaint, 0.0
-            );
-            break;
-          case LineType.SineLine:
-            _drawSineLine(
-                canvas,
-                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
-                currentPaint
-            );
-            break;
-          default:
-            canvas.drawLine(
-                Offset(clippedLine[0], clippedLine[1]), destinationPoint,
-                currentPaint
-            );
-            break;
-        }
-    }});
+    // Draw the line
+    switch (nodeData[destination]?.lineType) {
+      case LineType.DashedLine:
+        _drawDashedLine(canvas, sourceCenter, destCenter, currentPaint, 0.6);
+        break;
+      case LineType.DottedLine:
+        // dotted line uses the same method as dashed line, but with a lineLength of 0.0
+        _drawDashedLine(canvas, sourceCenter, destCenter, currentPaint, 0.0);
+        break;
+      case LineType.SineLine:
+        _drawSineLine(canvas, sourceCenter, destCenter, currentPaint);
+        break;
+      default:
+        canvas.drawLine(sourceCenter, destCenter, currentPaint);
+        break;
+    }
   }
 
   void _drawSharpBendPointsEdge(List<Offset> bendPoints) {
@@ -171,9 +161,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       final arcEndPointRadians = atan2(nextNode.dy - afterNextNode.dy, nextNode.dx - afterNextNode.dx);
       final arcEndPoint = nextNode - Offset.fromDirection(arcEndPointRadians, curveLength);
 
-      if (previousNode != null &&
-          ((currentNode.dx == nextNode.dx && nextNode.dx == afterNextNode.dx) ||
-              (currentNode.dy == nextNode.dy && nextNode.dy == afterNextNode.dy))) {
+      if (previousNode != null && ((currentNode.dx == nextNode.dx && nextNode.dx == afterNextNode.dx) || (currentNode.dy == nextNode.dy && nextNode.dy == afterNextNode.dy))) {
         path.lineTo(nextNode.dx, nextNode.dy);
       } else {
         path.lineTo(arcStartPoint.dx, arcStartPoint.dy);
@@ -184,7 +172,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
   void _drawDashedLine(Canvas canvas, Offset source, Offset destination,
       Paint paint, double lineLength) {
-    // Calculate the distance between the source and destination points
     var dx = destination.dx - source.dx;
     var dy = destination.dy - source.dy;
 
@@ -197,10 +184,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     var stepX = dx / numLines;
     var stepY = dy / numLines;
 
-    // Set a fixed radius for the circles
     var circleRadius = 1.0;
 
-    // Set a fixed stroke width for the circles
     var circleStrokeWidth = 1.0;
     var circlePaint = Paint()
       ..color = paint.color
@@ -251,7 +236,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         num x;
         if ((dx > 0 && dy < 0) || (dx < 0 && dy > 0)) {
           x = sin(phase + phaseOffset) * segmentLength;
-        } else { // dx < 0 && dy < 0
+        } else {
+          // dx < 0 && dy < 0
           x = -sin(phase + phaseOffset) * segmentLength;
         }
 
