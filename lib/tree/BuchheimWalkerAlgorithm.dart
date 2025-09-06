@@ -20,10 +20,27 @@ class BuchheimWalkerAlgorithm extends Algorithm {
         orientation == BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT;
   }
 
+  void _detectCycles(Graph graph) {
+    Set<Node> visiting = {};
+
+    bool hasCycle(Node node) {
+      if (visiting.contains(node)) return true;
+      visiting.add(node);
+      bool cycleFound = successorsOf(node).any(hasCycle);
+      visiting.remove(node);
+      return cycleFound;
+    }
+
+    if (graph.nodes.any(hasCycle)) {
+      throw Exception('Cyclic dependency detected - tree structure required');
+    }
+  }
+
   @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     nodeData.clear();
     initData(graph);
+    _detectCycles(graph!);
     var firstNode = getFirstNode(graph!);
     firstWalk(graph, firstNode, 0, 0);
     secondWalk(graph, firstNode, 0.0);

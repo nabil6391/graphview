@@ -1,7 +1,7 @@
 import 'package:example/layer_graphview.dart';
 import 'package:flutter/material.dart';
 
-import 'directed_graphview.dart';
+import 'force_directed_graphview.dart';
 import 'tree_graphview.dart';
 
 void main() {

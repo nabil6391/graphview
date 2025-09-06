@@ -20,7 +20,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
                   constrained: false,
                   boundaryMargin: EdgeInsets.all(8),
                   minScale: 0.001,
-                  maxScale: 100,
+                  maxScale: 10000,
                   child: GraphView(
                       graph: graph,
                       algorithm: builder,

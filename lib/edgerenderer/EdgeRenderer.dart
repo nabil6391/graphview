@@ -1,6 +1,8 @@
 part of graphview;
 
 abstract class EdgeRenderer {
+  Offset getNodePosition(Node node) => node.position;
+
   void render(Canvas canvas, Graph graph, Paint paint);
 }
 

@@ -8,14 +8,22 @@ class TreeViewPage extends StatefulWidget {
   _TreeViewPageState createState() => _TreeViewPageState();
 }
 
-class _TreeViewPageState extends State<TreeViewPage> {
+class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMixin {
+
+  GraphViewController _controller = GraphViewController();
+  final Random r = Random();
+  int nextNodeId = 1;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          title: Text('Tree View'),
+        ),
         body: Column(
           mainAxisSize: MainAxisSize.max,
           children: [
+            // Configuration controls
             Wrap(
               children: [
                 Container(
@@ -71,39 +79,50 @@ class _TreeViewPageState extends State<TreeViewPage> {
                     setState(() {});
                   },
                   child: Text('Add'),
-                )
+                ),
+                ElevatedButton(
+                  onPressed: _navigateToRandomNode,
+                  child: Text('Go to Node $nextNodeId'),
+                ),
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _resetView,
+                  child: Text('Reset View'),
+                ),
+                SizedBox(width: 8,),
+                ElevatedButton(onPressed: (){
+                  _controller.zoomToFit();
+                }, child: Text("Zoom to fit"))
               ],
             ),
+
             Expanded(
-              child: InteractiveViewer(
-                  constrained: false,
-                  boundaryMargin: EdgeInsets.all(100),
-                  minScale: 0.01,
-                  maxScale: 5.6,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
-                    paint: Paint()
-                      ..color = Colors.green
-                      ..strokeWidth = 1
-                      ..style = PaintingStyle.stroke,
-                    builder: (Node node) {
-                      // I can decide what widget should be shown here based on the id
-                      var a = node.key!.value as int?;
-                      return rectangleWidget(a);
-                    },
-                  )),
+              child: GraphView.builder(
+                controller: _controller,
+                graph: graph,
+                algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                builder: (Node node) => InkWell(
+                  onTap: () => _controller.animateToNode(node.key?.value),
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: [BoxShadow(color: Colors.blue[100]!, spreadRadius: 1)],
+                    ),
+                    child: Text('Node ${node.key?.value} \n${graph.nodes.firstWhere((n) => n.key == node.key).position}'),
+                  ),
+                ),
+              ),
             ),
           ],
         ));
   }
 
-  Random r = Random();
-
   Widget rectangleWidget(int? a) {
     return InkWell(
       onTap: () {
-        print('clicked');
+        print('clicked node $a');
       },
       child: Container(
           padding: EdgeInsets.all(16),
@@ -113,15 +132,36 @@ class _TreeViewPageState extends State<TreeViewPage> {
               BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
             ],
           ),
-          child: Text('Node ${a}')),
+          child: Text('Node ${a} ')),
     );
   }
 
   final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
 
+  void _navigateToRandomNode() {
+    if (graph.nodes.isEmpty) return;
+
+    final randomNode = graph.nodes.firstWhere(
+      (node) => node.key != null && node.key!.value == nextNodeId,
+      orElse: () => graph.nodes.first,
+    );
+    final nodeId = randomNode.key!;
+    _controller.animateToNode(nodeId);
+
+    setState(() {
+      nextNodeId = r.nextInt(graph.nodes.length) + 1;
+    });
+  }
+
+  void _resetView() {
+    _controller.resetView();
+  }
+
   @override
   void initState() {
+    super.initState();
+
     final node1 = Node.Id(1);
     final node2 = Node.Id(2);
     final node3 = Node.Id(3);
@@ -152,4 +192,5 @@ class _TreeViewPageState extends State<TreeViewPage> {
       ..subtreeSeparation = (150)
       ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
   }
+
 }

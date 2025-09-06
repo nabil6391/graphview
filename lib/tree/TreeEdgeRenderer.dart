@@ -9,7 +9,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
 
   @override
   void render(Canvas canvas, Graph graph, Paint paint) {
-    var levelSeparationHalf = configuration.levelSeparation / 2;
+    var levelSeparationHalf = configuration.levelSeparation * 0.5;
 
     graph.nodes.forEach((node) {
       var children = graph.successorsOf(node);
@@ -17,51 +17,76 @@ class TreeEdgeRenderer extends EdgeRenderer {
       children.forEach((child) {
         var edge = graph.getEdgeBetween(node, child);
         var edgePaint = (edge?.paint ?? paint)..style = PaintingStyle.stroke;
+        final parentOffset = getNodePosition(node);
+        final childOffset = getNodePosition(child);
+
+        final parentCenterX = parentOffset.dx + node.width * 0.5;
+        final parentCenterY = parentOffset.dy + node.height * 0.5;
+        final childCenterX = childOffset.dx + child.width * 0.5;
+        final childCenterY = childOffset.dy + child.height * 0.5;
+
         linePath.reset();
+
         switch (configuration.orientation) {
           case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
-            // position at the middle-top of the child
-            linePath.moveTo((child.x + child.width / 2), child.y);
-            // draws a line from the child's middle-top halfway up to its parent
-            linePath.lineTo(child.x + child.width / 2, child.y - levelSeparationHalf);
-            // draws a line from the previous point to the middle of the parents width
-            linePath.lineTo(node.x + node.width / 2, child.y - levelSeparationHalf);
-
-            // position at the middle of the level separation under the parent
-            linePath.moveTo(node.x + node.width / 2, child.y - levelSeparationHalf);
-            // draws a line up to the parents middle-bottom
-            linePath.lineTo(node.x + node.width / 2, node.y + node.height);
-
+            _drawLShapedPath(
+                childCenterX,
+                childOffset.dy,
+                childCenterX,
+                childOffset.dy - levelSeparationHalf,
+                parentCenterX,
+                childOffset.dy - levelSeparationHalf,
+                parentCenterX,
+                parentOffset.dy + node.height);
             break;
           case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
-            linePath.moveTo(child.x + child.width / 2, child.y + child.height);
-            linePath.lineTo(child.x + child.width / 2, child.y + child.height + levelSeparationHalf);
-            linePath.lineTo(node.x + node.width / 2, child.y + child.height + levelSeparationHalf);
-
-            linePath.moveTo(node.x + node.width / 2, child.y + child.height + levelSeparationHalf);
-            linePath.lineTo(node.x + node.width / 2, node.y + node.height);
-
+            _drawLShapedPath(
+                childCenterX,
+                childOffset.dy + child.height,
+                childCenterX,
+                childOffset.dy + child.height + levelSeparationHalf,
+                parentCenterX,
+                childOffset.dy + child.height + levelSeparationHalf,
+                parentCenterX,
+                parentOffset.dy + node.height);
             break;
+
           case BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT:
-            linePath.moveTo(child.x, child.y + child.height / 2);
-            linePath.lineTo(child.x - levelSeparationHalf, child.y + child.height / 2);
-            linePath.lineTo(child.x - levelSeparationHalf, node.y + node.height / 2);
-
-            linePath.moveTo(child.x - levelSeparationHalf, node.y + node.height / 2);
-            linePath.lineTo(node.x + node.width, node.y + node.height / 2);
-
+            _drawLShapedPath(
+                childOffset.dx,
+                childCenterY,
+                childOffset.dx - levelSeparationHalf,
+                childCenterY,
+                childOffset.dx - levelSeparationHalf,
+                parentCenterY,
+                parentOffset.dx + node.width,
+                parentCenterY);
             break;
+
           case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
-            linePath.moveTo(child.x + child.width, child.y + child.height / 2);
-            linePath.lineTo(child.x + child.width + levelSeparationHalf, child.y + child.height / 2);
-            linePath.lineTo(child.x + child.width + levelSeparationHalf, node.y + node.height / 2);
-
-            linePath.moveTo(child.x + child.width + levelSeparationHalf, node.y + node.height / 2);
-            linePath.lineTo(node.x + node.width, node.y + node.height / 2);
+            _drawLShapedPath(
+                childOffset.dx + child.width,
+                childCenterY,
+                childOffset.dx + child.width + levelSeparationHalf,
+                childCenterY,
+                childOffset.dx + child.width + levelSeparationHalf,
+                parentCenterY,
+                parentOffset.dx + node.width,
+                parentCenterY);
+            break;
         }
-
         canvas.drawPath(linePath, edgePaint);
       });
     });
+  }
+
+  void _drawLShapedPath(double x1, double y1, double x2, double y2, double x3,
+      double y3, double x4, double y4) {
+    linePath
+      ..moveTo(x1, y1)
+      ..lineTo(x2, y2)
+      ..lineTo(x3, y3)
+      ..moveTo(x3, y3)
+      ..lineTo(x4, y4);
   }
 }
