@@ -42,13 +42,21 @@ typedef NodeWidgetBuilder = Widget Function(Node node);
 
 class GraphViewController {
   _GraphViewState? _state;
+  final TransformationController? transformationController;
+
+  GraphViewController({this.transformationController});
 
   void _attach(_GraphViewState state) => _state = state;
+
   void _detach() => _state = null;
 
-  void animateToNode(int nodeId) => _state?.animateToNode(nodeId);
-  void animateToMatrix(Matrix4 targetMatrix) => _state?.animateToMatrix(targetMatrix);
+  void animateToNode(ValueKey key) => _state?.animateToNode(key);
+
+  void animateToMatrix(Matrix4 targetMatrix) =>
+      _state?.animateToMatrix(targetMatrix);
+
   void resetView() => _state?.resetView();
+
   void zoomToFit() => _state?.zoomToFit();
 }
 
@@ -68,7 +76,9 @@ class GraphView extends StatefulWidget {
     this.paint,
     required this.builder,
     this.animated = true,
-  }) : controller = null, _isBuilder = false, super(key: key);
+  })  : controller = null,
+        _isBuilder = false,
+        super(key: key);
 
   GraphView.builder({
     Key? key,
@@ -78,21 +88,33 @@ class GraphView extends StatefulWidget {
     required this.builder,
     this.controller,
     this.animated = true,
-  }) : _isBuilder = true, super(key: key);
+  })  : _isBuilder = true,
+        super(key: key);
 
   @override
   _GraphViewState createState() => _GraphViewState();
 }
 
 class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
-  final TransformationController _transformationController = TransformationController();
+  TransformationController _transformationController = TransformationController();
+
+  // Separate animation controllers
+  late final AnimationController
+      _cameraAnimationController; // For camera movements
+
   Animation<Matrix4>? _animationMove;
   late final AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+
+    if (widget.controller?.transformationController != null) {
+      _transformationController.dispose();
+      _transformationController = widget.controller!.transformationController!;
+    }
+    // Initialize camera animation controller (for animateToNode, zoomToFit, etc.)
+    _cameraAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
@@ -102,8 +124,11 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   @override
   void dispose() {
     widget.controller?._detach();
-    _animationController.dispose();
-    _transformationController.dispose();
+    _cameraAnimationController.dispose();
+
+    if (widget.controller?.transformationController == null) {
+      _transformationController.dispose();
+    }
     super.dispose();
   }
 
@@ -130,11 +155,11 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     return graphView;
   }
 
-  void animateToNode(int nodeId) {
+  void animateToNode(ValueKey key) {
     final node = widget.graph.nodes.cast<Node?>().firstWhere(
-          (n) => n?.key?.value == nodeId,
-      orElse: () => null,
-    );
+          (n) => n?.key == key,
+          orElse: () => null,
+        );
     if (node == null) return;
 
     final renderBox = context.findRenderObject() as RenderBox?;
@@ -190,24 +215,24 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   }
 
   void animateToMatrix(Matrix4 targetMatrix) {
-    _animationController.reset();
+    _cameraAnimationController.reset();
     _animationMove = Matrix4Tween(
       begin: _transformationController.value,
       end: targetMatrix,
     ).animate(CurvedAnimation(
-      parent: _animationController,
+      parent: _cameraAnimationController,
       curve: Curves.easeInOut,
     ));
     _animationMove!.addListener(_onAnimateMove);
-    _animationController.forward();
+    _cameraAnimationController.forward();
   }
 
   void _onAnimateMove() {
     _transformationController.value = _animationMove!.value;
-    if (!_animationController.isAnimating) {
+    if (!_cameraAnimationController.isAnimating) {
       _animationMove!.removeListener(_onAnimateMove);
       _animationMove = null;
-      _animationController.reset();
+      _cameraAnimationController.reset();
     }
   }
 
