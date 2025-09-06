@@ -146,7 +146,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
       (node) => node.key != null && node.key!.value == nextNodeId,
       orElse: () => graph.nodes.first,
     );
-    final nodeId = randomNode.key?.value as int;
+    final nodeId = randomNode.key!;
     _controller.animateToNode(nodeId);
 
     setState(() {

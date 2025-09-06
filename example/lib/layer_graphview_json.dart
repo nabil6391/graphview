@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
@@ -80,9 +82,17 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
       {
         "from": "161904647",
         "to": "598554018"
+      },
+      {
+        "from": "469600377",
+        "to": "254022114"
       }
     ]
   };
+
+  GraphViewController _controller = GraphViewController();
+  final Random r = Random();
+  int nextNodeId = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -148,31 +158,55 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
                     ],
                   ),
                 ),
+                ElevatedButton(
+                  onPressed: () => _navigateToRandomNode(),
+                  child: Text('Go to Node $nextNodeId'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _controller.resetView(),
+                  child: Text('Reset View'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _controller.zoomToFit(),
+                  child: Text("Zoom to fit"),
+                ),
               ],
             ),
             Expanded(
-              child: InteractiveViewer(
-                  constrained: false,
-                  boundaryMargin: EdgeInsets.all(100),
-                  minScale: 0.01,
-                  maxScale: 5.6,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: SugiyamaAlgorithm(builder),
-                    paint: Paint()
-                      ..color = Colors.green
-                      ..strokeWidth = 1
-                      ..style = PaintingStyle.stroke,
-                    builder: (Node node) {
-                      // I can decide what widget should be shown here based on the id
-                      var a = node.key!.value;
-                      return rectangleWidget(a, node);
-                    },
-                  )),
+              child: GraphView.builder(
+                controller: _controller,
+                graph: graph,
+                algorithm: SugiyamaAlgorithm(builder),
+                paint: Paint()
+                  ..color = Colors.green
+                  ..strokeWidth = 1
+                  ..style = PaintingStyle.stroke,
+                builder: (Node node) {
+                  // I can decide what widget should be shown here based on the id
+                  var a = node.key!.value;
+                  return rectangleWidget(a, node);
+                },
+              ),
             ),
           ],
         ));
   }
+
+  void _navigateToRandomNode() {
+    if (graph.nodes.isEmpty) return;
+
+    final randomNode = graph.nodes.firstWhere(
+          (node) => node.key != null && node.key!.value == nextNodeId,
+      orElse: () => graph.nodes.first,
+    );
+    final nodeId = randomNode.key!;
+    _controller.animateToNode(nodeId);
+
+    setState(() {
+      nextNodeId = r.nextInt(graph.nodes.length) + 1;
+    });
+  }
+
 
   Widget rectangleWidget(String? a, Node node) {
     return Container(

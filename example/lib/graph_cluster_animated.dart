@@ -1,12 +1,10 @@
-import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
 class GraphScreen extends StatefulWidget {
-  Graph graph;
-  Algorithm algorithm;
+  final Graph graph;
+  final Algorithm algorithm;
   final Paint? paint;
 
   GraphScreen(this.graph, this.algorithm, this.paint);
@@ -16,14 +14,15 @@ class GraphScreen extends StatefulWidget {
 }
 
 class _GraphScreenState extends State<GraphScreen> {
-  bool animated = true;
-  Random r = Random();
+  GraphViewController _controller = GraphViewController();
+  final Random r = Random();
+  int nextNodeId = 1;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Graph Screen'),
+        title: Text('Graph View'),
         actions: [
           IconButton(
             icon: Icon(Icons.add),
@@ -41,43 +40,81 @@ class _GraphScreenState extends State<GraphScreen> {
             icon: Icon(Icons.animation),
             onPressed: () async {
               setState(() {
-                animated = !animated;
               });
             },
           )
         ],
       ),
-      body: InteractiveViewer(
-          constrained: false,
-          boundaryMargin: EdgeInsets.all(100),
-          minScale: 0.0001,
-          maxScale: 10.6,
-          child: GraphView(
-            graph: widget.graph,
-            algorithm: widget.algorithm,
-            animated: animated,
-            builder: (Node node) {
-              // I can decide what widget should be shown here based on the id
-              var a = node.key!.value as String;
-              return rectangWidget(a);
-            },
-          )),
+
+      body: Column(
+        children: [
+          // Navigation controls
+          Wrap(
+            children: [
+              ElevatedButton(
+                onPressed: () => _navigateToRandomNode(),
+                child: Text('Go to Node $nextNodeId'),
+              ),
+              ElevatedButton(
+                onPressed: () => _controller.resetView(),
+                child: Text('Reset View'),
+              ),
+              ElevatedButton(
+                onPressed: () => _controller.zoomToFit(),
+                child: Text("Zoom to fit"),
+              ),
+            ],
+          ),
+          Expanded(
+            child: GraphView.builder(
+              controller: _controller,
+              graph: widget.graph,
+              algorithm: widget.algorithm,
+              paint: widget.paint,
+              builder: (Node node) {
+                var a = node.key?.value;
+                return rectangleWidget(a);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget rectangWidget(String? i) {
-    return Container(
-        padding: EdgeInsets.all(16),
+  Widget rectangleWidget(nodeText) {
+    return InkWell(
+      onTap: () => print('clicked $nodeText'),
+      child: Container(
+        padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: [
-            BoxShadow(color: Colors.blue, spreadRadius: 1),
-          ],
+          color: Colors.red,
+          border: Border.all(color: Colors.white, width: 1),
+          borderRadius: BorderRadius.circular(30),
         ),
-        child: Center(child: Text('Node $i')));
+        child: Center(
+          child: Text(
+            '$nodeText',
+            style: TextStyle(fontSize: 10),
+          ),
+        ),
+      ),
+    );
   }
 
-  Future<void> update() async {
-    setState(() {});
+  void _navigateToRandomNode() {
+    if (widget.graph.nodes.isEmpty) return;
+
+    final randomNode = widget.graph.nodes.firstWhere(
+          (node) => node.key != null && node.key!.value == nextNodeId,
+      orElse: () => widget.graph.nodes.first,
+    );
+    final nodeId = randomNode.key!;
+    _controller.animateToNode(nodeId);
+
+    setState(() {
+      nextNodeId = r.nextInt(widget.graph.nodes.length) + 1;
+    });
   }
+
 }
