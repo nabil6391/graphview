@@ -64,6 +64,42 @@ void main() {
       expect(size, Size(950.0, 850.0));
     });
 
+    test('Buchheim detects cyclic dependencies', () {
+      // Create a graph with a cycle
+      final cyclicGraph = Graph();
+      final nodeA = Node.Id('A');
+      final nodeB = Node.Id('B');
+      final nodeC = Node.Id('C');
+
+      // Create cycle: A -> B -> C -> A
+      cyclicGraph.addEdge(nodeA, nodeB);
+      cyclicGraph.addEdge(nodeB, nodeC);
+      cyclicGraph.addEdge(nodeC, nodeA); // This creates the cycle
+
+      for (var i = 0; i < cyclicGraph.nodeCount(); i++) {
+        cyclicGraph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
+      }
+
+      final configuration = BuchheimWalkerConfiguration()
+        ..siblingSeparation = (100)
+        ..levelSeparation = (150)
+        ..subtreeSeparation = (150)
+        ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
+
+      var algorithm = BuchheimWalkerAlgorithm(
+          configuration, TreeEdgeRenderer(configuration));
+
+      // Should throw exception when cycle is detected
+      expect(
+            () => algorithm.run(cyclicGraph, 0, 0),
+        throwsA(isA<Exception>().having(
+              (e) => e.toString(),
+          'message',
+          contains('Cyclic dependency detected'),
+        )),
+      );
+    });
+
     test('Buchheim Performance for 100 nodes to be less than 2.5s', () {
 
 
