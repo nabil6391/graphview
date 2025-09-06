@@ -329,7 +329,7 @@ class RenderCustomLayoutBox extends RenderBox
       position++;
     }
 
-    size = algorithm.run(graph, 10, 10);
+    size = algorithm.run(graph, 0, 0);
 
     child = firstChild;
     position = 0;
