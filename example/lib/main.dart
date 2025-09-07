@@ -1,5 +1,6 @@
 import 'package:example/decision_tree_screen.dart';
 import 'package:example/layer_graphview.dart';
+import 'package:example/mindmap_graphview.dart';
 import 'package:example/tree_graphview_json.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
@@ -130,7 +131,15 @@ class Home extends StatelessWidget {
             ),
           ]),
 
-
+          _buildSection('Specialized Views', [
+            _buildButton(
+              'Mind Map',
+              'Conceptual mapping',
+              Icons.psychology,
+              Colors.purple,
+                  () => MindMapPage(),
+            ),
+          ]),
         ],
       ),
     );
