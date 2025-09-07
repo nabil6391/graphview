@@ -9,84 +9,152 @@ class TreeEdgeRenderer extends EdgeRenderer {
 
   @override
   void render(Canvas canvas, Graph graph, Paint paint) {
-    var levelSeparationHalf = configuration.levelSeparation * 0.5;
+    for (final node in graph.nodes) {
+      for (final child in graph.successorsOf(node)) {
+        final edge = graph.getEdgeBetween(node, child);
+        final edgePaint = (edge?.paint ?? paint)..style = PaintingStyle.stroke;
 
-    graph.nodes.forEach((node) {
-      var children = graph.successorsOf(node);
-
-      children.forEach((child) {
-        var edge = graph.getEdgeBetween(node, child);
-        var edgePaint = (edge?.paint ?? paint)..style = PaintingStyle.stroke;
-        final parentOffset = getNodePosition(node);
-        final childOffset = getNodePosition(child);
-
-        final parentCenterX = parentOffset.dx + node.width * 0.5;
-        final parentCenterY = parentOffset.dy + node.height * 0.5;
-        final childCenterX = childOffset.dx + child.width * 0.5;
-        final childCenterY = childOffset.dy + child.height * 0.5;
-
-        linePath.reset();
-
-        switch (configuration.orientation) {
-          case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
-            _drawLShapedPath(
-                childCenterX,
-                childOffset.dy,
-                childCenterX,
-                childOffset.dy - levelSeparationHalf,
-                parentCenterX,
-                childOffset.dy - levelSeparationHalf,
-                parentCenterX,
-                parentOffset.dy + node.height);
-            break;
-          case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
-            _drawLShapedPath(
-                childCenterX,
-                childOffset.dy + child.height,
-                childCenterX,
-                childOffset.dy + child.height + levelSeparationHalf,
-                parentCenterX,
-                childOffset.dy + child.height + levelSeparationHalf,
-                parentCenterX,
-                parentOffset.dy + node.height);
-            break;
-
-          case BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT:
-            _drawLShapedPath(
-                childOffset.dx,
-                childCenterY,
-                childOffset.dx - levelSeparationHalf,
-                childCenterY,
-                childOffset.dx - levelSeparationHalf,
-                parentCenterY,
-                parentOffset.dx + node.width,
-                parentCenterY);
-            break;
-
-          case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
-            _drawLShapedPath(
-                childOffset.dx + child.width,
-                childCenterY,
-                childOffset.dx + child.width + levelSeparationHalf,
-                childCenterY,
-                childOffset.dx + child.width + levelSeparationHalf,
-                parentCenterY,
-                parentOffset.dx + node.width,
-                parentCenterY);
-            break;
-        }
-        canvas.drawPath(linePath, edgePaint);
-      });
-    });
+        renderEdge(canvas, node, child, edgePaint);
+      }
+    }
   }
 
-  void _drawLShapedPath(double x1, double y1, double x2, double y2, double x3,
-      double y3, double x4, double y4) {
-    linePath
-      ..moveTo(x1, y1)
-      ..lineTo(x2, y2)
-      ..lineTo(x3, y3)
-      ..moveTo(x3, y3)
-      ..lineTo(x4, y4);
+  void renderEdge(Canvas canvas, dynamic node, dynamic child, Paint edgePaint) {
+    final parentPos = getNodePosition(node);
+    final childPos = getNodePosition(child);
+
+    final orientation = getEffectiveOrientation(node, child);
+
+    linePath.reset();
+    buildEdgePath(node, child, parentPos, childPos, orientation);
+    canvas.drawPath(linePath, edgePaint);
+  }
+
+  int getEffectiveOrientation(dynamic node, dynamic child) {
+    return configuration.orientation;
+  }
+
+  /// Builds the path for the edge based on orientation
+  void buildEdgePath(dynamic node, dynamic child, Offset parentPos, Offset childPos, int orientation) {
+    final parentCenterX = parentPos.dx + node.width * 0.5;
+    final parentCenterY = parentPos.dy + node.height * 0.5;
+    final childCenterX = childPos.dx + child.width * 0.5;
+    final childCenterY = childPos.dy + child.height * 0.5;
+
+    switch (orientation) {
+      case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
+        buildTopBottomPath(node, child, parentPos, childPos, parentCenterX, parentCenterY, childCenterX, childCenterY);
+        break;
+
+      case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
+        buildBottomTopPath(node, child, parentPos, childPos, parentCenterX, parentCenterY, childCenterX, childCenterY);
+        break;
+
+      case BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT:
+        buildLeftRightPath(node, child, parentPos, childPos, parentCenterX, parentCenterY, childCenterX, childCenterY);
+        break;
+
+      case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
+        buildRightLeftPath(node, child, parentPos, childPos, parentCenterX, parentCenterY, childCenterX, childCenterY);
+        break;
+    }
+  }
+
+  /// Builds path for top-bottom orientation
+  void buildTopBottomPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+      double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
+    final parentBottomY = parentPos.dy + node.height;
+    final childTopY = childPos.dy;
+    final midY = (parentBottomY + childTopY) * 0.5;
+
+    if (configuration.useCurvedConnections) {
+      // Curved connection
+      linePath
+        ..moveTo(childCenterX, childTopY)
+        ..cubicTo(
+          childCenterX, midY,
+          parentCenterX, midY,
+          parentCenterX, parentBottomY,
+        );
+    } else {
+      // L-shaped connection
+      linePath
+        ..moveTo(parentCenterX, parentBottomY)
+        ..lineTo(parentCenterX, midY)
+        ..lineTo(childCenterX, midY)
+        ..lineTo(childCenterX, childTopY);
+    }
+  }
+
+  /// Builds path for bottom-top orientation
+  void buildBottomTopPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+      double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
+    final parentTopY = parentPos.dy;
+    final childBottomY = childPos.dy + child.height;
+    final midY = (parentTopY + childBottomY) * 0.5;
+
+    if (configuration.useCurvedConnections) {
+      linePath
+        ..moveTo(childCenterX, childBottomY)
+        ..cubicTo(
+          childCenterX, midY,
+          parentCenterX, midY,
+          parentCenterX, parentTopY,
+        );
+    } else {
+      linePath
+        ..moveTo(parentCenterX, parentTopY)
+        ..lineTo(parentCenterX, midY)
+        ..lineTo(childCenterX, midY)
+        ..lineTo(childCenterX, childBottomY);
+    }
+  }
+
+  /// Builds path for left-right orientation
+  void buildLeftRightPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+      double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
+    final parentRightX = parentPos.dx + node.width;
+    final childLeftX = childPos.dx;
+    final midX = (parentRightX + childLeftX) * 0.5;
+
+    if (configuration.useCurvedConnections) {
+      linePath
+        ..moveTo(childLeftX, childCenterY)
+        ..cubicTo(
+          midX, childCenterY,
+          midX, parentCenterY,
+          parentRightX, parentCenterY,
+        );
+    } else {
+      linePath
+        ..moveTo(parentRightX, parentCenterY)
+        ..lineTo(midX, parentCenterY)
+        ..lineTo(midX, childCenterY)
+        ..lineTo(childLeftX, childCenterY);
+    }
+  }
+
+  /// Builds path for right-left orientation
+  void buildRightLeftPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+      double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
+    final parentLeftX = parentPos.dx;
+    final childRightX = childPos.dx + child.width;
+    final midX = (parentLeftX + childRightX) * 0.5;
+
+    if (configuration.useCurvedConnections) {
+      linePath
+        ..moveTo(childRightX, childCenterY)
+        ..cubicTo(
+          midX, childCenterY,
+          midX, parentCenterY,
+          parentLeftX, parentCenterY,
+        );
+    } else {
+      linePath
+        ..moveTo(parentLeftX, parentCenterY)
+        ..lineTo(midX, parentCenterY)
+        ..lineTo(midX, childCenterY)
+        ..lineTo(childRightX, childCenterY);
+    }
   }
 }
