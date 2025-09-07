@@ -93,12 +93,6 @@ class SugiyamaAlgorithm extends Algorithm {
     });
   }
 
-  void cycleRemoval() {
-    graph.nodes.forEach((node) {
-      dfs(node);
-    });
-  }
-
   void dfs(Node node) {
     if (visited.contains(node)) {
       return;
@@ -118,12 +112,29 @@ class SugiyamaAlgorithm extends Algorithm {
     stack.remove(node);
   }
 
-  // top sort + add dummy nodes;
   void layerAssignment() {
-    if (graph.nodes.isEmpty) {
-      return;
+    switch (configuration.layeringStrategy) {
+      case LayeringStrategy.topDown:
+        layerAssignmentTopDown();
+        break;
+      case LayeringStrategy.longestPath:
+        layerAssignmentLongestPath();
+        break;
+      case LayeringStrategy.coffmanGraham:
+        layerAssignmentCoffmanGraham();
+        break;
+      case LayeringStrategy.networkSimplex:
+        layerAssignmentNetworkSimplex();
+        break;
     }
-    // build layers;
+
+    // Add dummy nodes for long edges
+    addDummyNodes();
+  }
+
+  void layerAssignmentTopDown() {
+    if (graph.nodes.isEmpty) return;
+
     final copiedGraph = copyGraph(graph);
     var roots = getRootNodes(copiedGraph);
 
@@ -133,7 +144,162 @@ class SugiyamaAlgorithm extends Algorithm {
       roots = getRootNodes(copiedGraph);
     }
 
-    // add dummy's;
+    // Set layer metadata
+    for (var i = 0; i < layers.length; i++) {
+      for (var j = 0; j < layers[i].length; j++) {
+        nodeData[layers[i][j]]!.layer = i;
+        nodeData[layers[i][j]]!.position = j;
+      }
+    }
+  }
+
+  void layerAssignmentLongestPath() {
+    if (graph.nodes.isEmpty) return;
+
+    var U = <Node>{};
+    var Z = <Node>{};
+    var V = Set<Node>.from(graph.nodes);
+    var currentLayer = 0;
+    layers = [[]];
+
+    while (U.length != graph.nodes.length) {
+      var candidates = V.where((v) =>
+      !U.contains(v) &&
+          Z.containsAll(graph.successorsOf(v))
+      );
+
+      if (candidates.isNotEmpty) {
+        var node = candidates.first;
+        layers[currentLayer].add(node);
+        U.add(node);
+      } else {
+        currentLayer++;
+        layers.add([]);
+        Z.addAll(U);
+      }
+    }
+
+    // Reverse layers and set metadata
+    layers = layers.reversed.where((layer) => layer.isNotEmpty).toList();
+    for (var i = 0; i < layers.length; i++) {
+      for (var j = 0; j < layers[i].length; j++) {
+        nodeData[layers[i][j]]!.layer = i;
+        nodeData[layers[i][j]]!.position = j;
+      }
+    }
+  }
+
+  void layerAssignmentCoffmanGraham() {
+    if (graph.nodes.isEmpty) return;
+
+    var width = configuration.coffmanGrahamWidth;
+    if (width == 0) width = (graph.nodes.length / 10).ceil();
+
+    var Z = <Node>{};
+    var lambda = <Node, int>{};
+    var V = Set<Node>.from(graph.nodes);
+
+    // Assign lambda values based on in-degree
+    V.forEach((v) => lambda[v] = double.maxFinite.toInt());
+    for (var i = 0; i < V.length; i++) {
+      var mv = V.where((v) => lambda[v] == double.maxFinite.toInt())
+          .reduce((a, b) => graph.getInEdges(a).length <= graph.getInEdges(b).length ? a : b);
+      lambda[mv] = i;
+    }
+
+    var k = 0;
+    layers = [[]];
+    var U = <Node>{};
+
+    while (U.length != graph.nodes.length) {
+      var candidates = V.where((v) =>
+      !U.contains(v) &&
+          U.containsAll(graph.successorsOf(v))
+      );
+
+      if (candidates.isNotEmpty) {
+        var got = candidates.reduce((a, b) => lambda[a]! > lambda[b]! ? a : b);
+
+        if (layers[k].length < width && Z.containsAll(graph.successorsOf(got))) {
+          layers[k].add(got);
+        } else {
+          Z.addAll(layers[k]);
+          k++;
+          layers.add([]);
+          layers[k].add(got);
+        }
+        U.add(got);
+      }
+    }
+
+    // Remove empty layers and reverse
+    layers = layers.where((l) => l.isNotEmpty).toList().reversed.toList();
+
+    // Set metadata
+    for (var i = 0; i < layers.length; i++) {
+      for (var j = 0; j < layers[i].length; j++) {
+        nodeData[layers[i][j]]!.layer = i;
+        nodeData[layers[i][j]]!.position = j;
+      }
+    }
+  }
+
+  void layerAssignmentNetworkSimplex() {
+    // Start with longest path as base
+    layerAssignmentLongestPath();
+
+    // Simple optimization: try to minimize edge span
+    var improved = true;
+    var iterations = 5;
+
+    while (improved && iterations > 0) {
+      improved = false;
+      iterations--;
+
+      for (var i = layers.length - 1; i >= 0; i--) {
+        var layer = List<Node>.from(layers[i]);
+        var nodesToMove = <Node, int>{};
+
+        for (var v in layer) {
+          if (graph.getOutEdges(v).isEmpty) continue;
+
+          var outgoingEdges = graph.getOutEdges(v);
+          if (outgoingEdges.isNotEmpty) {
+            var minRank = outgoingEdges
+                .map((e) => nodeData[e.destination]!.layer - 1)
+                .reduce(min);
+
+            if (minRank != nodeData[v]!.layer && minRank >= 0) {
+              nodesToMove[v] = minRank;
+              improved = true;
+            }
+          }
+        }
+
+        // Move nodes
+        for (var entry in nodesToMove.entries) {
+          var node = entry.key;
+          var newRank = entry.value;
+          var oldRank = nodeData[node]!.layer;
+
+          layers[oldRank].remove(node);
+          if (newRank < layers.length) {
+            layers[newRank].add(node);
+            nodeData[node]!.layer = newRank;
+          }
+        }
+      }
+
+      // Recompute positions
+      for (var i = 0; i < layers.length; i++) {
+        for (var j = 0; j < layers[i].length; j++) {
+          nodeData[layers[i][j]]!.position = j;
+        }
+      }
+    }
+  }
+
+  void addDummyNodes() {
     for (var i = 0; i < layers.length - 1; i++) {
       var indexNextLayer = i + 1;
       var currentLayer = layers[i];
@@ -188,37 +354,33 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   void nodeOrdering() {
-    final best = <List<Node>>[...layers];
+    // The `layers` variable is the member variable of the class.
+    // We will modify it directly. There is no need for a separate 'best' copy
+    // with the current iterative improvement strategy.
 
-    // Precalculate predecessor and successor info that we require during the following processes.
+    // Precalculate predecessor and successor info
     graph.edges.forEach((element) {
       nodeData[element.source]?.successorNodes.add(element.destination);
       nodeData[element.destination]?.predecessorNodes.add(element.source);
     });
 
     for (var i = 0; i < configuration.iterations; i++) {
-      median(best, i);
-      // transpose(best);
-      // if (!changed) {
-      //   break;
-      // }
-      // var c = crossing(best);
-      // var l = crossing(layers);
-      // if (c < l) {
-      // layers = best;
-      // }
-      var changed = transpose(best);
+      // Apply the median heuristic to reorder nodes in each layer.
+      median(layers, i);
+
+      // Apply the transpose heuristic to fine-tune the ordering by swapping adjacent nodes.
+      // This will use the efficient AccumulatorTree-based approach we defined.
+      var changed = configuration.crossMinimizationStrategy == CrossMinimizationStrategy.simple ? transposex(layers): transpose(layers);
+      // If a full pass of transpose made no improvements, we've stabilized.
       if (!changed) {
         break;
       }
     }
-    // Set the final position of the nodes in memory
-    var pos = 0;
+
+    // Set final positions based on the optimized order.
     for (var currentLayer in layers) {
-      pos = 0;
-      for (var node in currentLayer) {
-        nodeData[node]?.position = pos;
-        pos++;
+      for (var pos = 0; pos < currentLayer.length; pos++) {
+        nodeData[currentLayer[pos]]?.position = pos;
       }
     }
   }
@@ -300,7 +462,7 @@ class SugiyamaAlgorithm extends Algorithm {
     }
   }
 
-  bool transpose(List<List<Node>> layers) {
+  bool transposex(List<List<Node>> layers) {
     var changed = false;
     var improved = true;
 
@@ -325,6 +487,81 @@ class SugiyamaAlgorithm extends Algorithm {
       }
     }
     return changed;
+  }
+
+  bool transpose(List<List<Node>> layers) {
+    var changed = false;
+    var improved = true;
+
+    while (improved) {
+      improved = false;
+      for (var l = 0; l < layers.length - 1; l++) {
+        final upperLayer = layers[l];
+        final lowerLayer = layers[l + 1];
+
+        // Calculate the total crossings for this pair of layers before any swaps.
+        var crossingsBefore = _getBiLayerCrossings(upperLayer, lowerLayer);
+        if(crossingsBefore == 0) continue;
+
+        for (var i = 0; i < lowerLayer.length - 1; i++) {
+          final v = lowerLayer[i];
+          final w = lowerLayer[i + 1];
+
+          // Perform a trial swap
+          exchange(lowerLayer, v, w);
+
+          // Recalculate total crossings with the more efficient method.
+          var crossingsAfter = _getBiLayerCrossings(upperLayer, lowerLayer);
+
+          if (crossingsAfter < crossingsBefore) {
+            // The swap was good, keep it.
+            improved = true;
+            changed = true;
+            crossingsBefore = crossingsAfter; // Update the baseline crossing count
+          } else {
+            // The swap was not beneficial, revert it.
+            exchange(lowerLayer, w, v);
+          }
+        }
+      }
+    }
+    return changed;
+  }
+
+  /// Calculates the number of crossings between two specific layers using the AccumulatorTree.
+  int _getBiLayerCrossings(List<Node> upperLayer, List<Node> lowerLayer) {
+    if (upperLayer.isEmpty || lowerLayer.isEmpty) {
+      return 0;
+    }
+
+    // Update positions in nodeData based on the current list order.
+    // This is crucial as the transpose function modifies the list directly.
+    for (var i = 0; i < lowerLayer.length; i++) {
+      nodeData[lowerLayer[i]]!.position = i;
+    }
+
+    var targetIndices = <int>[];
+    // Ensure upper layer nodes are sorted by their original position to maintain a stable sort.
+    var sortedUpperLayer = List<Node>.from(upperLayer)..sort((a,b) => nodeData[a]!.position.compareTo(nodeData[b]!.position));
+
+    for (var source in sortedUpperLayer) {
+      var outEdges = graph.getOutEdges(source)
+        ..sort((a, b) => nodeData[a.destination]!.position.compareTo(nodeData[b.destination]!.position));
+
+      for (var edge in outEdges) {
+        if (lowerLayer.contains(edge.destination)) {
+          targetIndices.add(nodeData[edge.destination]!.position);
+        }
+      }
+    }
+
+    if (targetIndices.isNotEmpty) {
+      var maxIndex = targetIndices.reduce(max);
+      var accumTree = AccumulatorTree(maxIndex + 1);
+      return accumTree.crossCount(targetIndices);
+    }
+
+    return 0;
   }
 
   void exchange(List<Node> nodes, Node v, Node w) {
@@ -378,10 +615,14 @@ class SugiyamaAlgorithm extends Algorithm {
     graph.nodes.forEach((v) {
       v.position = getPosition(v, offset);
     });
+
+    if (configuration.postStraighten) {
+      postStraighten();
+    }
   }
 
   void assignX() {
-    // each node points to the root of the block.;
+    // Existing implementation remains the same
     final root = <Map<Node, Node>>[];
     // each node points to its aligned neighbor in the layer below.;
     final align = <Map<Node, Node>>[];
@@ -423,17 +664,17 @@ class SugiyamaAlgorithm extends Algorithm {
           final r = root[k][v]!;
           blockWidth[k][r] = max(blockWidth[k][r]!, vertical ? v.width + separation : v.height);
         });
-          horizontalCompactation(
-              align[k],
-              root[k],
-              sink[k],
-              shift[k],
-              blockWidth[k],
-              x[k],
-              isLeftToRight,
-              isDownward,
-              layers,
-              separation);
+        horizontalCompactation(
+            align[k],
+            root[k],
+            sink[k],
+            shift[k],
+            blockWidth[k],
+            x[k],
+            isLeftToRight,
+            isDownward,
+            layers,
+            separation);
       }
     }
 
@@ -921,6 +1162,101 @@ class SugiyamaAlgorithm extends Algorithm {
     });
   }
 
+  void cycleRemoval() {
+    switch (configuration.cycleRemovalStrategy) {
+      case CycleRemovalStrategy.dfs:
+        _dfsRecursiveCycleRemoval();
+        break;
+      case CycleRemovalStrategy.greedy:
+        _greedyCycleRemoval();
+        break;
+    }
+  }
+
+  void _dfsRecursiveCycleRemoval() {
+    // Existing DFS implementation
+    graph.nodes.forEach((node) {
+      dfs(node);
+    });
+  }
+
+  void _greedyCycleRemoval() {
+    var greedyRemoval = GreedyCycleRemoval(graph);
+    var feedbackArcs = greedyRemoval.getFeedbackArcs();
+
+    for (var edge in feedbackArcs) {
+      var source = edge.source;
+      var target = edge.destination;
+      graph.removeEdge(edge);
+      graph.addEdge(target, source);
+      nodeData[source]!.reversed.add(target);
+    }
+  }
+
+  void postStraighten() {
+    if (!configuration.postStraighten) return;
+
+    // Align dummy vertices to create straighter edges
+    var dummyNodes = <Node>[];
+    for (var layer in layers) {
+      dummyNodes.addAll(layer.where((n) => nodeData[n]!.isDummy));
+    }
+
+    // Group dummy nodes by their original edge
+    var edgeGroups = <List<Node>>[];
+    var processed = <Node>{};
+
+    for (var dummy in dummyNodes) {
+      if (processed.contains(dummy)) continue;
+
+      var group = <Node>[dummy];
+      processed.add(dummy);
+
+      // Find connected dummy nodes (same edge)
+      _findConnectedDummies(dummy, group, processed, dummyNodes);
+
+      if (group.length > 1) {
+        edgeGroups.add(group);
+      }
+    }
+
+    // Align each group vertically
+    for (var group in edgeGroups) {
+      group.sort((a, b) => nodeData[a]!.layer.compareTo(nodeData[b]!.layer));
+
+      // Calculate average x position
+      var avgX = group.map((n) => n.x).reduce((a, b) => a + b) / group.length;
+
+      // Set all dummy nodes to average x
+      for (var node in group) {
+        node.x = avgX;
+      }
+    }
+  }
+
+  void _findConnectedDummies(Node current, List<Node> group, Set<Node> processed, List<Node> synthetics) {
+    var outgoing = graph.getOutEdges(current);
+    var incoming = graph.getInEdges(current);
+
+    for (var edge in outgoing) {
+      var target = edge.destination;
+      if (synthetics.contains(target) && !processed.contains(target)) {
+        group.add(target);
+        processed.add(target);
+        _findConnectedDummies(target, group, processed, synthetics);
+      }
+    }
+
+    for (var edge in incoming) {
+      var source = edge.source;
+      if (synthetics.contains(source) && !processed.contains(source)) {
+        group.add(source);
+        processed.add(source);
+        _findConnectedDummies(source, group, processed, synthetics);
+      }
+    }
+  }
+
   Offset getOffset(Graph graph, bool needReverseOrder) {
     var offsetX = double.infinity;
     var offsetY = double.infinity;
@@ -1004,3 +1340,94 @@ class SugiyamaAlgorithm extends Algorithm {
     // graphHeight = height;
   }
 }
+
+
+class AccumulatorTree {
+  late List<int> tree;
+  late int firstIndex;
+  late int treeSize;
+  late int base;
+  late int last;
+
+  AccumulatorTree(int size) {
+    firstIndex = 1;
+    while (firstIndex < size) {
+      firstIndex *= 2;
+    }
+    treeSize = 2 * firstIndex - 1;
+    firstIndex--;
+    base = size - 1;
+    last = size - 1;
+    tree = List.filled(treeSize, 0);
+  }
+
+  int crossCount(List<int> southSequence) {
+    var crossCount = 0;
+    for (var k = 0; k < southSequence.length; k++) {
+      var index = southSequence[k] + firstIndex;
+      tree[index]++;
+      while (index > 0) {
+        if (index % 2 != 0) {
+          crossCount += tree[index + 1];
+        }
+        index = (index - 1) ~/ 2;
+        tree[index]++;
+      }
+    }
+    return crossCount;
+  }
+}
+
+class GreedyCycleRemoval {
+  final Graph graph;
+  final Set<Edge> feedbackArcs = {};
+
+  GreedyCycleRemoval(this.graph);
+
+  Set<Edge> getFeedbackArcs() {
+    var copy = _copyGraph();
+    _removeCycles(copy);
+    return feedbackArcs;
+  }
+
+  Graph _copyGraph() {
+    var copy = Graph();
+    copy.addNodes(graph.nodes);
+    copy.addEdges(graph.edges);
+    return copy;
+  }
+
+  void _removeCycles(Graph g) {
+    while (g.nodes.isNotEmpty) {
+      // Remove sinks
+      var sinks = g.nodes.where((n) => g.getOutEdges(n).isEmpty).toList();
+      if (sinks.isNotEmpty) {
+        for (var sink in sinks) {
+          g.removeNode(sink);
+        }
+        continue;
+      }
+
+      // Remove sources
+      var sources = g.nodes.where((n) => g.getInEdges(n).isEmpty).toList();
+      if (sources.isNotEmpty) {
+        for (var source in sources) {
+          g.removeNode(source);
+        }
+        continue;
+      }
+
+      // Choose vertex with highest out-degree - in-degree
+      var best = g.nodes.reduce((a, b) {
+        var aDiff = g.getOutEdges(a).length - g.getInEdges(a).length;
+        var bDiff = g.getOutEdges(b).length - g.getInEdges(b).length;
+        return aDiff > bDiff ? a : b;
+      });
+
+      // Add incoming edges to feedback arcs
+      feedbackArcs.addAll(g.getInEdges(best));
+      g.removeNode(best);
+    }
+  }
+}
+
