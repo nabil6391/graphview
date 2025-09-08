@@ -18,6 +18,7 @@ part 'familytree/FamilyTreeAlgorithm.dart';
 part 'familytree/FamilyTreeBuchheimWalkerConfiguration.dart';
 part 'familytree/FamilyTreeEdgeRenderer.dart';
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
+part 'forcedirected/FruchtermanReingoldConfiguration.dart';
 part 'layered/EiglspergerAlgorithm.dart';
 part 'layered/SugiyamaAlgorithm.dart';
 part 'layered/SugiyamaConfiguration.dart';
