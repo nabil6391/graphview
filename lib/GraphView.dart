@@ -1,39 +1,34 @@
 library graphview;
 
-import 'dart:async';
 import 'dart:collection';
-import 'dart:math';
 import 'dart:convert';
+import 'dart:math';
+
+import 'package:collection/collection.dart'
+    show IterableExtension, ListEquality;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'dart:ui';
-import 'package:collection/collection.dart' show IterableExtension;
-
-part 'Graph.dart';
 
 part 'Algorithm.dart';
-
+part 'Graph.dart';
 part 'edgerenderer/ArrowEdgeRenderer.dart';
-
 part 'edgerenderer/EdgeRenderer.dart';
-
+part 'familytree/FamilyTreeAlgorithm.dart';
+part 'familytree/FamilyTreeBuchheimWalkerConfiguration.dart';
+part 'familytree/FamilyTreeEdgeRenderer.dart';
 part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
-
+part 'layered/EiglspergerAlgorithm.dart';
 part 'layered/SugiyamaAlgorithm.dart';
-
 part 'layered/SugiyamaConfiguration.dart';
-
 part 'layered/SugiyamaEdgeData.dart';
-
 part 'layered/SugiyamaEdgeRenderer.dart';
-
 part 'layered/SugiyamaNodeData.dart';
-
+part 'mindmap/MindMapAlgorithm.dart';
+part 'mindmap/MindmapEdgeRenderer.dart';
+part 'tree/BaloonLayoutAlgorithm.dart';
 part 'tree/BuchheimWalkerAlgorithm.dart';
-
 part 'tree/BuchheimWalkerConfiguration.dart';
-
 part 'tree/BuchheimWalkerNodeData.dart';
 
 part 'tree/TreeEdgeRenderer.dart';

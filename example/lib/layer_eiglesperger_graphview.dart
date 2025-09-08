@@ -2,12 +2,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
-class LayeredGraphViewPage extends StatefulWidget {
+class LayeredEiglspergerGraphViewPage extends StatefulWidget {
   @override
-  _LayeredGraphViewPageState createState() => _LayeredGraphViewPageState();
+  _LayeredEiglspergerGraphViewPageState createState() => _LayeredEiglspergerGraphViewPageState();
 }
 
-class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
+class _LayeredEiglspergerGraphViewPageState extends State<LayeredEiglspergerGraphViewPage> {
   GraphViewController _controller = GraphViewController();
   final Random r = Random();
   int nextNodeId = 0;
@@ -104,7 +104,7 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
               child: GraphView.builder(
                 controller: _controller,
                 graph: graph,
-                algorithm: SugiyamaAlgorithm(builder),
+                algorithm: EiglspergerAlgorithm(builder),
                 paint: Paint()
                   ..color = Colors.green
                   ..strokeWidth = 1
