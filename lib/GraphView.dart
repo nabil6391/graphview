@@ -30,8 +30,11 @@ part 'tree/BaloonLayoutAlgorithm.dart';
 part 'tree/BuchheimWalkerAlgorithm.dart';
 part 'tree/BuchheimWalkerConfiguration.dart';
 part 'tree/BuchheimWalkerNodeData.dart';
-
+part 'tree/CircleLayoutAlgorithm.dart';
+part 'tree/RadialTreeLayoutAlgorithm.dart';
+part 'tree/TidierTreeLayoutAlgorithm.dart';
 part 'tree/TreeEdgeRenderer.dart';
+part 'tree/TreeLayoutAlgorithm.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
 
