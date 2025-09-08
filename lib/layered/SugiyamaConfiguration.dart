@@ -22,7 +22,7 @@ class SugiyamaConfiguration {
   CrossMinimizationStrategy crossMinimizationStrategy = CrossMinimizationStrategy.simple;
   CycleRemovalStrategy cycleRemovalStrategy = CycleRemovalStrategy.dfs;
 
-  final bool postStraighten = false;
+  bool postStraighten = false;
   int coffmanGrahamWidth = 10000;
 
   bool addTriangleToEdge = true;
