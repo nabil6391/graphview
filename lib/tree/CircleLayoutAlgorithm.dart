@@ -324,11 +324,7 @@ class CircleLayoutAlgorithm extends Algorithm {
     // Implementation can be added if needed
   }
 
-  @override
-  void step(Graph? graph) {
-    // Implementation can be added if needed
-  }
-
+ 
   @override
   EdgeRenderer? renderer;
 }

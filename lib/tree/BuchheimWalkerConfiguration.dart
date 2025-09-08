@@ -26,4 +26,10 @@ class BuchheimWalkerConfiguration {
   int getSubtreeSeparation() {
     return subtreeSeparation;
   }
+  BuchheimWalkerConfiguration(
+      {this.siblingSeparation = DEFAULT_SIBLING_SEPARATION,
+        this.levelSeparation = DEFAULT_LEVEL_SEPARATION,
+        this.subtreeSeparation = DEFAULT_SUBTREE_SEPARATION,
+        this.orientation = DEFAULT_ORIENTATION});
+
 }

@@ -321,8 +321,4 @@ class TreeLayoutAlgorithm extends Algorithm {
     // TODO: implement setDimensions
   }
 
-  @override
-  void step(Graph? graph) {
-    // TODO: implement step
-  }
 }

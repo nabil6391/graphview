@@ -507,9 +507,6 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   @override
-  void setFocusedNode(Node node) {}
-
-  @override
   void init(Graph? graph) {
     var firstNode = getFirstNode(graph!);
     firstWalk(graph, firstNode, 0, 0);
@@ -520,17 +517,14 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   @override
-  void step(Graph? graph) {
-    var firstNode = getFirstNode(graph!);
-    firstWalk(graph, firstNode, 0, 0);
-    secondWalk(graph, firstNode, 0.0);
-    checkUnconnectedNotes(graph);
-    positionNodes(graph);
-  }
-
-  @override
   void setDimensions(double width, double height) {
     // graphWidth = width;
     // graphHeight = height;
+  }
+
+  @override
+  bool _isConfigurationEqual(Algorithm other) {
+    return other is BuchheimWalkerAlgorithm &&
+        configuration == other.configuration;
   }
 }
