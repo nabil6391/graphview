@@ -100,7 +100,8 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
               child: GraphView.builder(
                 controller: _controller,
                 graph: graph,
-                algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+                algorithm: algorithm,
+                initialNode: ValueKey(1),
                 builder: (Node node) => InkWell(
                   onTap: () => _controller.animateToNode(node.key?.value),
                   child: Container(
@@ -138,6 +139,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
 
   final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
+  late final algorithm = BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder));
 
   void _navigateToRandomNode() {
     if (graph.nodes.isEmpty) return;
@@ -162,29 +164,126 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
   void initState() {
     super.initState();
 
-    final node1 = Node.Id(1);
-    final node2 = Node.Id(2);
-    final node3 = Node.Id(3);
-    final node4 = Node.Id(4);
-    final node5 = Node.Id(5);
-    final node6 = Node.Id(6);
-    final node8 = Node.Id(7);
-    final node7 = Node.Id(8);
-    final node9 = Node.Id(9);
-    final node10 = Node.Id(10);
-    final node11 = Node.Id(11);
-    final node12 = Node.Id(12);
-    graph.addEdge(node1, node2);
-    graph.addEdge(node1, node3, paint: Paint()..color = Colors.red);
-    graph.addEdge(node1, node4, paint: Paint()..color = Colors.blue);
-    graph.addEdge(node2, node5);
-    graph.addEdge(node2, node6);
-    graph.addEdge(node6, node7, paint: Paint()..color = Colors.red);
-    graph.addEdge(node6, node8, paint: Paint()..color = Colors.red);
-    graph.addEdge(node4, node9);
-    graph.addEdge(node4, node10, paint: Paint()..color = Colors.black);
-    graph.addEdge(node4, node11, paint: Paint()..color = Colors.red);
-    graph.addEdge(node11, node12);
+
+
+// Create all nodes
+    final root = Node.Id(1);  // Central topic
+
+// Left side - Technology branch (will be large)
+    final tech = Node.Id(2);
+    final ai = Node.Id(3);
+    final web = Node.Id(4);
+    final mobile = Node.Id(5);
+    final aiSubtopics = [
+      Node.Id(6),   // Machine Learning
+      Node.Id(7),   // Deep Learning
+      Node.Id(8),   // NLP
+      Node.Id(9),   // Computer Vision
+    ];
+    final webSubtopics = [
+      Node.Id(10),  // Frontend
+      Node.Id(11),  // Backend
+      Node.Id(12),  // DevOps
+    ];
+    final frontendDetails = [
+      Node.Id(13),  // React
+      Node.Id(14),  // Vue
+      Node.Id(15),  // Angular
+    ];
+    final backendDetails = [
+      Node.Id(16),  // Node.js
+      Node.Id(17),  // Python
+      Node.Id(18),  // Java
+      Node.Id(19),  // Go
+    ];
+
+// Right side - Business branch (will be smaller to test balancing)
+    final business = Node.Id(20);
+    final marketing = Node.Id(21);
+    final sales = Node.Id(22);
+    final finance = Node.Id(23);
+    final marketingDetails = [
+      Node.Id(24),  // Digital Marketing
+      Node.Id(25),  // Content Strategy
+    ];
+    final salesDetails = [
+      Node.Id(26),  // B2B Sales
+      Node.Id(27),  // Customer Success
+    ];
+
+// Additional right side - Personal branch
+    final personal = Node.Id(28);
+    final health = Node.Id(29);
+    final hobbies = Node.Id(30);
+    final healthDetails = [
+      Node.Id(31),  // Exercise
+      Node.Id(32),  // Nutrition
+      Node.Id(33),  // Mental Health
+    ];
+    final exerciseDetails = [
+      Node.Id(34),  // Cardio
+      Node.Id(35),  // Strength Training
+      Node.Id(36),  // Yoga
+    ];
+
+// Build the graph structure
+    graph.addEdge(root, tech);
+    graph.addEdge(root, business, paint: Paint()..color = Colors.blue);
+    graph.addEdge(root, personal, paint: Paint()..color = Colors.green);
+
+// Technology branch (left side - large subtree)
+    graph.addEdge(tech, ai);
+    graph.addEdge(tech, web);
+    graph.addEdge(tech, mobile);
+
+// AI subtree
+    for (final aiNode in aiSubtopics) {
+      graph.addEdge(ai, aiNode, paint: Paint()..color = Colors.purple);
+    }
+
+// Web subtree with deep nesting
+    for (final webNode in webSubtopics) {
+      graph.addEdge(web, webNode, paint: Paint()..color = Colors.orange);
+    }
+
+// Frontend details (3rd level)
+    for (final frontendNode in frontendDetails) {
+      graph.addEdge(webSubtopics[0], frontendNode, paint: Paint()..color = Colors.cyan);
+    }
+
+// Backend details (3rd level) - even deeper
+    for (final backendNode in backendDetails) {
+      graph.addEdge(webSubtopics[1], backendNode, paint: Paint()..color = Colors.teal);
+    }
+
+// Business branch (right side - smaller subtree)
+    graph.addEdge(business, marketing);
+    graph.addEdge(business, sales);
+    graph.addEdge(business, finance);
+
+// Marketing details
+    for (final marketingNode in marketingDetails) {
+      graph.addEdge(marketing, marketingNode, paint: Paint()..color = Colors.red);
+    }
+
+// Sales details
+    for (final salesNode in salesDetails) {
+      graph.addEdge(sales, salesNode, paint: Paint()..color = Colors.indigo);
+    }
+
+// Personal branch (right side - medium subtree)
+    graph.addEdge(personal, health);
+    graph.addEdge(personal, hobbies);
+
+// Health details
+    for (final healthNode in healthDetails) {
+      graph.addEdge(health, healthNode, paint: Paint()..color = Colors.lightGreen);
+    }
+
+// Exercise details (3rd level)
+    for (final exerciseNode in exerciseDetails) {
+      graph.addEdge(healthDetails[0], exerciseNode, paint: Paint()..color = Colors.amber);
+    }
 
     builder
       ..siblingSeparation = (100)
