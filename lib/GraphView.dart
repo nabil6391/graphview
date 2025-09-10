@@ -51,8 +51,7 @@ class GraphViewController {
 
   void animateToNode(ValueKey key) => _state?.animateToNode(key);
 
-  void animateToMatrix(Matrix4 targetMatrix) =>
-      _state?.animateToMatrix(targetMatrix);
+  void animateToMatrix(Matrix4 target) => _state?.animateToMatrix(target);
 
   void resetView() => _state?.resetView();
 
@@ -67,6 +66,9 @@ class GraphView extends StatefulWidget {
   final bool animated;
   final GraphViewController? controller;
   final bool _isBuilder;
+  Duration? animationDuration;
+  ValueKey? initialNode;
+  bool autoZoomToFit = false;
 
   GraphView({
     Key? key,
@@ -87,7 +89,12 @@ class GraphView extends StatefulWidget {
     required this.builder,
     this.controller,
     this.animated = true,
+    this.initialNode,
+    this.autoZoomToFit = false,
+    this.animationDuration,
   })  : _isBuilder = true,
+        assert(!(autoZoomToFit && initialNode != null),
+        'Cannot use both autoZoomToFit and initialNode together. Choose one.'),
         super(key: key);
 
   @override
@@ -112,19 +119,28 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       _transformationController.dispose();
       _transformationController = widget.controller!.transformationController!;
     }
-    // Initialize camera animation controller (for animateToNode, zoomToFit, etc.)
-    _cameraAnimationController = AnimationController(
+
+    _cameraController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: widget.animationDuration ?? const Duration(milliseconds: 600),
     );
     widget.controller?._attach(this);
+
+    if (widget.autoZoomToFit || widget.initialNode != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.autoZoomToFit) {
+          zoomToFit();
+        } else if (widget.initialNode != null) {
+          animateToNode(widget.initialNode!);
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     widget.controller?._detach();
-    _cameraAnimationController.dispose();
-
+    _cameraController.dispose();
     if (widget.controller?.transformationController == null) {
       _transformationController.dispose();
     }
@@ -155,27 +171,20 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   }
 
   void animateToNode(ValueKey key) {
-    final node = widget.graph.nodes.cast<Node?>().firstWhere(
-          (n) => n?.key == key,
-          orElse: () => null,
-        );
+    final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
     if (node == null) return;
 
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
-    final viewportSize = renderBox.size;
-    final centerX = viewportSize.width / 2;
-    final centerY = viewportSize.height / 2;
+    final viewport = renderBox.size;
+    final center = Offset(viewport.width / 2, viewport.height / 2);
     final nodeCenter = Offset(
-      node.position.dx + node.width / 2,
-      node.position.dy + node.height / 2,
-    );
+        node.position.dx + node.width / 2, node.position.dy + node.height / 2);
 
-    final targetMatrix = Matrix4.identity()
-      ..translate(centerX - nodeCenter.dx, centerY - nodeCenter.dy);
-
-    animateToMatrix(targetMatrix);
+    final target = Matrix4.identity()
+      ..translate(center.dx - nodeCenter.dx, center.dy - nodeCenter.dy);
+    animateToMatrix(target);
   }
 
   void resetView() => animateToMatrix(Matrix4.identity());
@@ -185,53 +194,50 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
-    final viewportSize = renderBox.size;
+    final vp = renderBox.size;
     final bounds = _calculateGraphBounds();
+    final scale = (vp.shortestSide * 0.8 / bounds.longestSide).clamp(0.01, 5.6);
+    final centerOffset = Offset(vp.width / 2 - bounds.center.dx * scale,
+        vp.height / 2 - bounds.center.dy * scale);
 
-    final scale = (viewportSize.shortestSide * 0.8 / bounds.longestSide).clamp(0.01, 5.6);
-    final centerOffset = Offset(
-      viewportSize.width / 2 - bounds.center.dx * scale,
-      viewportSize.height / 2 - bounds.center.dy * scale,
-    );
-
-    final targetMatrix = Matrix4.identity()
+    final target = Matrix4.identity()
       ..translate(centerOffset.dx, centerOffset.dy)
       ..scale(scale);
-
-    animateToMatrix(targetMatrix);
+    animateToMatrix(target);
   }
 
   Rect _calculateGraphBounds() {
     if (widget.graph.nodes.isEmpty) return Rect.zero;
-
-    final positions = widget.graph.nodes.map((n) => n.position);
-    final left = positions.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
-    final top = positions.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
-    final right = positions.map((p) => p.dx + 100).reduce((a, b) => a > b ? a : b);
-    final bottom = positions.map((p) => p.dy + 50).reduce((a, b) => a > b ? a : b);
-
+    final xs = widget.graph.nodes.map((n) => n.position.dx);
+    final ys = widget.graph.nodes.map((n) => n.position.dy);
+    final left = xs.reduce(min);
+    final top = ys.reduce(min);
+    final right = widget.graph.nodes
+        .map((n) => n.position.dx + (n.width == 0 ? 100 : n.width))
+        .reduce(max);
+    final bottom = widget.graph.nodes
+        .map((n) => n.position.dy + (n.height == 0 ? 50 : n.height))
+        .reduce(max);
     return Rect.fromLTRB(left, top, right, bottom);
   }
 
-  void animateToMatrix(Matrix4 targetMatrix) {
-    _cameraAnimationController.reset();
-    _animationMove = Matrix4Tween(
-      begin: _transformationController.value,
-      end: targetMatrix,
-    ).animate(CurvedAnimation(
-      parent: _cameraAnimationController,
-      curve: Curves.easeInOut,
-    ));
-    _animationMove!.addListener(_onAnimateMove);
-    _cameraAnimationController.forward();
+  void animateToMatrix(Matrix4 target) {
+    _cameraController.reset();
+    _cameraAnimation =
+        Matrix4Tween(begin: _transformationController.value, end: target)
+            .animate(CurvedAnimation(
+                parent: _cameraController, curve: Curves.easeInOut));
+    _cameraAnimation!.addListener(_onCameraTick);
+    _cameraController.forward();
   }
 
-  void _onAnimateMove() {
-    _transformationController.value = _animationMove!.value;
-    if (!_cameraAnimationController.isAnimating) {
-      _animationMove!.removeListener(_onAnimateMove);
-      _animationMove = null;
-      _cameraAnimationController.reset();
+  void _onCameraTick() {
+    if (_cameraAnimation == null) return;
+    _transformationController.value = _cameraAnimation!.value;
+    if (!_cameraController.isAnimating) {
+      _cameraAnimation!.removeListener(_onCameraTick);
+      _cameraAnimation = null;
+      _cameraController.reset();
     }
   }
 
