@@ -49,7 +49,9 @@ class GraphViewController {
 
   void _detach() => _state = null;
 
-  void animateToNode(ValueKey key) => _state?.animateToNode(key);
+  void animateToNode(ValueKey key) => _state?.jumpToNode(key, true);
+
+  void jumpToNode(ValueKey key) => _state?.jumpToNode(key, false);
 
   void animateToMatrix(Matrix4 target) => _state?.animateToMatrix(target);
 
@@ -131,7 +133,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
         if (widget.autoZoomToFit) {
           zoomToFit();
         } else if (widget.initialNode != null) {
-          animateToNode(widget.initialNode!);
+          jumpToNode(widget.initialNode!, false);
         }
       });
     }
@@ -170,7 +172,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     return graphView;
   }
 
-  void animateToNode(ValueKey key) {
+  void jumpToNode(ValueKey key, bool animated) {
     final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
     if (node == null) return;
 
@@ -184,7 +186,12 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
     final target = Matrix4.identity()
       ..translate(center.dx - nodeCenter.dx, center.dy - nodeCenter.dy);
-    animateToMatrix(target);
+
+    if (animated) {
+      animateToMatrix(target);
+    } else {
+      _transformationController.value = target;
+    }
   }
 
   void resetView() => animateToMatrix(Matrix4.identity());
@@ -195,7 +202,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     if (renderBox == null) return;
 
     final vp = renderBox.size;
-    final bounds = _calculateGraphBounds();
+    final bounds = widget.graph.calculateGraphBounds();
     final scale = (vp.shortestSide * 0.8 / bounds.longestSide).clamp(0.01, 5.6);
     final centerOffset = Offset(vp.width / 2 - bounds.center.dx * scale,
         vp.height / 2 - bounds.center.dy * scale);
@@ -204,21 +211,6 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       ..translate(centerOffset.dx, centerOffset.dy)
       ..scale(scale);
     animateToMatrix(target);
-  }
-
-  Rect _calculateGraphBounds() {
-    if (widget.graph.nodes.isEmpty) return Rect.zero;
-    final xs = widget.graph.nodes.map((n) => n.position.dx);
-    final ys = widget.graph.nodes.map((n) => n.position.dy);
-    final left = xs.reduce(min);
-    final top = ys.reduce(min);
-    final right = widget.graph.nodes
-        .map((n) => n.position.dx + (n.width == 0 ? 100 : n.width))
-        .reduce(max);
-    final bottom = widget.graph.nodes
-        .map((n) => n.position.dy + (n.height == 0 ? 50 : n.height))
-        .reduce(max);
-    return Rect.fromLTRB(left, top, right, bottom);
   }
 
   void animateToMatrix(Matrix4 target) {
