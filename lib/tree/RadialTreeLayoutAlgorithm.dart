@@ -172,7 +172,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   }
 
   void _setRadialLocations(Graph graph) {
-    final bounds = _calculateGraphBounds(graph);
+    final bounds = graph.calculateGraphBounds();
     final maxPoint = _getMaxXY(graph);
     final maxx = max(maxPoint.dx + config.levelSeparation, bounds.width);
 
@@ -206,7 +206,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   }
 
   void _putRadialPointsInModel(Graph graph) {
-    final bounds = _calculateGraphBounds(graph);
+    final bounds = graph.calculateGraphBounds();
     final centerX = bounds.width / 2;
     final centerY = bounds.height / 2;
 
@@ -232,7 +232,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   }
 
   Size _adjustLayoutSize(Graph graph, double diameter) {
-    final bounds = _calculateGraphBounds(graph);
+    final bounds = graph.calculateGraphBounds();
     final offsetDelta = diameter - bounds.width;
 
     if (offsetDelta > 0) {
@@ -251,33 +251,6 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
         node.y + delta,
       );
     }
-  }
-
-  Rect _calculateGraphBounds(Graph graph) {
-    if (graph.nodes.isEmpty) return const Rect.fromLTWH(0, 0, 400, 400);
-
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = double.negativeInfinity;
-    double maxY = double.negativeInfinity;
-
-    for (final node in graph.nodes) {
-      minX = min(minX, node.x);
-      minY = min(minY, node.y);
-      maxX = max(maxX, node.x + node.width);
-      maxY = max(maxY, node.y + node.height);
-    }
-
-    if (minX == double.infinity) {
-      return const Rect.fromLTWH(0, 0, 400, 400);
-    }
-
-    return Rect.fromLTRB(minX, minY, maxX, maxY);
-  }
-
-  Size _calculateGraphSize(Graph graph) {
-    final bounds = _calculateGraphBounds(graph);
-    return Size(bounds.width, bounds.height);
   }
 
   void _shiftCoordinates(Graph graph, double shiftX, double shiftY) {

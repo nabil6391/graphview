@@ -62,7 +62,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
 
     _setRootPolars(graph, roots);
     _shiftCoordinates(graph, shiftX, shiftY);
-    return _calculateGraphSize(graph);
+    return graph.calculateGraphSize();
   }
 
   void _initializeData(Graph graph) {
@@ -89,7 +89,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
 
   void _setRootPolars(Graph graph, List<Node> roots) {
     final center = _getGraphCenter(graph);
-    final width = _calculateGraphBounds(graph).width;
+    final width = graph.calculateGraphBounds().width;
     final defaultRadius = max(width / 2, 200.0);
 
     if (roots.length == 1) {
@@ -159,39 +159,11 @@ class BalloonLayoutAlgorithm extends Algorithm {
   }
 
   Offset _getGraphCenter(Graph graph) {
-    final bounds = _calculateGraphBounds(graph);
+    final bounds = graph.calculateGraphBounds();
     return Offset(
       bounds.left + bounds.width / 2,
       bounds.top + bounds.height / 2,
     );
-  }
-
-  Rect _calculateGraphBounds(Graph graph) {
-    if (graph.nodes.isEmpty) return Rect.zero;
-
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = double.negativeInfinity;
-    double maxY = double.negativeInfinity;
-
-    for (final node in graph.nodes) {
-      minX = min(minX, node.x);
-      minY = min(minY, node.y);
-      maxX = max(maxX, node.x + node.width);
-      maxY = max(maxY, node.y + node.height);
-    }
-
-    // Provide default bounds if all nodes are at origin
-    if (minX == double.infinity) {
-      return const Rect.fromLTWH(0, 0, 400, 400);
-    }
-
-    return Rect.fromLTRB(minX, minY, maxX, maxY);
-  }
-
-  Size _calculateGraphSize(Graph graph) {
-    final bounds = _calculateGraphBounds(graph);
-    return Size(bounds.width, bounds.height);
   }
 
   void _shiftCoordinates(Graph graph, double shiftX, double shiftY) {
@@ -249,7 +221,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
     }
 
     _shiftCoordinates(spanningTree, shiftX, shiftY);
-    return _calculateGraphSize(spanningTree);
+    return spanningTree.calculateGraphSize();
   }
 
   // Utility methods to get polar coordinates and radii

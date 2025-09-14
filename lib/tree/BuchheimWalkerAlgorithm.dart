@@ -47,7 +47,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     checkUnconnectedNotes(graph);
     positionNodes(graph);
     shiftCoordinates(graph, shiftX, shiftY);
-    return calculateGraphSize(graph);
+    return graph.calculateGraphSize();
   }
 
   Node getFirstNode(Graph graph) => graph.nodes.firstWhere((element) => !hasPredecessor(element));
@@ -124,22 +124,6 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     graph.successorsOf(node).forEach((w) {
       secondWalk(graph, w, modifier + nodeData.modifier);
     });
-  }
-
-  Size calculateGraphSize(Graph graph) {
-    var left = double.infinity;
-    var top = double.infinity;
-    var right = double.negativeInfinity;
-    var bottom = double.negativeInfinity;
-
-    graph.nodes.forEach((node) {
-      left = min(left, node.x);
-      top = min(top, node.y);
-      right = max(right, node.x + node.width);
-      bottom = max(bottom, node.y + node.height);
-    });
-
-    return Size(right - left, bottom - top);
   }
 
   void executeShifts(Graph graph, Node node) {
@@ -522,9 +506,4 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     // graphHeight = height;
   }
 
-  @override
-  bool _isConfigurationEqual(Algorithm other) {
-    return other is BuchheimWalkerAlgorithm &&
-        configuration == other.configuration;
-  }
 }

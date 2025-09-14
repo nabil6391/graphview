@@ -43,7 +43,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     _buildTree(graph);
     _shiftCoordinates(graph, shiftX, shiftY);
 
-    final size = _calculateGraphSize(graph);
+    final size = graph.calculateGraphSize();
     _clearMetadata();
     return size;
   }
@@ -379,7 +379,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   }
 
   void _normalizePositions(Graph graph) {
-    final graphBounds = _calculateCurrentBounds(graph);
+    final graphBounds = graph.calculateGraphBounds();
     final xOffset = config.siblingSeparation - graphBounds.left;
     final yOffset = config.levelSeparation - graphBounds.top;
 
@@ -389,29 +389,6 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
         node.y + yOffset,
       );
     }
-  }
-
-  Rect _calculateCurrentBounds(Graph graph) {
-    if (graph.nodes.isEmpty) return Rect.zero;
-
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = double.negativeInfinity;
-    double maxY = double.negativeInfinity;
-
-    for (final node in graph.nodes) {
-      minX = min(minX, node.x);
-      minY = min(minY, node.y);
-      maxX = max(maxX, node.x + node.width);
-      maxY = max(maxY, node.y + node.height);
-    }
-
-    return Rect.fromLTRB(minX, minY, maxX, maxY);
-  }
-
-  Size _calculateGraphSize(Graph graph) {
-    final bounds = _calculateCurrentBounds(graph);
-    return Size(bounds.width + 2 * config.siblingSeparation, bounds.height + 2 * config.levelSeparation);
   }
 
   void _shiftCoordinates(Graph graph, double shiftX, double shiftY) {

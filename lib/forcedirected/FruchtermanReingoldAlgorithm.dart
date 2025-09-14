@@ -207,7 +207,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
 
     shiftCoordinates(graph, shiftX, shiftY);
 
-    return calculateGraphSize(graph);
+    return graph.calculateGraphSize();
   }
 
   void shiftCoordinates(Graph graph, double shiftX, double shiftY) {
@@ -324,22 +324,6 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
   }
 
   void drawEdges(Canvas canvas, Graph graph, Paint linePaint) {}
-
-  Size calculateGraphSize(Graph graph) {
-    var left = double.infinity;
-    var top = double.infinity;
-    var right = double.negativeInfinity;
-    var bottom = double.negativeInfinity;
-
-    graph.nodes.forEach((node) {
-      left = min(left, node.x);
-      top = min(top, node.y);
-      right = max(right, node.x + node.width);
-      bottom = max(bottom, node.y + node.height);
-    });
-
-    return Size(right - left, bottom - top);
-  }
 
   @override
   void setDimensions(double width, double height) {

@@ -258,31 +258,10 @@ class CircleLayoutAlgorithm extends Algorithm {
     }
 
     // Calculate actual bounds based on positioned nodes
-    final bounds = _calculateGraphBounds(graph);
+    final bounds = graph.calculateGraphBounds();
     return Size(bounds.width + 40, bounds.height + 40); // Add some padding
   }
-
-  Rect _calculateGraphBounds(Graph graph) {
-    if (graph.nodes.isEmpty) return Rect.zero;
-
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = double.negativeInfinity;
-    double maxY = double.negativeInfinity;
-
-    for (final node in graph.nodes) {
-      minX = min(minX, node.x - node.width / 2);
-      minY = min(minY, node.y - node.height / 2);
-      maxX = max(maxX, node.x + node.width / 2);
-      maxY = max(maxY, node.y + node.height / 2);
-    }
-
-    if (minX == double.infinity) {
-      return const Rect.fromLTWH(0, 0, 400, 400);
-    }
-
-    return Rect.fromLTRB(minX, minY, maxX, maxY);
-  }
+  
 
   void _shiftCoordinates(Graph graph, double shiftX, double shiftY) {
     for (final node in graph.nodes) {

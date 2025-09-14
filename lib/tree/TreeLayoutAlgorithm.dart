@@ -52,7 +52,7 @@ class TreeLayoutAlgorithm extends Algorithm {
       // _expandToFill(graph);
 
     _shiftCoordinates(graph, shiftX, shiftY);
-    return _calculateGraphSize(graph);
+    return graph.calculateGraphSize();
   }
 
   void _initializeData(Graph graph) {
@@ -204,7 +204,7 @@ class TreeLayoutAlgorithm extends Algorithm {
   }
 
   void _expandToFill(Graph graph) {
-    final bounds = _calculateGraphBounds(graph);
+    final bounds = graph.calculateGraphBounds();
     if (bounds.width <= 0 || bounds.height <= 0) return;
 
     // Add padding
@@ -224,29 +224,6 @@ class TreeLayoutAlgorithm extends Algorithm {
         node.position = Offset(centerX + offsetX, centerY + offsetY);
       }
     }
-  }
-
-  Rect _calculateGraphBounds(Graph graph) {
-    if (graph.nodes.isEmpty) return Rect.zero;
-
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = double.negativeInfinity;
-    double maxY = double.negativeInfinity;
-
-    for (final node in graph.nodes) {
-      minX = min(minX, node.x);
-      minY = min(minY, node.y);
-      maxX = max(maxX, node.x + node.width);
-      maxY = max(maxY, node.y + node.height);
-    }
-
-    return Rect.fromLTRB(minX, minY, maxX, maxY);
-  }
-
-  Size _calculateGraphSize(Graph graph) {
-    final bounds = _calculateGraphBounds(graph);
-    return Size(bounds.width, bounds.height);
   }
 
   void _shiftCoordinates(Graph graph, double shiftX, double shiftY) {
@@ -308,7 +285,7 @@ class TreeLayoutAlgorithm extends Algorithm {
     }
 
     _shiftCoordinates(spanningTree, shiftX, shiftY);
-    return _calculateGraphSize(spanningTree);
+    return spanningTree.calculateGraphSize();
   }
 
   @override

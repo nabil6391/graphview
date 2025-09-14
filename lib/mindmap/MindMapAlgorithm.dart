@@ -27,7 +27,7 @@ class MindmapAlgorithm extends BuchheimWalkerAlgorithm {
     _applyBuchheimWalkerSpacing(graph, root);
     _createMindmapLayout(graph, root);
     shiftCoordinates(graph, shiftX, shiftY);
-    return calculateGraphSize(graph);
+    return graph.calculateGraphSize();
   }
 
   void _markSubtree(Node node, MindmapSide side) {

@@ -49,27 +49,13 @@ class SugiyamaAlgorithm extends Algorithm {
     //   // The optimizer modifies the Y coordinates in place, so no need to call assignY() again.
     // }
     shiftCoordinates(shiftX, shiftY);
-    final graphSize = calculateGraphSize(this.graph);
+    final graphSize = graph.calculateGraphSize();
     denormalize();
     restoreCycle();
     return graphSize;
   }
 
-  Size calculateGraphSize(Graph graph) {
-    var left = double.infinity;
-    var top = double.infinity;
-    var right = double.negativeInfinity;
-    var bottom = double.negativeInfinity;
 
-    graph.nodes.forEach((node) {
-      left = min(left, node.x);
-      top = min(top, node.y);
-      right = max(right, node.x + node.width);
-      bottom = max(bottom, node.y + node.height);
-    });
-
-    return Size(right - left, bottom - top);
-  }
 
   void shiftCoordinates(double shiftX, double shiftY) {
     layers.forEach((List<Node?> arrayList) {
