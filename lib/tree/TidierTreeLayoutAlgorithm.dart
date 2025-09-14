@@ -25,6 +25,18 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     this.renderer = renderer ?? TreeEdgeRenderer(config);
   }
 
+  bool isVertical() {
+    var orientation = config.orientation;
+    return orientation == BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM ||
+        orientation == BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP;
+  }
+
+  bool needReverseOrder() {
+    var orientation = config.orientation;
+    return orientation == BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP ||
+        orientation == BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT;
+  }
+
   @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     if (graph == null || graph.nodes.isEmpty) {
@@ -33,7 +45,6 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
     _clearMetadata();
 
-    // Handle single node case
     if (graph.nodes.length == 1) {
       final node = graph.nodes.first;
       node.position = Offset(shiftX + 100, shiftY + 100);
@@ -41,6 +52,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     }
 
     _buildTree(graph);
+    _applyOrientation(graph);
     _shiftCoordinates(graph, shiftX, shiftY);
 
     final size = graph.calculateGraphSize();
@@ -66,7 +78,6 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     vertexData.clear();
     heights.clear();
 
-    // Find roots
     roots = _findRoots(graph);
 
     if (roots.isEmpty) {
@@ -77,30 +88,16 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
     tree = graph;
 
-    // For forest (multiple roots), use null as the virtual parent
     final virtualRoot = roots.length > 1 ? null : roots.first;
 
     _firstWalk(virtualRoot, null);
     _computeMaxHeights(virtualRoot, 0);
     _secondWalk(virtualRoot, virtualRoot != null ? -_vertexData(virtualRoot).x : 0, 0, 0);
 
-    // Normalize and position nodes
     _normalizePositions(graph);
   }
 
   List<Node> _findRoots(Graph graph) {
-    final nodeData = <Node, List<Node>>{};
-
-    // Initialize parent-child relationships
-    for (final node in graph.nodes) {
-      nodeData[node] = [];
-    }
-
-    for (final edge in graph.edges) {
-      nodeData[edge.source]!.add(edge.destination);
-    }
-
-    // Find nodes with no incoming edges
     final incomingCounts = <Node, int>{};
     for (final node in graph.nodes) {
       incomingCounts[node] = 0;
@@ -120,12 +117,10 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   void _firstWalk(Node? v, Node? leftSibling) {
     if (_successors(v).isEmpty) {
-      // Leaf node
       if (leftSibling != null) {
-        _vertexData(v).x = _vertexData(leftSibling).x + _getDistance(v, leftSibling);
+        _vertexData(v).x = _vertexData(leftSibling).x + _getDistance(v, leftSibling, true);
       }
     } else {
-      // Internal node
       final children = _successors(v);
       Node? defaultAncestor = children.isNotEmpty ? children.first : null;
       Node? previousChild;
@@ -145,7 +140,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
         final midpoint = (_vertexData(firstChild).x + _vertexData(lastChild).x) ~/ 2;
 
         if (leftSibling != null) {
-          _vertexData(v).x = _vertexData(leftSibling).x + _getDistance(v, leftSibling);
+          _vertexData(v).x = _vertexData(leftSibling).x + _getDistance(v, leftSibling, true);
           _vertexData(v).mod = _vertexData(v).x - midpoint;
         } else {
           _vertexData(v).x = midpoint;
@@ -156,11 +151,13 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   void _secondWalk(Node? v, int m, int depth, int yOffset) {
     if (v == null) {
-      // Handle forest case - process all roots
+      // Handle multiple roots with subtree separation
       int rootOffset = 0;
-      for (final root in roots) {
-        _secondWalk(root, m, depth, yOffset);
-        rootOffset += _getDistance(root, null);
+      for (int i = 0; i < roots.length; i++) {
+        _secondWalk(roots[i], m + rootOffset, depth, yOffset);
+        if (i < roots.length - 1) {
+          rootOffset += config.subtreeSeparation;
+        }
       }
       return;
     }
@@ -195,19 +192,19 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   void _computeMaxHeights(Node? vertex, int depth) {
     if (vertex == null) {
-      // Handle forest case
       for (final root in roots) {
         _computeMaxHeights(root, depth);
       }
       return;
     }
 
-    // Ensure heights list is large enough
     while (heights.length <= depth) {
       heights.add(0);
     }
 
-    final nodeHeight = max(vertex.height.toInt(), config.levelSeparation);
+    final nodeHeight = isVertical()
+        ? max(vertex.height.toInt(), config.levelSeparation)
+        : max(vertex.width.toInt(), config.levelSeparation);
     heights[depth] = max(heights[depth], nodeHeight);
 
     for (final child in _successors(vertex)) {
@@ -217,7 +214,6 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   List<Node> _successors(Node? v) {
     if (v == null) {
-      // Virtual root's children are the actual roots
       return roots;
     }
 
@@ -232,7 +228,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   List<Node> _predecessors(Node v) {
     if (roots.contains(v)) {
-      return []; // Roots have no predecessors
+      return [];
     }
 
     final predecessors = <Node>[];
@@ -254,11 +250,17 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     return children.isNotEmpty ? children.last : _vertexData(v).thread;
   }
 
-  int _getDistance(Node? v, Node? w) {
+  int _getDistance(Node? v, Node? w, bool isSibling) {
     if (v == null || w == null) return config.siblingSeparation;
 
-    final sizeOfNodes = v.width.toInt() + w.width.toInt();
-    return sizeOfNodes ~/ 2 + config.siblingSeparation;
+    // Use appropriate separation based on relationship
+    final separation = isSibling ? config.siblingSeparation : config.subtreeSeparation;
+
+    // Consider node sizes in the calculation
+    final vSize = isVertical() ? v.width.toInt() : v.height.toInt();
+    final wSize = isVertical() ? w.width.toInt() : w.height.toInt();
+
+    return (vSize + wSize) ~/ 2 + separation;
   }
 
   Node? _apportion(Node? v, Node? defaultAncestor, Node? leftSibling, Node? parentOfV) {
@@ -287,7 +289,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
         _vertexData(vor).ancestor = v;
       }
 
-      final shift = (_vertexData(vil).x + innerLeft) - (_vertexData(vir).x + innerRight) + _getDistance(vil, vir);
+      final shift = (_vertexData(vil).x + innerLeft) - (_vertexData(vir).x + innerRight) + _getDistance(vil, vir, true);
 
       if (shift > 0) {
         _moveSubtree(_ancestor(vil, parentOfV, defaultAncestor), v, parentOfV, shift);
@@ -364,7 +366,6 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   void _shift(Node? v) {
     final children = _successors(v);
-    children.reversed;
 
     int shift = 0;
     int change = 0;
@@ -380,7 +381,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   void _normalizePositions(Graph graph) {
     final graphBounds = graph.calculateGraphBounds();
-    final xOffset = config.siblingSeparation - graphBounds.left;
+    final xOffset = config.subtreeSeparation - graphBounds.left;
     final yOffset = config.levelSeparation - graphBounds.top;
 
     for (final node in graph.nodes) {
@@ -388,6 +389,39 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
         node.x + xOffset,
         node.y + yOffset,
       );
+    }
+  }
+
+  void _applyOrientation(Graph graph) {
+    if (config.orientation == BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM) {
+      return;
+    }
+
+    final bounds = graph.calculateGraphBounds();
+    final centerX = bounds.left + bounds.width / 2;
+    final centerY = bounds.top + bounds.height / 2;
+
+    for (final node in graph.nodes) {
+      final x = node.x - centerX;
+      final y = node.y - centerY;
+      Offset newPosition;
+
+      switch (config.orientation) {
+        case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
+          newPosition = Offset(x + centerX, centerY - y);
+          break;
+        case BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT:
+          newPosition = Offset(-y + centerX, x + centerY);
+          break;
+        case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
+          newPosition = Offset(y + centerX, -x + centerY);
+          break;
+        default:
+          newPosition = node.position;
+          break;
+      }
+
+      node.position = newPosition;
     }
   }
 
@@ -431,16 +465,11 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   }
 
   @override
-  void init(Graph? graph) {
-    // Implementation can be added if needed
-  }
+  void init(Graph? graph) {}
 
   @override
-  void setDimensions(double width, double height) {
-    // Implementation can be added if needed
-  }
+  void setDimensions(double width, double height) {}
 
- 
   @override
   EdgeRenderer? renderer;
 }

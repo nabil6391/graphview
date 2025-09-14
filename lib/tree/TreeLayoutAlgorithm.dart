@@ -9,8 +9,9 @@ class TreeLayoutNodeData {
 
   TreeLayoutNodeData();
 }
+
 class TreeLayoutAlgorithm extends Algorithm {
-   late BuchheimWalkerConfiguration config;
+  late BuchheimWalkerConfiguration config;
   final Map<Node, TreeLayoutNodeData> nodeData = {};
   final Map<Node, Size> baseBounds = {};
 
@@ -18,13 +19,25 @@ class TreeLayoutAlgorithm extends Algorithm {
     this.renderer = renderer ?? TreeEdgeRenderer(BuchheimWalkerConfiguration());
   }
 
+  // Helper methods for orientation support
+  bool isVertical() {
+    var orientation = config.orientation;
+    return orientation == BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM ||
+        orientation == BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP;
+  }
+
+  bool needReverseOrder() {
+    var orientation = config.orientation;
+    return orientation == BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP ||
+        orientation == BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT;
+  }
+
   @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     nodeData.clear();
     baseBounds.clear();
 
-
-    if (graph ==null || graph.nodes.isEmpty) {
+    if (graph == null || graph.nodes.isEmpty) {
       return Size.zero;
     }
 
@@ -39,29 +52,23 @@ class TreeLayoutAlgorithm extends Algorithm {
     final roots = _findRoots(graph);
 
     if (roots.isEmpty) {
-      // If no roots found, create a spanning tree
       final spanningTree = _createSpanningTree(graph);
       return _layoutSpanningTree(spanningTree, shiftX, shiftY);
     }
 
     _calculateSubtreeDimensions(roots);
     _positionNodes(roots);
-
-      _correctVerticalEdgeOverlaps(graph);
-
-      // _expandToFill(graph);
-
+    _correctVerticalEdgeOverlaps(graph);
+    _applyOrientation(graph);
     _shiftCoordinates(graph, shiftX, shiftY);
     return graph.calculateGraphSize();
   }
 
   void _initializeData(Graph graph) {
-    // Initialize node data and build parent-child relationships
     for (final node in graph.nodes) {
       nodeData[node] = TreeLayoutNodeData();
     }
 
-    // Build tree structure from edges
     for (final edge in graph.edges) {
       final source = edge.source;
       final target = edge.destination;
@@ -95,15 +102,18 @@ class TreeLayoutAlgorithm extends Algorithm {
 
     final children = nodeData[node]!.children;
     if (children.isEmpty) {
-      final width = max(node.width.toInt(), config.siblingSeparation);
+      // For leaf nodes, use node width plus minimum spacing
+      final nodeWidth = isVertical() ? node.width.toInt() : node.height.toInt();
+      final width = max(nodeWidth, config.siblingSeparation);
       baseBounds[node] = Size(width.toDouble(), 0);
       return width;
     }
 
-    int totalWidth = 0;
-    for (int i = 0; i < children.length; i++) {
+    var totalWidth = 0;
+    for (var i = 0; i < children.length; i++) {
       totalWidth += _calculateWidth(children[i], visited);
       if (i < children.length - 1) {
+        // Use sibling separation between children
         totalWidth += config.siblingSeparation;
       }
     }
@@ -117,17 +127,19 @@ class TreeLayoutAlgorithm extends Algorithm {
 
     final children = nodeData[node]!.children;
     if (children.isEmpty) {
-      final height = max(node.height.toInt(), config.levelSeparation);
+      final nodeHeight = isVertical() ? node.height.toInt() : node.width.toInt();
+      final height = max(nodeHeight, config.levelSeparation);
       final current = baseBounds[node]!;
       baseBounds[node] = Size(current.width, height.toDouble());
       return height;
     }
 
-    int maxChildHeight = 0;
+    var maxChildHeight = 0;
     for (final child in children) {
       maxChildHeight = max(maxChildHeight, _calculateHeight(child, visited));
     }
 
+    // Use level separation for vertical spacing
     final totalHeight = maxChildHeight + config.levelSeparation;
     final current = baseBounds[node]!;
     baseBounds[node] = Size(current.width, totalHeight.toDouble());
@@ -135,15 +147,22 @@ class TreeLayoutAlgorithm extends Algorithm {
   }
 
   void _positionNodes(List<Node> roots) {
-    double currentX = config.siblingSeparation.toDouble();
+    // Use subtree separation between different root trees
+    var currentX = config.subtreeSeparation.toDouble();
 
-    for (final root in roots) {
+    for (var i = 0; i < roots.length; i++) {
+      final root = roots[i];
       final rootWidth = baseBounds[root]!.width;
       currentX += rootWidth / 2;
 
       _buildTree(root, currentX, config.levelSeparation.toDouble(), <Node>{});
 
-      currentX += rootWidth / 2 + config.siblingSeparation;
+      currentX += rootWidth / 2;
+
+      // Add subtree separation between roots, except for the last one
+      if (i < roots.length - 1) {
+        currentX += config.subtreeSeparation;
+      }
     }
   }
 
@@ -155,29 +174,35 @@ class TreeLayoutAlgorithm extends Algorithm {
     final children = nodeData[node]!.children;
     if (children.isEmpty) return;
 
+    // Use level separation for vertical spacing
     final nextY = y + config.levelSeparation;
     final totalWidth = baseBounds[node]!.width;
-    double childX = x - totalWidth / 2;
+    var childX = x - totalWidth / 2;
 
-    for (final child in children) {
+    for (var i = 0; i < children.length; i++) {
+      final child = children[i];
       final childWidth = baseBounds[child]!.width;
       childX += childWidth / 2;
 
       _buildTree(child, childX, nextY, visited);
 
-      childX += childWidth / 2 + config.siblingSeparation;
+      childX += childWidth / 2;
+
+      // Use sibling separation between children, except for the last one
+      if (i < children.length - 1) {
+        childX += config.siblingSeparation;
+      }
     }
   }
 
   void _correctVerticalEdgeOverlaps(Graph graph) {
-    // Simple overlap correction - move nodes that overlap vertical edges
     final verticalEdges = <double, List<Edge>>{};
 
     for (final edge in graph.edges) {
       final sourceX = edge.source.x;
       final targetX = edge.destination.x;
 
-      if ((sourceX - targetX).abs() < 1.0) { // Vertical edge
+      if ((sourceX - targetX).abs() < 1.0) {
         verticalEdges.putIfAbsent(sourceX, () => []).add(edge);
       }
     }
@@ -195,7 +220,6 @@ class TreeLayoutAlgorithm extends Algorithm {
           final maxY = max(edge.source.y, edge.destination.y);
 
           if ((nodeX - edgeX).abs() < 1.0 && nodeY >= minY && nodeY <= maxY) {
-            // Move node to avoid overlap
             node.position = Offset(nodeX + config.siblingSeparation / 4, nodeY);
           }
         }
@@ -203,26 +227,36 @@ class TreeLayoutAlgorithm extends Algorithm {
     }
   }
 
-  void _expandToFill(Graph graph) {
+  void _applyOrientation(Graph graph) {
+    if (config.orientation == BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM) {
+      return;
+    }
+
     final bounds = graph.calculateGraphBounds();
-    if (bounds.width <= 0 || bounds.height <= 0) return;
+    final centerX = bounds.left + bounds.width / 2;
+    final centerY = bounds.top + bounds.height / 2;
 
-    // Add padding
-    final paddedWidth = bounds.width + 2 * config.siblingSeparation;
-    final paddedHeight = bounds.height + 2 * config.levelSeparation;
+    for (final node in graph.nodes) {
+      final x = node.x - centerX;
+      final y = node.y - centerY;
+      Offset newPosition;
 
-    final maxDimension = max(paddedWidth, paddedHeight);
-    final scale = maxDimension / max(bounds.width, bounds.height);
-
-    if (scale > 1.0) {
-      final centerX = bounds.left + bounds.width / 2;
-      final centerY = bounds.top + bounds.height / 2;
-
-      for (final node in graph.nodes) {
-        final offsetX = (node.x - centerX) * scale;
-        final offsetY = (node.y - centerY) * scale;
-        node.position = Offset(centerX + offsetX, centerY + offsetY);
+      switch (config.orientation) {
+        case BuchheimWalkerConfiguration.ORIENTATION_BOTTOM_TOP:
+          newPosition = Offset(x + centerX, centerY - y);
+          break;
+        case BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT:
+          newPosition = Offset(-y + centerX, x + centerY);
+          break;
+        case BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT:
+          newPosition = Offset(y + centerX, -x + centerY);
+          break;
+        default:
+          newPosition = node.position;
+          break;
       }
+
+      node.position = newPosition;
     }
   }
 
@@ -232,7 +266,6 @@ class TreeLayoutAlgorithm extends Algorithm {
     }
   }
 
-  // Simplified spanning tree creation using BFS
   Graph _createSpanningTree(Graph graph) {
     final visited = <Node>{};
     final spanningEdges = <Edge>[];
@@ -252,7 +285,7 @@ class TreeLayoutAlgorithm extends Algorithm {
             spanningEdges.add(edge);
           } else if (edge.destination == current && !visited.contains(edge.source)) {
             neighbor = edge.source;
-            spanningEdges.add(Edge(current, edge.source)); // Maintain direction
+            spanningEdges.add(Edge(current, edge.source));
           }
 
           if (neighbor != null && !visited.contains(neighbor)) {
@@ -263,19 +296,16 @@ class TreeLayoutAlgorithm extends Algorithm {
       }
     }
 
-    return Graph()
-      ..addEdges(spanningEdges);
+    return Graph()..addEdges(spanningEdges);
   }
 
   Size _layoutSpanningTree(Graph spanningTree, double shiftX, double shiftY) {
-    // Reinitialize with spanning tree and run layout
     nodeData.clear();
     baseBounds.clear();
     _initializeData(spanningTree);
 
     final roots = _findRoots(spanningTree);
     if (roots.isEmpty && spanningTree.nodes.isNotEmpty) {
-      // If still no roots, pick the first node as root
       final fakeRoot = spanningTree.nodes.first;
       _calculateSubtreeDimensions([fakeRoot]);
       _positionNodes([fakeRoot]);
@@ -284,18 +314,14 @@ class TreeLayoutAlgorithm extends Algorithm {
       _positionNodes(roots);
     }
 
+    _applyOrientation(spanningTree);
     _shiftCoordinates(spanningTree, shiftX, shiftY);
     return spanningTree.calculateGraphSize();
   }
 
   @override
-  void init(Graph? graph) {
-    // TODO: implement init
-  }
+  void init(Graph? graph) {}
 
   @override
-  void setDimensions(double width, double height) {
-    // TODO: implement setDimensions
-  }
-
+  void setDimensions(double width, double height) {}
 }
