@@ -32,7 +32,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
   final Map<Node, double> radii = {};
 
   BalloonLayoutAlgorithm(this.config, EdgeRenderer? renderer) {
-    this.renderer = renderer ?? TreeEdgeRenderer(config);
+    this.renderer = renderer ?? ArrowEdgeRenderer();
   }
 
   @override
@@ -143,9 +143,8 @@ class BalloonLayoutAlgorithm extends Algorithm {
       );
       child.position = position;
 
-      // Recursively position children
       final newAngleToParent = atan2(
-        position.dy - parentLocation.dy,
+        parentLocation.dy - position.dy,
         parentLocation.dx - position.dx,
       );
 
@@ -153,8 +152,11 @@ class BalloonLayoutAlgorithm extends Algorithm {
           .where((node) => !seen.contains(node))
           .toList();
 
-      seen.addAll(grandChildren);
-      _setPolars(grandChildren, position, newAngleToParent, childRadius, seen);
+      if (grandChildren.isNotEmpty) {
+        final newSeen = Set<Node>.from(seen);
+        newSeen.add(child); // Add current child to prevent cycles
+        _setPolars(grandChildren, position, newAngleToParent, childRadius, newSeen);
+      }
     }
   }
 
