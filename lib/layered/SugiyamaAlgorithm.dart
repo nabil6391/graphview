@@ -1354,20 +1354,6 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   @override
-  void step(Graph? graph) {
-    reset();
-    initSugiyamaData();
-    cycleRemoval();
-    layerAssignment();
-    nodeOrdering(); //expensive operation
-    coordinateAssignment(); //expensive operation
-    // shiftCoordinates(shiftX, shiftY);
-    //final graphSize = calculateGraphSize(this.graph);
-    denormalize();
-    restoreCycle();
-  }
-
-  @override
   void setDimensions(double width, double height) {
     // graphWidth = width;
     // graphHeight = height;

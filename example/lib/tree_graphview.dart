@@ -103,7 +103,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
                 algorithm: algorithm,
                 initialNode: ValueKey(1),
                 builder: (Node node) => InkWell(
-                  onTap: () => _controller.animateToNode(node.key?.value),
+                  onTap: () => _toggleCollapse(node),
                   child: Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -111,7 +111,10 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [BoxShadow(color: Colors.blue[100]!, spreadRadius: 1)],
                     ),
-                    child: Text('Node ${node.key?.value} \n${graph.nodes.firstWhere((n) => n.key == node.key).position}'),
+                    child: Text(
+                      'Node ${node.key?.value}\n ${node.position}'
+                          '${graph.isNodeCollapsed(node) ? "(collapsed)" : ""}',
+                    ),
                   ),
                 ),
               ),
@@ -141,6 +144,16 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
   late final algorithm = BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder));
 
+  void _toggleCollapse(Node node) {
+    // _controller.toggleNodeExpanded(node.key!);
+    if (graph.isNodeCollapsed(node)) {
+      graph.expandNode(node);
+    } else {
+      graph.collapseNode(node);
+    }
+    setState(() {});
+  }
+
   void _navigateToRandomNode() {
     if (graph.nodes.isEmpty) return;
 
@@ -157,7 +170,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
   }
 
   void _resetView() {
-    _controller.resetView();
+    _controller.animateToNode(ValueKey(1));
   }
 
   @override

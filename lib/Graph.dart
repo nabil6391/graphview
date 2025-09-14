@@ -156,6 +156,39 @@ class Graph {
     return json.encode(jsonString);
   }
 
+  bool _isNodeVisible(Node node) {
+    Node? current = node;
+    while (current != null) {
+      final parent = predecessorsOf(current).firstOrNull;
+      if (parent == null) break;
+
+      if (parent.collapse) {
+        return false;
+      }
+
+      current = parent;
+    }
+    return true;
+  }
+
+  // Get visible nodes only
+  List<Node> get visibleNodes => nodes.where((n) => isNodeVisible(n)).toList();
+
+  List<Edge> get visibleEdges =>
+      edges.where((e) =>
+      isNodeVisible(e.source) && isNodeVisible(e.destination)
+      ).toList();
+
+  bool isNodeVisible(Node node) => _isNodeVisible(node); // delegate
+
+  void collapseNode(Node node) => node.collapse = true;
+
+  void expandNode(Node node) => node.collapse = false;
+
+  bool isNodeCollapsed(Node node) => node.collapse;
+
+  void toggleNode(Node node) => node.collapse = !node.collapse;
+
   Rect calculateGraphBounds() {
     final visibleNodes = nodes.toList();
     if (visibleNodes.isEmpty) return Rect.zero;
@@ -209,6 +242,8 @@ class Node {
 
   LineType lineType = LineType.Default;
 
+  bool collapse = false;
+
   double get height => size.height;
 
   double get width => size.width;
@@ -226,7 +261,8 @@ class Node {
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Node && hashCode == other.hashCode;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Node && hashCode == other.hashCode;
 
   @override
   int get hashCode {
@@ -235,7 +271,7 @@ class Node {
 
   @override
   String toString() {
-    return 'Node{position: $position, key: $key, _size: $size, lineType: $lineType}';
+    return 'Node{position: $position, key: $key, _size: $size, lineType: $lineType, hidden:}';
   }
 }
 
@@ -249,7 +285,8 @@ class Edge {
   Edge(this.source, this.destination, {this.key, this.paint});
 
   @override
-  bool operator ==(Object? other) => identical(this, other) || other is Edge && hashCode == other.hashCode;
+  bool operator ==(Object? other) =>
+      identical(this, other) || other is Edge && hashCode == other.hashCode;
 
   @override
   int get hashCode => key?.hashCode ?? Object.hash(source, destination);

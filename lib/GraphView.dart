@@ -1,11 +1,11 @@
 library graphview;
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:collection/collection.dart'
-    show IterableExtension, ListEquality;
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -38,14 +38,15 @@ part 'tree/TreeEdgeRenderer.dart';
 part 'tree/TreeLayoutAlgorithm.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
+typedef EdgeWidgetBuilder = Widget Function(Edge edge);
 
 class GraphViewController {
-  _GraphViewState? _state;
+  dynamic _state;
   final TransformationController? transformationController;
 
   GraphViewController({this.transformationController});
 
-  void _attach(_GraphViewState state) => _state = state;
+  void _attach(dynamic state) => _state = state;
 
   void _detach() => _state = null;
 
@@ -58,6 +59,30 @@ class GraphViewController {
   void resetView() => _state?.resetView();
 
   void zoomToFit() => _state?.zoomToFit();
+
+  void forceRecalculation() => _state?.forceRecalculation();
+
+  final Map<ValueKey, bool> _expandedNodes = <ValueKey, bool>{};
+
+  bool isNodeExpanded(ValueKey key) => _expandedNodes[key] ?? true;
+
+  void expandNode(ValueKey key) {
+    _expandedNodes[key] = true;
+    forceRecalculation();
+  }
+
+  void collapseNode(ValueKey key) {
+    _expandedNodes[key] = false;
+    forceRecalculation();
+  }
+
+  void toggleNodeExpanded(ValueKey key) {
+    if (isNodeExpanded(key)) {
+      collapseNode(key);
+    } else {
+      expandNode(key);
+    }
+  }
 }
 
 class GraphView extends StatefulWidget {
@@ -68,6 +93,7 @@ class GraphView extends StatefulWidget {
   final bool animated;
   final GraphViewController? controller;
   final bool _isBuilder;
+
   Duration? animationDuration;
   ValueKey? initialNode;
   bool autoZoomToFit = false;
@@ -104,14 +130,14 @@ class GraphView extends StatefulWidget {
 }
 
 class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
-  TransformationController _transformationController = TransformationController();
+  late TransformationController _transformationController;
+  late final AnimationController _cameraController;
+  late final AnimationController _nodeController;
+  Animation<Matrix4>? _cameraAnimation;
 
-  // Separate animation controllers
-  late final AnimationController
-      _cameraAnimationController; // For camera movements
-
-  Animation<Matrix4>? _animationMove;
-  late final AnimationController _animationController;
+  _GraphViewState() {
+    _transformationController = TransformationController();
+  }
 
   @override
   void initState() {
@@ -126,6 +152,12 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       vsync: this,
       duration: widget.animationDuration ?? const Duration(milliseconds: 600),
     );
+
+    _nodeController = AnimationController(
+      vsync: this,
+      duration: widget.animationDuration ?? const Duration(milliseconds: 600),
+    );
+
     widget.controller?._attach(this);
 
     if (widget.autoZoomToFit || widget.initialNode != null) {
@@ -143,6 +175,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   void dispose() {
     widget.controller?._detach();
     _cameraController.dispose();
+    _nodeController.dispose();
     if (widget.controller?.transformationController == null) {
       _transformationController.dispose();
     }
@@ -151,12 +184,13 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final graphView = _GraphView(
-      graph: widget.graph,
-      algorithm: widget.algorithm,
-      paint: widget.paint,
-      builder: widget.builder,
-    );
+    final view = _GraphView(
+        graph: widget.graph,
+        algorithm: widget.algorithm,
+        paint: widget.paint,
+        nodeAnimationController: _nodeController,
+        builder: widget.builder,
+        controller: widget.controller);
 
     if (widget._isBuilder) {
       return InteractiveViewer(
@@ -165,11 +199,11 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
         boundaryMargin: EdgeInsets.all(double.infinity),
         minScale: 0.01,
         maxScale: 5.6,
-        child: graphView,
+        child: view,
       );
     }
 
-    return graphView;
+    return view;
   }
 
   void jumpToNode(ValueKey key, bool animated) {
@@ -218,7 +252,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     _cameraAnimation =
         Matrix4Tween(begin: _transformationController.value, end: target)
             .animate(CurvedAnimation(
-                parent: _cameraController, curve: Curves.easeInOut));
+            parent: _cameraController, curve: Curves.easeInOut));
     _cameraAnimation!.addListener(_onCameraTick);
     _cameraController.forward();
   }
@@ -233,85 +267,83 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     }
   }
 
+  void forceRecalculation() => setState(() {});
 }
 
 class _GraphView extends MultiChildRenderObjectWidget {
   final Graph graph;
   final Algorithm algorithm;
   final Paint? paint;
+  final AnimationController nodeAnimationController;
+  GraphViewController? controller;
 
-  _GraphView({Key? key, required this.graph, required this.algorithm, this.paint, required NodeWidgetBuilder builder})
-      : super(key: key, children: _extractChildren(graph, builder)) {
-    assert(() {
-      if (children.isEmpty) {
-        throw FlutterError(
-          'Children must not be empty, ensure you are overriding the builder',
-        );
-      }
-
-      return true;
-    }());
+  _GraphView({
+    Key? key,
+    required this.graph,
+    required this.algorithm,
+    this.paint,
+    required this.nodeAnimationController,
+    required NodeWidgetBuilder builder,
+    this.controller,
+  }) : super(key: key, children: _extractChildren(graph, builder)) {
+    assert(children.isNotEmpty, 'Children must not be empty');
   }
 
-  // Traverses the nodes depth-first collects the list of child widgets that are created.
-  static List<Widget> _extractChildren(Graph graph, NodeWidgetBuilder builder) {
-    final result = <Widget>[];
-
-    graph.nodes.forEach((node) {
-      var widget = node.data ?? builder(node);
-      result.add(widget);
-    });
-
-    return result;
-  }
+  static List<Widget> _extractChildren(
+      Graph graph, NodeWidgetBuilder builder) =>
+      graph.nodes.map((n) => n.data ?? builder(n)).toList(growable: false);
 
   @override
-  RenderCustomLayoutBox createRenderObject(BuildContext context) {
-    return RenderCustomLayoutBox(graph, algorithm, paint);
-  }
+  RenderCustomLayoutBox createRenderObject(BuildContext context) =>
+      RenderCustomLayoutBox(graph, algorithm, paint,
+          nodeAnimationController: nodeAnimationController,
+          controller: controller);
 
   @override
-  void updateRenderObject(BuildContext context, RenderCustomLayoutBox renderObject) {
+  void updateRenderObject(
+      BuildContext context, RenderCustomLayoutBox renderObject) {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
-      ..edgePaint = paint;
+      ..edgePaint = paint
+      ..nodeAnimationController = nodeAnimationController;
   }
 }
 
 class RenderCustomLayoutBox extends RenderBox
-    with ContainerRenderObjectMixin<RenderBox, NodeBoxData>, RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
+    with
+        ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   late Graph _graph;
   late Algorithm _algorithm;
   late Paint _paint;
+  late AnimationController _nodeAnimationController;
 
-  RenderCustomLayoutBox(
-    Graph graph,
-    Algorithm algorithm,
-    Paint? paint, {
-    List<RenderBox>? children,
-  }) {
+  Size? _cachedSize;
+  bool _isInitialized = false;
+  bool _needsFullRecalculation = false;
+  bool _needsLayout = false;
+  late GraphViewController? _controller;
+
+  RenderCustomLayoutBox(Graph graph, Algorithm algorithm, Paint? paint,
+      {List<RenderBox>? children,
+        required AnimationController nodeAnimationController,
+        required GraphViewController? controller}) {
     _algorithm = algorithm;
     _graph = graph;
+    _nodeAnimationController = nodeAnimationController;
     edgePaint = paint;
+    _controller = controller;
     addAll(children);
-  }
-
-  Paint get edgePaint => _paint;
-
-  set edgePaint(Paint? value) {
-    _paint = value ??
-        (Paint()
-          ..color = Colors.black
-          ..strokeWidth = 3)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt;
-    markNeedsPaint();
   }
 
   Graph get graph => _graph;
 
   set graph(Graph value) {
+    // if (identical(_graph, value)) return;
+
+    _needsFullRecalculation = true;
+    _isInitialized = false;
     _graph = value;
     markNeedsLayout();
   }
@@ -319,14 +351,168 @@ class RenderCustomLayoutBox extends RenderBox
   Algorithm get algorithm => _algorithm;
 
   set algorithm(Algorithm value) {
+    _needsFullRecalculation = true;
+    _isInitialized = false;
     _algorithm = value;
     markNeedsLayout();
   }
 
+  Graph _createVisibleGraph() {
+    if (_cachedVisibleGraph != null && !_needsFullRecalculation) {
+      return _cachedVisibleGraph!;
+    }
+
+    final visibleGraph = Graph();
+
+    for (final edge in graph.edges) {
+      if (_isNodeVisible(edge.source) && _isNodeVisible(edge.destination)) {
+        visibleGraph.addEdgeS(edge);
+      }
+    }
+
+    if (visibleGraph.nodes.isEmpty) {
+      visibleGraph.addNode(graph.nodes.first);
+    }
+
+    _cachedVisibleGraph = visibleGraph;
+    return visibleGraph;
+  }
+
+  bool _isNodeVisible(Node node) {
+    // Walk up the ancestor chain
+    Node? current = node;
+    while (current != null) {
+      final parent = graph.predecessorsOf(current).firstOrNull;
+
+      if (parent != null) {
+        if (parent.collapse) {
+          // if (!_controller!.isNodeExpanded(parent.key as ValueKey)) {
+          return false;
+        }
+      }
+      current = parent;
+    }
+    return true;
+  }
+
+  Graph? _cachedVisibleGraph;
+
   @override
-  void setupParentData(RenderBox child) {
-    if (child.parentData is! NodeBoxData) {
-      child.parentData = NodeBoxData();
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _nodeAnimationController.addListener(_onAnimationTick);
+  }
+
+  @override
+  void detach() {
+    _nodeAnimationController.removeListener(_onAnimationTick);
+    super.detach();
+  }
+
+  void forceRecalculation() {
+    _needsFullRecalculation = true;
+    _isInitialized = false;
+    markNeedsLayout();
+  }
+
+  Paint get edgePaint => _paint;
+
+  set edgePaint(Paint? value) {
+    final newPaint = value ??
+        (Paint()
+          ..color = Colors.black
+          ..strokeWidth = 3)
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.butt;
+
+    _paint = newPaint;
+    markNeedsPaint();
+  }
+
+  AnimationController get nodeAnimationController => _nodeAnimationController;
+
+  set nodeAnimationController(AnimationController value) {
+    if (identical(_nodeAnimationController, value)) return;
+    _nodeAnimationController.removeListener(_onAnimationTick);
+    _nodeAnimationController = value;
+    _nodeAnimationController.addListener(_onAnimationTick);
+    markNeedsLayout();
+  }
+
+  void _onAnimationTick() {
+    markNeedsPaint();
+  }
+
+  final animatedPositions = <Node, Offset>{};
+
+  // computeDryLayout to provide a size for nodes not shown
+
+  var enableAnimation = true;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final t = _nodeAnimationController.value;
+    animatedPositions.clear();
+
+    var child = firstChild;
+    var i = 0;
+    while (child != null) {
+      final node = child.parentData as NodeBoxData;
+      final pos = Offset.lerp(node.startOffset, node.targetOffset, t)!;
+      animatedPositions[graph.getNodeAtPosition(i)] = pos;
+      child = node.nextSibling;
+      i++;
+    }
+
+    context.canvas.save();
+    context.canvas.translate(offset.dx, offset.dy);
+    algorithm.renderer?.setAnimatedPositions(animatedPositions);
+    algorithm.renderer?.render(context.canvas, graph, edgePaint);
+    context.canvas.restore();
+
+    child = firstChild;
+    i = 0;
+    while (child != null) {
+      final node = child.parentData as NodeBoxData;
+      final graphNode = graph.getNodeAtPosition(i);
+      final pos = animatedPositions[graphNode]!;
+
+      final isVisible = _isNodeVisible(graphNode);
+      if (isVisible) {
+        context.paintChild(child, offset + pos);
+      } else {
+        // Collapsing nodes: paint while animation is running, fade out & move toward parent
+        if (_nodeAnimationController.isAnimating &&
+            node.startOffset != node.targetOffset) {
+          // context.paintChild(child, offset + pos);
+          final progress = 1.0 - _nodeAnimationController.value; // 1 → 0
+          final shrink = progress.clamp(0.0, 1.0);
+
+          final center = pos +
+              offset +
+              Offset(child.size.width * 0.5, child.size.height * 0.5);
+
+          context.canvas.save();
+          // move pivot to center
+          context.canvas.translate(center.dx, center.dy);
+          context.canvas.scale(shrink, shrink);
+          context.canvas.translate(-center.dx, -center.dy);
+
+          context.paintChild(
+              child, offset + pos); // paint normally (size is scaled)
+          context.canvas.restore();
+        } else if (_nodeAnimationController.isCompleted) {
+          node.startOffset = node.targetOffset;
+        }
+        debugPrint(
+            "Collapsing node ${graphNode.key} at $pos ${graphNode.position} old:${node.startOffset} new:${node.targetOffset} ${_nodeAnimationController}");
+      }
+
+      if (_nodeAnimationController.isCompleted) {
+        node.offset = graphNode.position;
+      }
+      child = node.nextSibling;
+      i++;
     }
   }
 
@@ -334,52 +520,161 @@ class RenderCustomLayoutBox extends RenderBox
   void performLayout() {
     if (childCount == 0) {
       size = constraints.biggest;
-      assert(size.isFinite);
       return;
     }
 
+    final looseConstraints = BoxConstraints.loose(constraints.biggest);
     var child = firstChild;
     var position = 0;
-    var looseConstraints = BoxConstraints.loose(constraints.biggest);
+
+    if (_needsFullRecalculation || !_isInitialized) {
+      while (child != null) {
+        final nodeData = child.parentData as NodeBoxData;
+        final graphNode = graph.getNodeAtPosition(position);
+
+        child.layout(looseConstraints, parentUsesSize: true);
+        graphNode.size = child.size;
+        child = nodeData.nextSibling;
+        position++;
+      }
+
+      final visibleGraph = _createVisibleGraph();
+      final layoutSize = _algorithm.run(visibleGraph, 0, 0);
+
+      // copy positions back to main graph
+      var visibleIndex = 0;
+      for (final originalNode in graph.nodes) {
+        if (_isNodeVisible(originalNode)) {
+          originalNode.position =
+              visibleGraph.getNodeAtPosition(visibleIndex).position;
+          visibleIndex++;
+        }
+      }
+
+      _cachedSize = layoutSize;
+      _isInitialized = true;
+      _needsFullRecalculation = false;
+    }
+
+    size = _cachedSize ?? Size.zero;
+
+    var needsAnimation = false;
+    child = firstChild;
+    position = 0;
+
     while (child != null) {
-      final node = child.parentData as NodeBoxData;
+      final nodeData = child.parentData as NodeBoxData;
+      final graphNode = graph.getNodeAtPosition(position);
 
-      child.layout(looseConstraints, parentUsesSize: true);
-      graph.getNodeAtPosition(position).size = child.size;
+      final prevNew = nodeData.targetOffset;
+      final newPos = graphNode.position;
+      var isVisible = _isNodeVisible(graphNode);
 
-      child = node.nextSibling;
+      if (isVisible) {
+        // nodeData.offset = newPos;
+
+        if (enableAnimation) {
+          if (prevNew == null) {
+            final parent = graph.predecessorsOf(graphNode).firstOrNull;
+            nodeData.startOffset = parent?.position ?? newPos;
+            nodeData.targetOffset = newPos;
+            needsAnimation = true;
+          } else if ((prevNew - newPos).distance >= 1.0) {
+            nodeData.startOffset = prevNew;
+            nodeData.targetOffset = newPos;
+            needsAnimation = true;
+          } else {
+            nodeData.startOffset = newPos;
+            nodeData.targetOffset = newPos;
+          }
+        }
+        // debugPrint("PerformLayout: Visible node ${graphNode.key} at $newPos, currentPostion ${graphNode.position} old: ${nodeData.oldOffset} new: ${nodeData.newOffset}");
+      } else {
+        if (enableAnimation) {
+          // collapsing nodes animate toward parent
+          final parent = _findClosestVisibleAncestor(graphNode);
+          final parentPos = parent!.position;
+          debugPrint(
+              "PerformLayout: Collapsing node ${graphNode.key} from ${nodeData.startOffset} ${nodeData.targetOffset} toward parent at $parentPos, currentPostion ${graphNode.position}");
+          if (nodeData.startOffset == nodeData.targetOffset) {
+            nodeData.targetOffset = parentPos;
+          } else if (prevNew != null && prevNew != parentPos) {
+            // Just collapsed now → animate toward parent
+            nodeData.startOffset = graphNode.position;
+            nodeData.targetOffset = parentPos;
+            needsAnimation = true;
+          } else {
+            // animation finished → lock to parent
+            nodeData.startOffset = parentPos;
+            nodeData.targetOffset = parentPos;
+          }
+        }
+      }
+
+      child = nodeData.nextSibling;
       position++;
     }
 
-    size = algorithm.run(graph, 0, 0);
-
-    child = firstChild;
-    position = 0;
-    while (child != null) {
-      final node = child.parentData as NodeBoxData;
-
-      node.offset = graph.getNodeAtPosition(position).position;
-
-      child = node.nextSibling;
-      position++;
+    if (enableAnimation &&
+        needsAnimation &&
+        _algorithm is! FruchtermanReingoldAlgorithm) {
+      _nodeAnimationController.reset();
+      _nodeAnimationController.forward();
+      _nodeAnimationController.addListener(_onAnimationTick);
     }
   }
 
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    context.canvas.save();
-    context.canvas.translate(offset.dx, offset.dy);
+  Node? _findClosestVisibleAncestor(Node node) {
+    final predecessors = graph.predecessorsOf(node);
+    var current = predecessors.isNotEmpty ? predecessors.first : null;
 
-    algorithm.renderer?.render(context.canvas, graph, edgePaint);
+    // Walk up until we find a visible ancestor
+    while (current != null) {
+      if (_isNodeVisible(current)) {
+        return current; // Return the first (closest) visible ancestor
+      }
 
-    context.canvas.restore();
+      current = graph.predecessorsOf(current).firstOrNull;
+    }
 
-    defaultPaint(context, offset);
+    return null;
   }
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    return defaultHitTestChildren(result, position: position);
+    // Only allow hit testing on visible nodes
+    var child = firstChild;
+    var i = 0;
+
+    while (child != null) {
+      final nodeData = child.parentData as NodeBoxData;
+      final graphNode = graph.getNodeAtPosition(i);
+
+      if (_isNodeVisible(graphNode)) {
+        final childParentData = child.parentData as BoxParentData;
+
+        final isHit = result.addWithPaintOffset(
+          offset: childParentData.offset,
+          position: position,
+          hitTest: (BoxHitTestResult result, Offset transformed) {
+            return child!.hitTest(result, position: transformed);
+          },
+        );
+        if (isHit) return true;
+      }
+
+      child = nodeData.nextSibling;
+      i++;
+    }
+
+    return false;
+  }
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! NodeBoxData) {
+      child.parentData = NodeBoxData();
+    }
   }
 
   @override
@@ -391,7 +686,10 @@ class RenderCustomLayoutBox extends RenderBox
   }
 }
 
-class NodeBoxData extends ContainerBoxParentData<RenderBox> {}
+class NodeBoxData extends ContainerBoxParentData<RenderBox> {
+  Offset? startOffset;
+  Offset? targetOffset;
+}
 
 class _GraphViewAnimated extends StatefulWidget {
   final Graph graph;
