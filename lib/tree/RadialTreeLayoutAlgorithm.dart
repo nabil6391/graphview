@@ -7,7 +7,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   final Map<Node, PolarPoint> polarLocations = {};
 
   RadialTreeLayoutAlgorithm(this.config, EdgeRenderer? renderer) {
-    this.renderer = renderer ?? TreeEdgeRenderer(config);
+    this.renderer = renderer ?? ArrowEdgeRenderer();
   }
 
   @override
@@ -44,12 +44,9 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
     // Convert polar to cartesian and position nodes
     _putRadialPointsInModel(graph);
 
-    // Calculate diameter and adjust layout
-    final diameter = _calculateDiameter();
-    final layoutSize = _adjustLayoutSize(graph, diameter);
-
     _shiftCoordinates(graph, shiftX, shiftY);
-    return layoutSize;
+
+    return graph.calculateGraphSize();
   }
 
   void _initializeData(Graph graph) {
@@ -102,8 +99,8 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
       return width;
     }
 
-    int totalWidth = 0;
-    for (int i = 0; i < children.length; i++) {
+    var totalWidth = 0;
+    for (var i = 0; i < children.length; i++) {
       totalWidth += _calculateWidth(children[i], visited);
       if (i < children.length - 1) {
         totalWidth += config.siblingSeparation;
@@ -125,7 +122,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
       return height;
     }
 
-    int maxChildHeight = 0;
+    var maxChildHeight = 0;
     for (final child in children) {
       maxChildHeight = max(maxChildHeight, _calculateHeight(child, visited));
     }
@@ -137,7 +134,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   }
 
   void _positionNodes(List<Node> roots) {
-    double currentX = config.siblingSeparation.toDouble();
+    var currentX = config.siblingSeparation.toDouble();
 
     for (final root in roots) {
       final rootWidth = baseBounds[root]!.width;
@@ -159,7 +156,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
 
     final nextY = y + config.levelSeparation;
     final totalWidth = baseBounds[node]!.width;
-    double childX = x - totalWidth / 2;
+    var childX = x - totalWidth / 2;
 
     for (final child in children) {
       final childWidth = baseBounds[child]!.width;
@@ -173,11 +170,10 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
 
   void _setRadialLocations(Graph graph) {
     final bounds = graph.calculateGraphBounds();
-    final maxPoint = _getMaxXY(graph);
-    final maxx = max(maxPoint.dx + config.levelSeparation, bounds.width);
+    final maxPoint =  bounds.width;
 
     // Calculate theta step based on maximum x coordinate
-    final theta = 2 * pi / maxx;
+    final theta = 2 * pi / maxPoint;
     final deltaRadius = 1.0;
     final offset = _findRoots(graph).length > 1 ? config.levelSeparation.toDouble() : 0.0;
 
@@ -193,30 +189,13 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
     }
   }
 
-  Offset _getMaxXY(Graph graph) {
-    double maxX = 0;
-    double maxY = 0;
-
-    for (final node in graph.nodes) {
-      maxX = max(maxX, node.x);
-      maxY = max(maxY, node.y);
-    }
-
-    return Offset(maxX, maxY);
-  }
-
   void _putRadialPointsInModel(Graph graph) {
-    final bounds = graph.calculateGraphBounds();
-    final centerX = bounds.width / 2;
-    final centerY = bounds.height / 2;
+    final diameter = _calculateDiameter();
+    final center = diameter * 0.5 * 0.5;
 
     polarLocations.forEach((node, polarPoint) {
       final cartesian = polarPoint.toCartesian();
-      final position = Offset(
-        centerX + cartesian.dx,
-        centerY + cartesian.dy,
-      );
-      node.position = position;
+      node.position = Offset(center + cartesian.dx, center + cartesian.dy);
     });
   }
 
@@ -229,28 +208,6 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
     });
 
     return maxRadius + config.siblingSeparation;
-  }
-
-  Size _adjustLayoutSize(Graph graph, double diameter) {
-    final bounds = graph.calculateGraphBounds();
-    final offsetDelta = diameter - bounds.width;
-
-    if (offsetDelta > 0) {
-      final offset = offsetDelta / 2;
-      _offsetNodes(graph, offset);
-    }
-
-    final finalDiameter = max(diameter, 400.0);
-    return Size(finalDiameter, finalDiameter);
-  }
-
-  void _offsetNodes(Graph graph, double delta) {
-    for (final node in graph.nodes) {
-      node.position = Offset(
-        node.x + delta,
-        node.y + delta,
-      );
-    }
   }
 
   void _shiftCoordinates(Graph graph, double shiftX, double shiftY) {
@@ -310,24 +267,8 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
     _setRadialLocations(spanningTree);
     _putRadialPointsInModel(spanningTree);
 
-    final diameter = _calculateDiameter();
-    final layoutSize = _adjustLayoutSize(spanningTree, diameter);
-
     _shiftCoordinates(spanningTree, shiftX, shiftY);
-    return layoutSize;
-  }
-
-  // Utility methods to access polar coordinates
-  PolarPoint? getPolarLocation(Node node) {
-    return polarLocations[node];
-  }
-
-  Map<Node, PolarPoint> getPolarLocations() {
-    return Map.from(polarLocations);
-  }
-
-  double getDiameter() {
-    return _calculateDiameter();
+    return spanningTree.calculateGraphSize();
   }
 
   @override
@@ -340,7 +281,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
     // Implementation can be added if needed
   }
 
- 
+
   @override
   EdgeRenderer? renderer;
 }

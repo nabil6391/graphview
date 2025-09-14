@@ -1435,7 +1435,7 @@ class GreedyCycleRemoval {
         continue;
       }
 
-      // Choose vertex with highest out-degree - in-degree
+      // Choose nodes with highest out-degree - in-degree
       var best = g.nodes.reduce((a, b) {
         var aDiff = g.getOutEdges(a).length - g.getInEdges(a).length;
         var bDiff = g.getOutEdges(b).length - g.getInEdges(b).length;

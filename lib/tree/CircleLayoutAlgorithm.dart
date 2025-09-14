@@ -15,11 +15,10 @@ class CircleLayoutConfiguration {
 class CircleLayoutAlgorithm extends Algorithm {
   final CircleLayoutConfiguration config;
   double _radius = 0.0;
-  List<Node> vertexOrderedList = [];
-  int _crossingCount = -1;
+  List<Node> nodeOrderedList = [];
 
   CircleLayoutAlgorithm(this.config, EdgeRenderer? renderer) {
-    this.renderer = renderer ?? TreeEdgeRenderer(BuchheimWalkerConfiguration());
+    this.renderer = renderer ?? ArrowEdgeRenderer();
     _radius = config.radius;
   }
 
@@ -29,7 +28,6 @@ class CircleLayoutAlgorithm extends Algorithm {
       return Size.zero;
     }
 
-    _crossingCount = -1;
 
     // Handle single node case
     if (graph.nodes.length == 1) {
@@ -38,21 +36,21 @@ class CircleLayoutAlgorithm extends Algorithm {
       return Size(200, 200);
     }
 
-    _computeVertexOrder(graph);
-    final size = _layoutVertices(graph, true);
+    _computeNodeOrder(graph);
+    final size = _layoutNodes(graph);
     _shiftCoordinates(graph, shiftX, shiftY);
 
     return size;
   }
 
-  void _computeVertexOrder(Graph graph) {
+  void _computeNodeOrder(Graph graph) {
     final shouldReduceCrossing = config.reduceEdgeCrossing &&
         graph.edges.length < config.reduceEdgeCrossingMaxEdges;
 
     if (shouldReduceCrossing) {
-      vertexOrderedList = _reduceEdgeCrossing(graph);
+      nodeOrderedList = _reduceEdgeCrossing(graph);
     } else {
-      vertexOrderedList = List.from(graph.nodes);
+      nodeOrderedList = List.from(graph.nodes);
     }
   }
 
@@ -139,7 +137,7 @@ class CircleLayoutAlgorithm extends Algorithm {
     // Try a few different starting arrangements
     final attempts = min(10, graph.nodes.length);
 
-    for (int attempt = 0; attempt < attempts; attempt++) {
+    for (var attempt = 0; attempt < attempts; attempt++) {
       var currentOrder = List<Node>.from(graph.nodes);
 
       // Shuffle starting order
@@ -148,15 +146,15 @@ class CircleLayoutAlgorithm extends Algorithm {
       }
 
       // Local optimization: try swapping adjacent nodes
-      bool improved = true;
-      int iterations = 0;
+      var improved = true;
+      var iterations = 0;
       const maxIterations = 50;
 
       while (improved && iterations < maxIterations) {
         improved = false;
         iterations++;
 
-        for (int i = 0; i < currentOrder.length - 1; i++) {
+        for (var i = 0; i < currentOrder.length - 1; i++) {
           // Try swapping positions i and i+1
           final temp = currentOrder[i];
           currentOrder[i] = currentOrder[i + 1];
@@ -184,20 +182,20 @@ class CircleLayoutAlgorithm extends Algorithm {
     if (nodeOrder.length < 3) return 0;
 
     final nodePositions = <Node, int>{};
-    for (int i = 0; i < nodeOrder.length; i++) {
+    for (var i = 0; i < nodeOrder.length; i++) {
       nodePositions[nodeOrder[i]] = i;
     }
 
-    int crossings = 0;
+    var crossings = 0;
     final edges = graph.edges;
 
     // Count crossings between all pairs of edges
-    for (int i = 0; i < edges.length; i++) {
+    for (var i = 0; i < edges.length; i++) {
       final edge1 = edges[i];
       final pos1a = nodePositions[edge1.source]!;
       final pos1b = nodePositions[edge1.destination]!;
 
-      for (int j = i + 1; j < edges.length; j++) {
+      for (var j = i + 1; j < edges.length; j++) {
         final edge2 = edges[j];
         final pos2a = nodePositions[edge2.source]!;
         final pos2b = nodePositions[edge2.destination]!;
@@ -230,10 +228,10 @@ class CircleLayoutAlgorithm extends Algorithm {
         (pos2a < pos1a && pos1a < pos2b && pos2b < pos1b);
   }
 
-  Size _layoutVertices(Graph graph, bool countCrossings) {
+  Size _layoutNodes(Graph graph) {
     // Calculate bounds for auto-sizing
-    double width = 400.0;
-    double height = 400.0;
+    var width = 400.0;
+    var height = 400.0;
 
     if (_radius <= 0) {
       _radius = 0.35 * max(width, height);
@@ -243,18 +241,14 @@ class CircleLayoutAlgorithm extends Algorithm {
     final centerY = height / 2;
 
     // Position nodes in circle
-    for (int i = 0; i < vertexOrderedList.length; i++) {
-      final node = vertexOrderedList[i];
-      final angle = (2 * pi * i) / vertexOrderedList.length;
+    for (var i = 0; i < nodeOrderedList.length; i++) {
+      final node = nodeOrderedList[i];
+      final angle = (2 * pi * i) / nodeOrderedList.length;
 
       final posX = cos(angle) * _radius + centerX;
       final posY = sin(angle) * _radius + centerY;
 
       node.position = Offset(posX, posY);
-    }
-
-    if (countCrossings) {
-      _crossingCount = _countCrossings(graph, vertexOrderedList);
     }
 
     // Calculate actual bounds based on positioned nodes
@@ -267,30 +261,6 @@ class CircleLayoutAlgorithm extends Algorithm {
     for (final node in graph.nodes) {
       node.position = Offset(node.x + shiftX, node.y + shiftY);
     }
-  }
-
-  // Public getters
-  double get radius => _radius;
-
-  int get crossingCount {
-    if (_crossingCount < 0 && vertexOrderedList.isNotEmpty) {
-      _crossingCount = _countCrossings(
-        // Need graph reference - this is a limitation of the current design
-          Graph()..nodes.addAll(vertexOrderedList),
-          vertexOrderedList
-      );
-    }
-    return _crossingCount;
-  }
-
-  List<Node> get vertexOrder => List.from(vertexOrderedList);
-
-  void setRadius(double radius) {
-    _radius = radius;
-  }
-
-  void setVertexOrder(List<Node> vertexOrder) {
-    vertexOrderedList = List.from(vertexOrder);
   }
 
   @override

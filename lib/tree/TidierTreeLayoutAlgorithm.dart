@@ -14,7 +14,7 @@ class TidierTreeNodeData {
 
 class TidierTreeLayoutAlgorithm extends Algorithm {
   late BuchheimWalkerConfiguration config;
-  final Map<Node, TidierTreeNodeData> vertexData = {};
+  final Map<Node, TidierTreeNodeData> nodeData = {};
   final Map<Node, Size> baseBounds = {};
   final List<int> heights = [];
   late List<Node> roots;
@@ -63,7 +63,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   void _clearMetadata() {
     heights.clear();
     baseBounds.clear();
-    vertexData.clear();
+    nodeData.clear();
     bounds = Rect.zero;
   }
 
@@ -75,7 +75,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
       return;
     }
 
-    vertexData.clear();
+    nodeData.clear();
     heights.clear();
 
     roots = _findRoots(graph);
@@ -92,7 +92,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
     _firstWalk(virtualRoot, null);
     _computeMaxHeights(virtualRoot, 0);
-    _secondWalk(virtualRoot, virtualRoot != null ? -_vertexData(virtualRoot).x : 0, 0, 0);
+    _secondWalk(virtualRoot, virtualRoot != null ? -_nodeData(virtualRoot).x : 0, 0, 0);
 
     _normalizePositions(graph);
   }
@@ -110,15 +110,15 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     return graph.nodes.where((node) => incomingCounts[node] == 0).toList();
   }
 
-  TidierTreeNodeData _vertexData(Node? v) {
+  TidierTreeNodeData _nodeData(Node? v) {
     if (v == null) return TidierTreeNodeData();
-    return vertexData.putIfAbsent(v, () => TidierTreeNodeData());
+    return nodeData.putIfAbsent(v, () => TidierTreeNodeData());
   }
 
   void _firstWalk(Node? v, Node? leftSibling) {
     if (_successors(v).isEmpty) {
       if (leftSibling != null) {
-        _vertexData(v).x = _vertexData(leftSibling).x + _getDistance(v, leftSibling, true);
+        _nodeData(v).x = _nodeData(leftSibling).x + _getDistance(v, leftSibling, true);
       }
     } else {
       final children = _successors(v);
@@ -137,13 +137,13 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
       final lastChild = children.isNotEmpty ? children.last : null;
 
       if (firstChild != null && lastChild != null) {
-        final midpoint = (_vertexData(firstChild).x + _vertexData(lastChild).x) ~/ 2;
+        final midpoint = (_nodeData(firstChild).x + _nodeData(lastChild).x) ~/ 2;
 
         if (leftSibling != null) {
-          _vertexData(v).x = _vertexData(leftSibling).x + _getDistance(v, leftSibling, true);
-          _vertexData(v).mod = _vertexData(v).x - midpoint;
+          _nodeData(v).x = _nodeData(leftSibling).x + _getDistance(v, leftSibling, true);
+          _nodeData(v).mod = _nodeData(v).x - midpoint;
         } else {
-          _vertexData(v).x = midpoint;
+          _nodeData(v).x = midpoint;
         }
       }
     }
@@ -163,7 +163,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     }
 
     final levelHeight = depth < heights.length ? heights[depth] : config.levelSeparation;
-    final x = _vertexData(v).x + m;
+    final x = _nodeData(v).x + m;
     final y = yOffset + levelHeight ~/ 2;
 
     v.position = Offset(x.toDouble(), y.toDouble());
@@ -173,14 +173,14 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     if (children.isNotEmpty) {
       final newYOffset = yOffset + levelHeight + config.levelSeparation;
       for (final child in children) {
-        _secondWalk(child, m + _vertexData(v).mod, depth + 1, newYOffset);
+        _secondWalk(child, m + _nodeData(v).mod, depth + 1, newYOffset);
       }
     }
   }
 
-  void _updateBounds(Node vertex, int centerX, int centerY) {
-    final width = vertex.width.toInt();
-    final height = vertex.height.toInt();
+  void _updateBounds(Node node, int centerX, int centerY) {
+    final width = node.width.toInt();
+    final height = node.height.toInt();
     final left = centerX - width ~/ 2;
     final right = centerX + width ~/ 2;
     final top = centerY - height ~/ 2;
@@ -190,8 +190,8 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     bounds = bounds == Rect.zero ? nodeBounds : bounds.expandToInclude(nodeBounds);
   }
 
-  void _computeMaxHeights(Node? vertex, int depth) {
-    if (vertex == null) {
+  void _computeMaxHeights(Node? node, int depth) {
+    if (node == null) {
       for (final root in roots) {
         _computeMaxHeights(root, depth);
       }
@@ -203,11 +203,11 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     }
 
     final nodeHeight = isVertical()
-        ? max(vertex.height.toInt(), config.levelSeparation)
-        : max(vertex.width.toInt(), config.levelSeparation);
+        ? max(node.height.toInt(), config.levelSeparation)
+        : max(node.width.toInt(), config.levelSeparation);
     heights[depth] = max(heights[depth], nodeHeight);
 
-    for (final child in _successors(vertex)) {
+    for (final child in _successors(node)) {
       _computeMaxHeights(child, depth + 1);
     }
   }
@@ -242,12 +242,12 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   Node? _leftChild(Node? v) {
     final children = _successors(v);
-    return children.isNotEmpty ? children.first : _vertexData(v).thread;
+    return children.isNotEmpty ? children.first : _nodeData(v).thread;
   }
 
   Node? _rightChild(Node? v) {
     final children = _successors(v);
-    return children.isNotEmpty ? children.last : _vertexData(v).thread;
+    return children.isNotEmpty ? children.last : _nodeData(v).thread;
   }
 
   int _getDistance(Node? v, Node? w, bool isSibling) {
@@ -271,10 +271,10 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     Node? vil = leftSibling;
     Node? vol = _successors(parentOfV).isNotEmpty ? _successors(parentOfV).first : null;
 
-    int innerRight = _vertexData(vir).mod;
-    int outerRight = _vertexData(vor).mod;
-    int innerLeft = _vertexData(vil).mod;
-    int outerLeft = _vertexData(vol).mod;
+    int innerRight = _nodeData(vir).mod;
+    int outerRight = _nodeData(vor).mod;
+    int innerLeft = _nodeData(vil).mod;
+    int outerLeft = _nodeData(vol).mod;
 
     Node? nextRightOfVil = _rightChild(vil);
     Node? nextLeftOfVir = _leftChild(vir);
@@ -286,10 +286,10 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
       vor = _rightChild(vor);
 
       if (vor != null) {
-        _vertexData(vor).ancestor = v;
+        _nodeData(vor).ancestor = v;
       }
 
-      final shift = (_vertexData(vil).x + innerLeft) - (_vertexData(vir).x + innerRight) + _getDistance(vil, vir, true);
+      final shift = (_nodeData(vil).x + innerLeft) - (_nodeData(vir).x + innerRight) + _getDistance(vil, vir, true);
 
       if (shift > 0) {
         _moveSubtree(_ancestor(vil, parentOfV, defaultAncestor), v, parentOfV, shift);
@@ -297,23 +297,23 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
         outerRight += shift;
       }
 
-      innerLeft += _vertexData(vil).mod;
-      innerRight += _vertexData(vir).mod;
-      outerLeft += _vertexData(vol).mod;
-      outerRight += _vertexData(vor).mod;
+      innerLeft += _nodeData(vil).mod;
+      innerRight += _nodeData(vir).mod;
+      outerLeft += _nodeData(vol).mod;
+      outerRight += _nodeData(vor).mod;
 
       nextRightOfVil = _rightChild(vil);
       nextLeftOfVir = _leftChild(vir);
     }
 
     if (nextRightOfVil != null && _rightChild(vor) == null) {
-      _vertexData(vor).thread = nextRightOfVil;
-      _vertexData(vor).mod += innerLeft - outerRight;
+      _nodeData(vor).thread = nextRightOfVil;
+      _nodeData(vor).mod += innerLeft - outerRight;
     }
 
     if (nextLeftOfVir != null && _leftChild(vol) == null) {
-      _vertexData(vol).thread = nextLeftOfVir;
-      _vertexData(vol).mod += innerRight - outerLeft;
+      _nodeData(vol).thread = nextLeftOfVir;
+      _nodeData(vol).mod += innerRight - outerLeft;
       defaultAncestor = v;
     }
 
@@ -321,7 +321,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   }
 
   Node? _ancestor(Node? vil, Node? parentOfV, Node? defaultAncestor) {
-    final ancestor = _vertexData(vil).ancestor ?? vil;
+    final ancestor = _nodeData(vil).ancestor ?? vil;
     final predecessors = _predecessors(ancestor!);
 
     if (predecessors.contains(parentOfV)) {
@@ -330,14 +330,14 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     return defaultAncestor;
   }
 
-  void _moveSubtree(Node? leftVertex, Node? rightVertex, Node? parentVertex, int shift) {
-    if (leftVertex == null || rightVertex == null) return;
+  void _moveSubtree(Node? leftNode, Node? rightNode, Node? parentNode, int shift) {
+    if (leftNode == null || rightNode == null) return;
 
-    final subtreeCount = _childPosition(rightVertex, parentVertex) - _childPosition(leftVertex, parentVertex);
+    final subtreeCount = _childPosition(rightNode, parentNode) - _childPosition(leftNode, parentNode);
 
     if (subtreeCount > 0) {
-      final rightData = _vertexData(rightVertex);
-      final leftData = _vertexData(leftVertex);
+      final rightData = _nodeData(rightNode);
+      final leftData = _nodeData(leftNode);
 
       rightData.change -= shift ~/ subtreeCount;
       rightData.shift += shift;
@@ -347,21 +347,21 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     }
   }
 
-  int _childPosition(Node? vertex, Node? parentNode) {
+  int _childPosition(Node? node, Node? parentNode) {
     if (parentNode == null) {
-      return roots.indexOf(vertex!) + 1;
+      return roots.indexOf(node!) + 1;
     }
 
-    if (_vertexData(vertex).childCount != 0) {
-      return _vertexData(vertex).childCount;
+    if (_nodeData(node).childCount != 0) {
+      return _nodeData(node).childCount;
     }
 
     final children = _successors(parentNode);
     for (int i = 0; i < children.length; i++) {
-      _vertexData(children[i]).childCount = i + 1;
+      _nodeData(children[i]).childCount = i + 1;
     }
 
-    return _vertexData(vertex).childCount;
+    return _nodeData(node).childCount;
   }
 
   void _shift(Node? v) {
@@ -371,7 +371,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     int change = 0;
 
     for (final child in children.reversed) {
-      final childData = _vertexData(child);
+      final childData = _nodeData(child);
       childData.x += shift;
       childData.mod += shift;
       change += childData.change;
