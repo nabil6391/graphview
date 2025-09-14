@@ -97,16 +97,28 @@ class Segment {
   String toString() => 'Segment($id)';
 }
 
-// Extended data for Eiglsperger algorithm - extends existing SugiyamaNodeData
-class EiglspergerNodeData extends SugiyamaNodeData {
+class EiglspergerNodeData {
+  bool isDummy = false;
   bool isPVertex = false;
   bool isQVertex = false;
   Segment? segment;
+  int layer = -1;
+  int position = -1;
   int rank = -1;
+  double measure = -1;
+  Set<Node> reversed = {};
+  List<Node> predecessorNodes = [];
+  List<Node> successorNodes = [];
+  LineType lineType;
 
-  EiglspergerNodeData(super.lineType);
+  EiglspergerNodeData(this.lineType);
 
   bool get isSegmentVertex => isPVertex || isQVertex;
+  bool get isReversed => reversed.isNotEmpty;
+}
+
+class EiglspergerEdgeData {
+  List<double> bendPoints = [];
 }
 
 // Virtual edge for container connections
@@ -146,33 +158,127 @@ class ContainerElement extends LayerElement {
   String toString() => 'ContainerElement(${container.toString()})';
 }
 
-class EiglspergerAlgorithm extends SugiyamaAlgorithm {
-  Map<Node, EiglspergerNodeData> eiglspergerNodeData = {};
+class EiglspergerAlgorithm extends Algorithm {
+  Map<Node, EiglspergerNodeData> nodeData = {};
+  Map<Edge, EiglspergerEdgeData> _edgeData = {};
+  Set<Node> stack = {};
+  Set<Node> visited = {};
+  List<List<Node>> layers = [];
   List<Segment> segments = [];
   Set<Edge> typeOneConflicts = {};
-
-  EiglspergerAlgorithm(super.configuration);
+  late Graph graph;
+  SugiyamaConfiguration configuration;
 
   @override
-  void initSugiyamaData() {
-    super.initSugiyamaData();
+  EdgeRenderer? renderer;
 
-    graph.nodes.forEach((node) {
-      eiglspergerNodeData[node] = EiglspergerNodeData(node.lineType);
+  var nodeCount = 1;
+
+  EiglspergerAlgorithm(this.configuration) {
+    // renderer = SugiyamaEdgeRenderer(nodeData, edgeData, configuration.bendPointShape, configuration.addTriangleToEdge);
+  }
+
+  int get dummyId => 'Dummy ${nodeCount++}'.hashCode;
+
+  bool isVertical() {
+    var orientation = configuration.orientation;
+    return orientation == SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM ||
+        orientation == SugiyamaConfiguration.ORIENTATION_BOTTOM_TOP;
+  }
+
+  bool needReverseOrder() {
+    var orientation = configuration.orientation;
+    return orientation == SugiyamaConfiguration.ORIENTATION_BOTTOM_TOP ||
+        orientation == SugiyamaConfiguration.ORIENTATION_RIGHT_LEFT;
+  }
+
+  @override
+  Size run(Graph? graph, double shiftX, double shiftY) {
+    this.graph = copyGraph(graph!);
+    reset();
+    initNodeData();
+    cycleRemoval();
+    layerAssignment();
+    nodeOrdering(); // Eiglsperger 6-step process
+    coordinateAssignment();
+    shiftCoordinates(shiftX, shiftY);
+    final graphSize = graph.calculateGraphSize();
+    denormalize();
+    restoreCycle();
+    return graphSize;
+  }
+
+  void shiftCoordinates(double shiftX, double shiftY) {
+    layers.forEach((List<Node?> arrayList) {
+      arrayList.forEach((it) {
+        it!.position = Offset(it.x + shiftX, it.y + shiftY);
+      });
     });
   }
 
-  @override
   void reset() {
-    super.reset();
-    eiglspergerNodeData.clear();
+    layers.clear();
+    stack.clear();
+    visited.clear();
+    nodeData.clear();
+    _edgeData.clear();
     segments.clear();
     typeOneConflicts.clear();
+    nodeCount = 1;
   }
 
-  @override
+  void initNodeData() {
+    graph.nodes.forEach((node) {
+      node.position = Offset(0, 0);
+      nodeData[node] = EiglspergerNodeData(node.lineType);
+    });
+
+    graph.edges.forEach((edge) {
+      _edgeData[edge] = EiglspergerEdgeData();
+    });
+  }
+
+  void cycleRemoval() {
+    graph.nodes.forEach((node) {
+      dfs(node);
+    });
+  }
+
+  void dfs(Node node) {
+    if (visited.contains(node)) {
+      return;
+    }
+    visited.add(node);
+    stack.add(node);
+    graph.getOutEdges(node).forEach((edge) {
+      final target = edge.destination;
+      if (stack.contains(target)) {
+        graph.removeEdge(edge);
+        graph.addEdge(target, node);
+        nodeData[node]!.reversed.add(target);
+      } else {
+        dfs(target);
+      }
+    });
+    stack.remove(node);
+  }
+
   void layerAssignment() {
-    super.layerAssignment();
+    if (graph.nodes.isEmpty) {
+      return;
+    }
+
+    // Build layers using topological sort
+    final copiedGraph = copyGraph(graph);
+    var roots = getRootNodes(copiedGraph);
+
+    while (roots.isNotEmpty) {
+      layers.add(roots);
+      copiedGraph.removeNodes(roots);
+      roots = getRootNodes(copiedGraph);
+    }
+
+    // Create segments for long edges
     createSegmentsForLongEdges();
   }
 
@@ -203,16 +309,10 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
   void createSingleDummyVertex(Edge edge, int dummyLayer) {
     final dummy = Node.Id(dummyId);
 
-    // Initialize Eiglsperger data
-    final dummyEigData = EiglspergerNodeData(edge.source.lineType);
-    dummyEigData.isDummy = true;
-    dummyEigData.rank = dummyLayer;
-    eiglspergerNodeData[dummy] = dummyEigData;
-
-    // Initialize Sugiyama data
-    nodeData[dummy] = SugiyamaNodeData(edge.source.lineType);
-    nodeData[dummy]!.layer = dummyLayer;
-    nodeData[dummy]!.isDummy = true;
+    final dummyData = EiglspergerNodeData(edge.source.lineType);
+    dummyData.isDummy = true;
+    dummyData.layer = dummyLayer;
+    nodeData[dummy] = dummyData;
 
     dummy.size = Size(edge.source.width, 0);
 
@@ -222,8 +322,8 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     final edge1 = graph.addEdge(edge.source, dummy);
     final edge2 = graph.addEdge(dummy, edge.destination);
 
-    edgeData[edge1] = SugiyamaEdgeData();
-    edgeData[edge2] = SugiyamaEdgeData();
+    _edgeData[edge1] = EiglspergerEdgeData();
+    _edgeData[edge2] = EiglspergerEdgeData();
   }
 
   void createSegment(Edge edge) {
@@ -232,34 +332,26 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
 
     // Create P-vertex (top of segment)
     final pVertex = Node.Id(dummyId);
-    final pEigData = EiglspergerNodeData(edge.source.lineType);
-    pEigData.isDummy = true;
-    pEigData.isPVertex = true;
-    pEigData.rank = sourceLayer + 1;
-    eiglspergerNodeData[pVertex] = pEigData;
-
-    nodeData[pVertex] = SugiyamaNodeData(edge.source.lineType);
-    nodeData[pVertex]!.layer = sourceLayer + 1;
-    nodeData[pVertex]!.isDummy = true;
+    final pData = EiglspergerNodeData(edge.source.lineType);
+    pData.isDummy = true;
+    pData.isPVertex = true;
+    pData.layer = sourceLayer + 1;
+    nodeData[pVertex] = pData;
     pVertex.size = Size(edge.source.width, 0);
 
     // Create Q-vertex (bottom of segment)
     final qVertex = Node.Id(dummyId);
-    final qEigData = EiglspergerNodeData(edge.source.lineType);
-    qEigData.isDummy = true;
-    qEigData.isQVertex = true;
-    qEigData.rank = targetLayer - 1;
-    eiglspergerNodeData[qVertex] = qEigData;
-
-    nodeData[qVertex] = SugiyamaNodeData(edge.source.lineType);
-    nodeData[qVertex]!.layer = targetLayer - 1;
-    nodeData[qVertex]!.isDummy = true;
+    final qData = EiglspergerNodeData(edge.source.lineType);
+    qData.isDummy = true;
+    qData.isQVertex = true;
+    qData.layer = targetLayer - 1;
+    nodeData[qVertex] = qData;
     qVertex.size = Size(edge.source.width, 0);
 
     // Create segment and link vertices
     final segment = Segment(pVertex, qVertex);
-    pEigData.segment = segment;
-    qEigData.segment = segment;
+    pData.segment = segment;
+    qData.segment = segment;
     segments.add(segment);
 
     // Add to layers and graph
@@ -273,16 +365,36 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     final segmentEdge = graph.addEdge(pVertex, qVertex);
     final edgeFromQ = graph.addEdge(qVertex, edge.destination);
 
-    edgeData[edgeToP] = SugiyamaEdgeData();
-    edgeData[segmentEdge] = SugiyamaEdgeData();
-    edgeData[edgeFromQ] = SugiyamaEdgeData();
+    _edgeData[edgeToP] = EiglspergerEdgeData();
+    _edgeData[segmentEdge] = EiglspergerEdgeData();
+    _edgeData[edgeFromQ] = EiglspergerEdgeData();
   }
 
-  @override
+  List<Node> getRootNodes(Graph graph) {
+    final predecessors = <Node, bool>{};
+    graph.edges.forEach((element) {
+      predecessors[element.destination] = true;
+    });
+
+    var roots = graph.nodes.where((node) => predecessors[node] == null);
+    roots.forEach((node) {
+      nodeData[node]?.layer = layers.length;
+    });
+
+    return roots.toList();
+  }
+
+  Graph copyGraph(Graph graph) {
+    final copy = Graph();
+    copy.addNodes(graph.nodes);
+    copy.addEdges(graph.edges);
+    return copy;
+  }
+
   void nodeOrdering() {
     final best = <List<Node>>[...layers];
 
-    // Precalculate neighbor information using graph methods
+    // Precalculate neighbor information
     graph.edges.forEach((edge) {
       nodeData[edge.source]?.successorNodes.add(edge.destination);
       nodeData[edge.destination]?.predecessorNodes.add(edge.source);
@@ -392,7 +504,7 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     return nodes;
   }
 
-  // Step 1: Handle P-vertices (forward) or Q-vertices (backward)
+  // Eiglsperger Step 1: Handle P-vertices (forward) or Q-vertices (backward)
   void stepOne(List<LayerElement> layer, bool isForward) {
     var processedElements = <LayerElement>[];
     ContainerX? currentContainer;
@@ -400,19 +512,19 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     for (var element in layer) {
       if (element is NodeElement) {
         var node = element.node;
-        var eigData = eiglspergerNodeData[node];
+        var data = nodeData[node];
 
         bool shouldMerge = isForward ?
-        (eigData?.isPVertex ?? false) :
-        (eigData?.isQVertex ?? false);
+        (data?.isPVertex ?? false) :
+        (data?.isQVertex ?? false);
 
-        if (shouldMerge && eigData?.segment != null) {
+        if (shouldMerge && data?.segment != null) {
           // Merge into container
           currentContainer ??= ContainerX();
-          currentContainer.append(eigData!.segment!);
+          currentContainer.append(data!.segment!);
 
           if (!processedElements.any((e) => e is ContainerElement && e.container == currentContainer)) {
-            processedElements.add(ContainerElement(currentContainer));
+            processedElements.add(ContainerElement(currentContainer!));
           }
         } else {
           // Regular node
@@ -429,7 +541,7 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     layer.addAll(processedElements);
   }
 
-  // Step 2: Compute position values and measures
+  // Eiglsperger Step 2: Compute position values and measures
   void stepTwo(List<LayerElement> currentLayer, List<LayerElement> nextLayer) {
     // Assign positions to current layer
     assignPositions(currentLayer);
@@ -467,7 +579,7 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     }
   }
 
-  // Step 3: Initial ordering based on measures
+  // Eiglsperger Step 3: Initial ordering based on measures
   void stepThree(List<LayerElement> layer) {
     var vertices = <LayerElement>[];
     var containers = <ContainerElement>[];
@@ -477,8 +589,8 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
       if (element is ContainerElement && element.container.size() > 0) {
         containers.add(element);
       } else if (element is NodeElement) {
-        var eigData = eiglspergerNodeData[element.node];
-        if (!(eigData?.isSegmentVertex ?? false)) {
+        var data = nodeData[element.node];
+        if (!(data?.isSegmentVertex ?? false)) {
           vertices.add(element);
         }
       }
@@ -539,15 +651,15 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     return result;
   }
 
-  // Step 4: Place Q-vertices according to their segments
+  // Eiglsperger Step 4: Place Q-vertices according to their segments
   void stepFour(List<LayerElement> layer, int layerIndex) {
     var segmentVertices = <NodeElement>[];
 
     // Find segment vertices in this layer
     for (var element in List.from(layer)) {
       if (element is NodeElement) {
-        var eigData = eiglspergerNodeData[element.node];
-        if (eigData?.isSegmentVertex ?? false) {
+        var data = nodeData[element.node];
+        if (data?.isSegmentVertex ?? false) {
           segmentVertices.add(element);
           layer.remove(element);
         }
@@ -557,8 +669,8 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     // Place each segment vertex
     for (var segmentElement in segmentVertices) {
       var segmentNode = segmentElement.node;
-      var eigData = eiglspergerNodeData[segmentNode];
-      var segment = eigData?.segment;
+      var data = nodeData[segmentNode];
+      var segment = data?.segment;
 
       if (segment != null) {
         // Find container containing this segment
@@ -607,7 +719,7 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     }
   }
 
-  // Step 5: Cross counting with virtual edges
+  // Eiglsperger Step 5: Cross counting with virtual edges
   double stepFive(List<LayerElement> currentLayer, List<LayerElement> nextLayer,
       int currentRank, int nextRank) {
     // Remove empty containers
@@ -634,8 +746,8 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
         var virtualEdge = VirtualEdge('virtual', element, element.container.size());
         allEdges.add(virtualEdge);
       } else if (element is NodeElement) {
-        var eigData = eiglspergerNodeData[element.node];
-        if (eigData?.isSegmentVertex ?? false) {
+        var data = nodeData[element.node];
+        if (data?.isSegmentVertex ?? false) {
           var virtualEdge = VirtualEdge('virtual', element.node, 1);
           allEdges.add(virtualEdge);
         }
@@ -695,7 +807,7 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
     return 0;
   }
 
-  // Step 6: Scan and ensure alternating structure
+  // Eiglsperger Step 6: Scan and ensure alternating structure
   void stepSix(List<LayerElement> layer) {
     var scanned = <LayerElement>[];
 
@@ -741,12 +853,174 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
         var node = layers[layerIndex][nodeIndex];
         nodeData[node]?.position = nodeIndex;
 
-        var eigData = eiglspergerNodeData[node];
-        if (eigData != null) {
-          eigData.rank = layerIndex;
+        var data = nodeData[node];
+        if (data != null) {
+          data.rank = layerIndex;
         }
       }
     }
+  }
+
+  void coordinateAssignment() {
+    assignX();
+    assignY();
+    var offset = getOffset(graph, needReverseOrder());
+
+    graph.nodes.forEach((v) {
+      v.position = getPosition(v, offset);
+    });
+  }
+
+  void assignX() {
+    // Simplified coordinate assignment - can be enhanced with full Brandes-Köpf algorithm
+    var separation = configuration.nodeSeparation;
+    var vertical = isVertical();
+
+    for (var layerIndex = 0; layerIndex < layers.length; layerIndex++) {
+      var layer = layers[layerIndex];
+      var x = 0.0;
+
+      for (var nodeIndex = 0; nodeIndex < layer.length; nodeIndex++) {
+        var node = layer[nodeIndex];
+        var width = vertical ? node.width + separation : node.height;
+        node.x = x + width / 2;
+        x += width + separation;
+      }
+    }
+  }
+
+  void assignY() {
+    var k = layers.length;
+    var yPos = 0.0;
+    var vertical = isVertical();
+
+    for (var i = 0; i < k; i++) {
+      var level = layers[i];
+      var maxHeight = 0.0;
+
+      level.forEach((node) {
+        var h = nodeData[node]!.isDummy
+            ? 0.0
+            : vertical
+            ? node.height
+            : node.width;
+        if (h > maxHeight) {
+          maxHeight = h;
+        }
+        node.y = yPos;
+      });
+
+      if (i < k - 1) {
+        yPos += configuration.levelSeparation + maxHeight;
+      }
+    }
+  }
+
+  void denormalize() {
+    // Remove dummy vertices and create bend points for articulated edges
+    for (var i = 1; i < layers.length - 1; i++) {
+      final iterator = layers[i].iterator;
+
+      while (iterator.moveNext()) {
+        final current = iterator.current;
+        if (nodeData[current]!.isDummy) {
+          final predecessor = graph.predecessorsOf(current)[0];
+          final successor = graph.successorsOf(current)[0];
+          final bendPoints = _edgeData[graph.getEdgeBetween(predecessor, current)!]!.bendPoints;
+
+          if (bendPoints.isEmpty || !bendPoints.contains(current.x + predecessor.width / 2)) {
+            bendPoints.add(predecessor.x + predecessor.width / 2);
+            bendPoints.add(predecessor.y + predecessor.height / 2);
+            bendPoints.add(current.x + predecessor.width / 2);
+            bendPoints.add(current.y);
+          }
+
+          if (!nodeData[predecessor]!.isDummy) {
+            bendPoints.add(current.x + predecessor.width / 2);
+          } else {
+            bendPoints.add(current.x);
+          }
+          bendPoints.add(current.y);
+
+          if (nodeData[successor]!.isDummy) {
+            bendPoints.add(successor.x + predecessor.width / 2);
+          } else {
+            bendPoints.add(successor.x + successor.width / 2);
+          }
+          bendPoints.add(successor.y + successor.height / 2);
+
+          graph.removeEdgeFromPredecessor(predecessor, current);
+          graph.removeEdgeFromPredecessor(current, successor);
+
+          final edge = graph.addEdge(predecessor, successor);
+          final edgeData = EiglspergerEdgeData();
+          edgeData.bendPoints = bendPoints;
+          this._edgeData[edge] = edgeData;
+
+          graph.removeNode(current);
+        }
+      }
+    }
+  }
+
+  void restoreCycle() {
+    graph.nodes.forEach((n) {
+      if (nodeData[n]!.isReversed) {
+        nodeData[n]!.reversed.forEach((target) {
+          final bendPoints = _edgeData[graph.getEdgeBetween(target, n)!]!.bendPoints;
+          graph.removeEdgeFromPredecessor(target, n);
+          final edge = graph.addEdge(n, target);
+
+          final edgeData = EiglspergerEdgeData();
+          edgeData.bendPoints = bendPoints;
+          _edgeData[edge] = edgeData;
+        });
+      }
+    });
+  }
+
+  Offset getOffset(Graph graph, bool needReverseOrder) {
+    var offsetX = double.infinity;
+    var offsetY = double.infinity;
+
+    if (needReverseOrder) {
+      offsetY = double.minPositive;
+    }
+
+    graph.nodes.forEach((node) {
+      if (needReverseOrder) {
+        offsetX = min(offsetX, node.x);
+        offsetY = max(offsetY, node.y);
+      } else {
+        offsetX = min(offsetX, node.x);
+        offsetY = min(offsetY, node.y);
+      }
+    });
+
+    return Offset(offsetX, offsetY);
+  }
+
+  Offset getPosition(Node node, Offset offset) {
+    Offset finalOffset;
+    switch (configuration.orientation) {
+      case 1:
+        finalOffset = Offset(node.x - offset.dx, node.y);
+        break;
+      case 2:
+        finalOffset = Offset(node.x - offset.dx, offset.dy - node.y);
+        break;
+      case 3:
+        finalOffset = Offset(node.y, node.x - offset.dx);
+        break;
+      case 4:
+        finalOffset = Offset(offset.dy - node.y, node.x - offset.dx);
+        break;
+      default:
+        finalOffset = Offset(0, 0);
+        break;
+    }
+
+    return finalOffset;
   }
 
   static double medianValue(List<int> positions) {
@@ -766,5 +1040,23 @@ class EiglspergerAlgorithm extends SugiyamaAlgorithm {
       if (left + right == 0) return 0.0;
       return (positions[mid - 1] * right + positions[mid] * left) / (left + right);
     }
+  }
+
+  @override
+  void init(Graph? graph) {
+    this.graph = copyGraph(graph!);
+    reset();
+    initNodeData();
+    cycleRemoval();
+    layerAssignment();
+    nodeOrdering();
+    coordinateAssignment();
+    denormalize();
+    restoreCycle();
+  }
+
+  @override
+  void setDimensions(double width, double height) {
+    // Can be used to set layout bounds if needed
   }
 }
