@@ -122,7 +122,7 @@ class GraphView extends StatefulWidget {
     this.animationDuration,
   })  : _isBuilder = true,
         assert(!(autoZoomToFit && initialNode != null),
-        'Cannot use both autoZoomToFit and initialNode together. Choose one.'),
+            'Cannot use both autoZoomToFit and initialNode together. Choose one.'),
         super(key: key);
 
   @override
@@ -190,7 +190,9 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
         paint: widget.paint,
         nodeAnimationController: _nodeController,
         builder: widget.builder,
-        controller: widget.controller);
+        controller: widget.controller,
+        enableAnimation: widget.animated,
+    );
 
     if (widget._isBuilder) {
       return InteractiveViewer(
@@ -252,7 +254,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     _cameraAnimation =
         Matrix4Tween(begin: _transformationController.value, end: target)
             .animate(CurvedAnimation(
-            parent: _cameraController, curve: Curves.easeInOut));
+                parent: _cameraController, curve: Curves.easeInOut));
     _cameraAnimation!.addListener(_onCameraTick);
     _cameraController.forward();
   }
@@ -276,6 +278,7 @@ class _GraphView extends MultiChildRenderObjectWidget {
   final Paint? paint;
   final AnimationController nodeAnimationController;
   GraphViewController? controller;
+  final bool enableAnimation;
 
   _GraphView({
     Key? key,
@@ -285,17 +288,18 @@ class _GraphView extends MultiChildRenderObjectWidget {
     required this.nodeAnimationController,
     required NodeWidgetBuilder builder,
     this.controller,
+    required this.enableAnimation
   }) : super(key: key, children: _extractChildren(graph, builder)) {
     assert(children.isNotEmpty, 'Children must not be empty');
   }
 
   static List<Widget> _extractChildren(
-      Graph graph, NodeWidgetBuilder builder) =>
+          Graph graph, NodeWidgetBuilder builder) =>
       graph.nodes.map((n) => n.data ?? builder(n)).toList(growable: false);
 
   @override
   RenderCustomLayoutBox createRenderObject(BuildContext context) =>
-      RenderCustomLayoutBox(graph, algorithm, paint,
+      RenderCustomLayoutBox(graph, algorithm, paint, enableAnimation,
           nodeAnimationController: nodeAnimationController,
           controller: controller);
 
@@ -322,26 +326,25 @@ class RenderCustomLayoutBox extends RenderBox
   Size? _cachedSize;
   bool _isInitialized = false;
   bool _needsFullRecalculation = false;
-  bool _needsLayout = false;
-  late GraphViewController? _controller;
+  final animatedPositions = <Node, Offset>{};
+  // computeDryLayout to provide a size for nodes not shown
+  var enableAnimation = false;
 
-  RenderCustomLayoutBox(Graph graph, Algorithm algorithm, Paint? paint,
+  RenderCustomLayoutBox(Graph graph, Algorithm algorithm, Paint? paint, bool enableAnimation,
       {List<RenderBox>? children,
-        required AnimationController nodeAnimationController,
-        required GraphViewController? controller}) {
+      required AnimationController nodeAnimationController,
+      required GraphViewController? controller,}) {
     _algorithm = algorithm;
     _graph = graph;
     _nodeAnimationController = nodeAnimationController;
     edgePaint = paint;
-    _controller = controller;
+    enableAnimation = enableAnimation;
     addAll(children);
   }
 
   Graph get graph => _graph;
 
   set graph(Graph value) {
-    // if (identical(_graph, value)) return;
-
     _needsFullRecalculation = true;
     _isInitialized = false;
     _graph = value;
@@ -356,6 +359,8 @@ class RenderCustomLayoutBox extends RenderBox
     _algorithm = value;
     markNeedsLayout();
   }
+
+  Graph? _cachedVisibleGraph;
 
   Graph _createVisibleGraph() {
     if (_cachedVisibleGraph != null && !_needsFullRecalculation) {
@@ -395,8 +400,6 @@ class RenderCustomLayoutBox extends RenderBox
     return true;
   }
 
-  Graph? _cachedVisibleGraph;
-
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
@@ -422,8 +425,8 @@ class RenderCustomLayoutBox extends RenderBox
         (Paint()
           ..color = Colors.black
           ..strokeWidth = 3)
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.butt;
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
 
     _paint = newPaint;
     markNeedsPaint();
@@ -443,76 +446,50 @@ class RenderCustomLayoutBox extends RenderBox
     markNeedsPaint();
   }
 
-  final animatedPositions = <Node, Offset>{};
-
-  // computeDryLayout to provide a size for nodes not shown
-
-  var enableAnimation = true;
-
   @override
   void paint(PaintingContext context, Offset offset) {
-    final t = _nodeAnimationController.value;
-    animatedPositions.clear();
+    if (enableAnimation) {
+      final t = _nodeAnimationController.value;
+      animatedPositions.clear();
 
-    var child = firstChild;
-    var i = 0;
-    while (child != null) {
-      final node = child.parentData as NodeBoxData;
-      final pos = Offset.lerp(node.startOffset, node.targetOffset, t)!;
-      animatedPositions[graph.getNodeAtPosition(i)] = pos;
-      child = node.nextSibling;
-      i++;
-    }
+      var child = firstChild;
+      var i = 0;
+      while (child != null) {
+        final node = child.parentData as NodeBoxData;
+        final pos = Offset.lerp(node.startOffset, node.targetOffset, t)!;
+        animatedPositions[graph.getNodeAtPosition(i)] = pos;
+        child = node.nextSibling;
+        i++;
+      }
 
-    context.canvas.save();
-    context.canvas.translate(offset.dx, offset.dy);
-    algorithm.renderer?.setAnimatedPositions(animatedPositions);
-    algorithm.renderer?.render(context.canvas, graph, edgePaint);
-    context.canvas.restore();
+      context.canvas.save();
+      context.canvas.translate(offset.dx, offset.dy);
+      algorithm.renderer?.setAnimatedPositions(animatedPositions);
+      algorithm.renderer?.render(context.canvas, graph, edgePaint);
+      context.canvas.restore();
 
-    child = firstChild;
-    i = 0;
-    while (child != null) {
-      final node = child.parentData as NodeBoxData;
-      final graphNode = graph.getNodeAtPosition(i);
-      final pos = animatedPositions[graphNode]!;
+      _paintNodes(context, offset, t);
+    } else {
+      context.canvas.save();
+      context.canvas.translate(offset.dx, offset.dy);
+      algorithm.renderer
+          ?.render(context.canvas, _cachedVisibleGraph!, edgePaint);
+      context.canvas.restore();
 
-      final isVisible = _isNodeVisible(graphNode);
-      if (isVisible) {
-        context.paintChild(child, offset + pos);
-      } else {
-        // Collapsing nodes: paint while animation is running, fade out & move toward parent
-        if (_nodeAnimationController.isAnimating &&
-            node.startOffset != node.targetOffset) {
-          // context.paintChild(child, offset + pos);
-          final progress = 1.0 - _nodeAnimationController.value; // 1 → 0
-          final shrink = progress.clamp(0.0, 1.0);
+      var child = firstChild;
+      var i = 0;
 
-          final center = pos +
-              offset +
-              Offset(child.size.width * 0.5, child.size.height * 0.5);
+      while (child != null) {
+        final nodeData = child.parentData as NodeBoxData;
+        final graphNode = _graph.getNodeAtPosition(i);
 
-          context.canvas.save();
-          // move pivot to center
-          context.canvas.translate(center.dx, center.dy);
-          context.canvas.scale(shrink, shrink);
-          context.canvas.translate(-center.dx, -center.dy);
-
-          context.paintChild(
-              child, offset + pos); // paint normally (size is scaled)
-          context.canvas.restore();
-        } else if (_nodeAnimationController.isCompleted) {
-          node.startOffset = node.targetOffset;
+        if (_isNodeVisible(graphNode)) {
+          context.paintChild(child, offset + graphNode.position);
         }
-        debugPrint(
-            "Collapsing node ${graphNode.key} at $pos ${graphNode.position} old:${node.startOffset} new:${node.targetOffset} ${_nodeAnimationController}");
-      }
 
-      if (_nodeAnimationController.isCompleted) {
-        node.offset = graphNode.position;
+        child = nodeData.nextSibling;
+        i++;
       }
-      child = node.nextSibling;
-      i++;
     }
   }
 
@@ -524,103 +501,180 @@ class RenderCustomLayoutBox extends RenderBox
     }
 
     final looseConstraints = BoxConstraints.loose(constraints.biggest);
-    var child = firstChild;
-    var position = 0;
-
     if (_needsFullRecalculation || !_isInitialized) {
-      while (child != null) {
-        final nodeData = child.parentData as NodeBoxData;
-        final graphNode = graph.getNodeAtPosition(position);
-
-        child.layout(looseConstraints, parentUsesSize: true);
-        graphNode.size = child.size;
-        child = nodeData.nextSibling;
-        position++;
-      }
-
-      final visibleGraph = _createVisibleGraph();
-      final layoutSize = _algorithm.run(visibleGraph, 0, 0);
-
-      // copy positions back to main graph
-      var visibleIndex = 0;
-      for (final originalNode in graph.nodes) {
-        if (_isNodeVisible(originalNode)) {
-          originalNode.position =
-              visibleGraph.getNodeAtPosition(visibleIndex).position;
-          visibleIndex++;
-        }
-      }
-
-      _cachedSize = layoutSize;
+      _layoutNodes(looseConstraints);
+      _runAlgorithm();
       _isInitialized = true;
       _needsFullRecalculation = false;
     }
 
     size = _cachedSize ?? Size.zero;
 
-    var needsAnimation = false;
-    child = firstChild;
-    position = 0;
+    if (enableAnimation) {
+      _updateAnimationStates();
+    } else {
+      _updateNodePositions();
+    }
+  }
+
+  void _paintNodes(PaintingContext context, Offset offset, double t) {
+    var child = firstChild;
+    var i = 0;
+    while (child != null) {
+      final node = child.parentData as NodeBoxData;
+      final graphNode = graph.getNodeAtPosition(i);
+      final pos = animatedPositions[graphNode]!;
+
+      final isVisible = _isNodeVisible(graphNode);
+      if (isVisible) {
+        context.paintChild(child, offset + pos);
+      } else {
+        if (_nodeAnimationController.isAnimating &&
+            node.startOffset != node.targetOffset) {
+          _paintCollapsingNode(context, child, offset, pos, t);
+        } else if (_nodeAnimationController.isCompleted) {
+          // animation finished → lock to parent
+          node.startOffset = node.targetOffset;
+        }
+      }
+
+      if (_nodeAnimationController.isCompleted) {
+        node.offset = graphNode.position;
+      }
+      child = node.nextSibling;
+      i++;
+    }
+  }
+
+  void _paintCollapsingNode(PaintingContext context, RenderBox child,
+      Offset offset, Offset pos, double t) {
+    final progress = (1.0 - t).clamp(0.0, 1.0);
+    final center =
+        pos + offset + Offset(child.size.width * 0.5, child.size.height * 0.5);
+
+    context.canvas.save();
+    context.canvas.translate(center.dx, center.dy);
+    context.canvas.scale(progress, progress);
+    context.canvas.translate(-center.dx, -center.dy);
+    context.paintChild(child, offset + pos);
+    context.canvas.restore();
+  }
+
+  void _updateNodePositions() {
+    var child = firstChild;
+    var position = 0;
 
     while (child != null) {
       final nodeData = child.parentData as NodeBoxData;
-      final graphNode = graph.getNodeAtPosition(position);
+      final graphNode = _graph.getNodeAtPosition(position);
 
-      final prevNew = nodeData.targetOffset;
-      final newPos = graphNode.position;
-      var isVisible = _isNodeVisible(graphNode);
+      if (_isNodeVisible(graphNode)) {
+        nodeData.offset = graphNode.position;
+      } else {
+        final parent = _findClosestVisibleAncestor(graphNode);
+        nodeData.offset = parent?.position ?? graphNode.position;
+      }
+
+      child = nodeData.nextSibling;
+      position++;
+    }
+  }
+
+  void _layoutNodes(BoxConstraints constraints) {
+    var child = firstChild;
+    var position = 0;
+
+    while (child != null) {
+      final nodeData = child.parentData as NodeBoxData;
+      final graphNode = _graph.getNodeAtPosition(position);
+
+      child.layout(constraints, parentUsesSize: true);
+      graphNode.size = child.size;
+
+      child = nodeData.nextSibling;
+      position++;
+    }
+  }
+
+  void _runAlgorithm() {
+    final visibleGraph = _createVisibleGraph();
+    final layoutSize = _algorithm.run(visibleGraph, 0, 0);
+
+    // Copy positions back to main graph
+    var visibleIndex = 0;
+    for (final originalNode in _graph.nodes) {
+      if (_isNodeVisible(originalNode)) {
+        originalNode.position =
+            visibleGraph.getNodeAtPosition(visibleIndex).position;
+        visibleIndex++;
+      }
+    }
+
+    _cachedSize = layoutSize;
+  }
+
+  void _updateAnimationStates() {
+    var child = firstChild;
+    var position = 0;
+
+    while (child != null) {
+      final nodeData = child.parentData as NodeBoxData;
+      final graphNode = _graph.getNodeAtPosition(position);
+      final isVisible = _isNodeVisible(graphNode);
 
       if (isVisible) {
-        // nodeData.offset = newPos;
-
-        if (enableAnimation) {
-          if (prevNew == null) {
-            final parent = graph.predecessorsOf(graphNode).firstOrNull;
-            nodeData.startOffset = parent?.position ?? newPos;
-            nodeData.targetOffset = newPos;
-            needsAnimation = true;
-          } else if ((prevNew - newPos).distance >= 1.0) {
-            nodeData.startOffset = prevNew;
-            nodeData.targetOffset = newPos;
-            needsAnimation = true;
-          } else {
-            nodeData.startOffset = newPos;
-            nodeData.targetOffset = newPos;
-          }
-        }
-        // debugPrint("PerformLayout: Visible node ${graphNode.key} at $newPos, currentPostion ${graphNode.position} old: ${nodeData.oldOffset} new: ${nodeData.newOffset}");
+        _updateVisibleNodeAnimation(nodeData, graphNode);
       } else {
-        if (enableAnimation) {
-          // collapsing nodes animate toward parent
-          final parent = _findClosestVisibleAncestor(graphNode);
-          final parentPos = parent!.position;
-          debugPrint(
-              "PerformLayout: Collapsing node ${graphNode.key} from ${nodeData.startOffset} ${nodeData.targetOffset} toward parent at $parentPos, currentPostion ${graphNode.position}");
-          if (nodeData.startOffset == nodeData.targetOffset) {
-            nodeData.targetOffset = parentPos;
-          } else if (prevNew != null && prevNew != parentPos) {
-            // Just collapsed now → animate toward parent
-            nodeData.startOffset = graphNode.position;
-            nodeData.targetOffset = parentPos;
-            needsAnimation = true;
-          } else {
-            // animation finished → lock to parent
-            nodeData.startOffset = parentPos;
-            nodeData.targetOffset = parentPos;
-          }
-        }
+        _updateCollapsedNodeAnimation(nodeData, graphNode);
       }
 
       child = nodeData.nextSibling;
       position++;
     }
 
-    if (enableAnimation &&
-        needsAnimation &&
-        _algorithm is! FruchtermanReingoldAlgorithm) {
+    if (enableAnimation && _algorithm is! FruchtermanReingoldAlgorithm) {
       _nodeAnimationController.reset();
       _nodeAnimationController.forward();
       _nodeAnimationController.addListener(_onAnimationTick);
+    }
+  }
+
+  bool _updateVisibleNodeAnimation(NodeBoxData nodeData, Node graphNode) {
+    final prevTarget = nodeData.targetOffset;
+    var newPos = graphNode.position;
+
+    if (prevTarget == null) {
+      final parent = _graph.predecessorsOf(graphNode).firstOrNull;
+      nodeData.startOffset = parent?.position ?? newPos;
+      nodeData.targetOffset = newPos;
+      return true;
+    } else if ((prevTarget - newPos).distance >= 0.1) {
+      nodeData.startOffset = prevTarget;
+      nodeData.targetOffset = newPos;
+      return true;
+    } else {
+      nodeData.startOffset = newPos;
+      nodeData.targetOffset = newPos;
+      return false;
+    }
+  }
+
+  void _updateCollapsedNodeAnimation(NodeBoxData nodeData, Node graphNode) {
+    final parent = _findClosestVisibleAncestor(graphNode);
+    final parentPos = parent?.position ?? Offset.zero;
+
+    final prevTarget = nodeData.targetOffset;
+
+    if (nodeData.startOffset == nodeData.targetOffset) {
+      nodeData.targetOffset = parentPos;
+    } else if (prevTarget != null && prevTarget != parentPos) {
+      // Just collapsed now → animate toward parent
+      nodeData.startOffset = graphNode.position;
+      nodeData.targetOffset = parentPos;
+    } else {
+      // animation finished → lock to parent
+      nodeData.startOffset = parentPos;
+      nodeData.targetOffset = parentPos;
     }
   }
 
@@ -699,8 +753,11 @@ class _GraphViewAnimated extends StatefulWidget {
   final stepMilis = 25;
 
   _GraphViewAnimated(
-      {Key? key, required this.graph, required this.algorithm, this.paint, required this.builder}) {
-  }
+      {Key? key,
+      required this.graph,
+      required this.algorithm,
+      this.paint,
+      required this.builder}) {}
 
   @override
   _GraphViewAnimatedState createState() => _GraphViewAnimatedState();
@@ -749,7 +806,8 @@ class _GraphViewAnimatedState extends State<_GraphViewAnimated> {
         ...List<Widget>.generate(graph.nodeCount(), (index) {
           return Positioned(
             child: GestureDetector(
-              child: graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
+              child:
+                  graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
               onPanUpdate: (details) {
                 graph.getNodeAtPosition(index).position += details.delta;
                 update();
