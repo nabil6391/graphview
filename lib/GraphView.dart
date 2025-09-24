@@ -194,7 +194,6 @@ class GraphChildDelegate {
   final Graph graph;
   final Algorithm algorithm;
   final NodeWidgetBuilder builder;
-  final bool addRepaintBoundaries;
   GraphViewController? controller;
 
   Graph? _cachedVisibleGraph;
@@ -204,8 +203,7 @@ class GraphChildDelegate {
     required this.graph,
     required this.algorithm,
     required this.builder,
-    required this.controller,
-    this.addRepaintBoundaries = true,
+    required this.controller
   });
 
   Graph getVisibleGraph() {

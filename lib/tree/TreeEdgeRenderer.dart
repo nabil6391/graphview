@@ -9,17 +9,16 @@ class TreeEdgeRenderer extends EdgeRenderer {
 
   @override
   void render(Canvas canvas, Graph graph, Paint paint) {
-    for (final node in graph.nodes) {
-      for (final child in graph.successorsOf(node)) {
-        final edge = graph.getEdgeBetween(node, child);
-        final edgePaint = (edge?.paint ?? paint)..style = PaintingStyle.stroke;
-
-        renderEdge(canvas, node, child, edgePaint);
-      }
-    }
+    graph.edges.forEach((edge) {
+      final edgePaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
+      renderEdge(canvas, edge, edgePaint);
+    });
   }
 
-  void renderEdge(Canvas canvas, Node node, Node child, Paint edgePaint) {
+  void renderEdge(Canvas canvas, Edge edge, Paint edgePaint) {
+    var node = edge.source;
+    var child = edge.destination;
+
     final parentPos = getNodePosition(node);
     final childPos = getNodePosition(child);
 
