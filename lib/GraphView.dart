@@ -34,7 +34,6 @@ part 'tree/CircleLayoutAlgorithm.dart';
 part 'tree/RadialTreeLayoutAlgorithm.dart';
 part 'tree/TidierTreeLayoutAlgorithm.dart';
 part 'tree/TreeEdgeRenderer.dart';
-part 'tree/TreeLayoutAlgorithm.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
 typedef EdgeWidgetBuilder = Widget Function(Edge edge);
@@ -43,50 +42,147 @@ class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
 
-  GraphViewController({this.transformationController});
-
-  void _attach(_GraphViewState? state) => _state = state;
-
-  void _detach() => _state = null;
-
-  void animateToNode(ValueKey key) => _state?.jumpToNode(key, true);
-
-  void jumpToNode(ValueKey key) => _state?.jumpToNode(key, false);
-
-  void animateToMatrix(Matrix4 target) => _state?.animateToMatrix(target);
-
-  void resetView() => _state?.resetView();
-
-  void zoomToFit() => _state?.zoomToFit();
-
-  void forceRecalculation() => _state?.forceRecalculation();
-
-  bool isNodeCollapsed(Node node) => node.collapse;
+  final Set<Node> _collapsedNodes = {};
+  final Set<Node> _hiddenNodes = {};
+  bool _visibilityValid = false;
 
   Node? _lastCollapsedNode;
 
+  GraphViewController({
+    this.transformationController,
+  });
+
+  void _attach(_GraphViewState? state) => _state = state;
+  void _detach() => _state = null;
+
+  void animateToNode(ValueKey key, {Offset offset = Offset.zero, double? scale}) =>
+      _state?.jumpToNode(key, true, offset: offset, scale: scale);
+
+  void jumpToNode(ValueKey key, {Offset offset = Offset.zero, double? scale}) =>
+      _state?.jumpToNode(key, false, offset: offset, scale: scale);
+
+  void animateToMatrix(Matrix4 target) => _state?.animateToMatrix(target);
+  void resetView() => _state?.resetView();
+  void zoomToFit() => _state?.zoomToFit();
+  void forceRecalculation() => _state?.forceRecalculation();
+
+  // Visibility management methods
+  bool isNodeCollapsed(Node node) => _collapsedNodes.contains(node);
+  bool isNodeHidden(Node node) => _hiddenNodes.contains(node);
+
+  bool isNodeVisible(Graph graph, Node node) {
+    if (!_visibilityValid) _buildVisibilityCache(graph);
+    return !_hiddenNodes.contains(node);
+  }
+
+  void _buildVisibilityCache(Graph graph) {
+    _hiddenNodes.clear();
+
+    void markDescendantsHidden(Node node) {
+      for (final child in graph.successorsOf(node)) {
+        _hiddenNodes.add(child);
+        markDescendantsHidden(child); // Recursively hide descendants
+      }
+    }
+
+    // Find all collapsed nodes and hide their descendants
+    for (final node in _collapsedNodes) {
+      markDescendantsHidden(node);
+    }
+
+    _visibilityValid = true;
+  }
+
+  void _invalidateVisibilityCache() {
+    _visibilityValid = false;
+  }
+
+  Node? findClosestVisibleAncestor(Graph graph, Node node) {
+    var current = graph.predecessorsOf(node).firstOrNull;
+
+    // Walk up until we find a visible ancestor
+    while (current != null) {
+      if (isNodeVisible(graph, current)) {
+        return current; // Return the first (closest) visible ancestor
+      }
+      current = graph.predecessorsOf(current).firstOrNull;
+    }
+
+    return null;
+  }
+
   void expandNode(Node node) {
-    node.collapse = false;
-    // Clear the last collapsed node since we're expanding
+    _collapsedNodes.remove(node);
+    _invalidateVisibilityCache();
     _lastCollapsedNode = null;
     forceRecalculation();
   }
 
   void collapseNode(Graph graph, Node node) {
     if (graph.hasSuccessor(node)) {
-      node.collapse = true;
-      // Set this as the last collapsed node
+      _collapsedNodes.add(node);
       _lastCollapsedNode = node;
+      _invalidateVisibilityCache();
       forceRecalculation();
     }
   }
 
   void toggleNodeExpanded(Graph graph, Node node) {
-    if (node.collapse) {
+    if (isNodeCollapsed(node)) {
       expandNode(node);
     } else {
       collapseNode(graph, node);
     }
+  }
+
+  List<Edge> getCollapsingEdges(Graph graph) {
+    if (_lastCollapsedNode == null) return [];
+
+    final collapsingEdges = <Edge>[];
+    final visitedNodes = <Node>{};
+
+    void collectCollapsingEdgesRecursively(Node node) {
+      if (visitedNodes.contains(node)) return;
+      visitedNodes.add(node);
+
+      // Get all outgoing edges from this node
+      for (final edge in graph.getOutEdges(node)) {
+        final destination = edge.destination;
+
+        // Add edge if destination is being hidden (collapsing)
+        if (_hiddenNodes.contains(destination)) {
+          collapsingEdges.add(edge);
+          // Recursively collect edges from hidden descendants
+          collectCollapsingEdgesRecursively(destination);
+        }
+      }
+    }
+
+    // Start collection from the last collapsed node
+    collectCollapsingEdgesRecursively(_lastCollapsedNode!);
+    return collapsingEdges;
+  }
+
+  // Get all collapsed nodes (for debugging or other purposes)
+  Set<Node> get collapsedNodes => Set.unmodifiable(_collapsedNodes);
+  Set<Node> get hiddenNodes => Set.unmodifiable(_hiddenNodes);
+
+  // Additional convenience methods for setting initial state
+  void setInitiallyCollapsedNodes(List<Node> nodes) {
+    _collapsedNodes.addAll(nodes);
+    _invalidateVisibilityCache();
+  }
+
+  void setInitiallyCollapsedByKeys(Graph graph, Set<ValueKey> keys) {
+    for (final key in keys) {
+      try {
+        final node = graph.getNodeUsingKey(key);
+        _collapsedNodes.add(node);
+      } catch (e) {
+        // Node with key not found, ignore
+      }
+    }
+    _invalidateVisibilityCache();
   }
 }
 
@@ -115,10 +211,15 @@ class GraphChildDelegate {
 
     final visibleGraph = Graph();
     for (final edge in graph.edges) {
-      if (isNodeVisible(edge.source) &&
-          (isNodeVisible(edge.destination) || isCollapsing(edge.destination))) {
+      if (isNodeVisible(edge.source) && isNodeVisible(edge.destination)) {
         visibleGraph.addEdgeS(edge);
       }
+    }
+
+    // Add collapsing edges for animation
+    if (controller != null) {
+      final collapsingEdges = controller!.getCollapsingEdges(graph);
+      visibleGraph.addEdges(collapsingEdges);
     }
 
     if (visibleGraph.nodes.isEmpty && graph.nodes.isNotEmpty) {
@@ -176,37 +277,11 @@ class GraphChildDelegate {
   }
 
   bool isNodeVisible(Node node) {
-    return graph.isNodeVisible(node);
+    return controller?.isNodeVisible(graph, node) ?? true;
   }
 
   Node? findClosestVisibleAncestor(Node node) {
-    return graph.findClosestVisibleAncestor(node);
-  }
-
-  bool isCollapsing(Node node) {
-    // Node is collapsing if:
-    // 1. It's not visible
-    // 2. It's not the node that was collapsed (that one stays in place)
-    // 3. It has the last collapsed node as an ancestor
-
-    if (isNodeVisible(node)) return false;
-
-    var _lastCollapsedNode = controller?._lastCollapsedNode;
-    if (node == _lastCollapsedNode) return false;
-
-    // Check if _lastCollapsedNode is an ancestor of this node
-    if (_lastCollapsedNode != null) {
-      Node? current = node;
-      while (current != null) {
-        final parent = graph.predecessorsOf(current).firstOrNull;
-        if (parent == _lastCollapsedNode) {
-          return true;
-        }
-        current = parent;
-      }
-    }
-
-    return false;
+    return controller?.findClosestVisibleAncestor(graph, node);
   }
 }
 
@@ -219,8 +294,8 @@ class GraphView extends StatefulWidget {
   final GraphViewController? controller;
   final bool _isBuilder;
 
-  Duration? cameraAnimationDuration;
-  Duration? nodeAnimationDuration;
+  Duration? panAnimationDuration;
+  Duration? toggleAnimationDuration;
   ValueKey? initialNode;
   bool autoZoomToFit = false;
   late GraphChildDelegate delegate;
@@ -251,8 +326,8 @@ class GraphView extends StatefulWidget {
     this.animated = true,
     this.initialNode,
     this.autoZoomToFit = false,
-    this.cameraAnimationDuration,
-    this.nodeAnimationDuration,
+    this.panAnimationDuration,
+    this.toggleAnimationDuration,
   })  : _isBuilder = true,
         delegate = GraphChildDelegate(
             graph: graph,
@@ -283,13 +358,13 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     _cameraController = AnimationController(
       vsync: this,
       duration:
-          widget.cameraAnimationDuration ?? const Duration(milliseconds: 600),
+          widget.panAnimationDuration ?? const Duration(milliseconds: 600),
     );
 
     _nodeController = AnimationController(
       vsync: this,
       duration:
-          widget.nodeAnimationDuration ?? const Duration(milliseconds: 600),
+          widget.toggleAnimationDuration ?? const Duration(milliseconds: 600),
     );
 
     widget.controller?._attach(this);
@@ -330,14 +405,15 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
         boundaryMargin: EdgeInsets.all(double.infinity),
         minScale: 0.01,
         maxScale: 10,
-        child: view,
+        child: Container(
+            color: Colors.amber, child: view),
       );
     }
 
     return view;
   }
 
-  void jumpToNode(ValueKey key, bool animated) {
+  void jumpToNode(ValueKey key, bool animated, {Offset offset = Offset.zero, double? scale}) {
     final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
     if (node == null) return;
 
@@ -349,8 +425,12 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final nodeCenter = Offset(
         node.position.dx + node.width / 2, node.position.dy + node.height / 2);
 
+    // Use current scale if not specified
+    final currentScale = scale ?? _transformationController.value.getMaxScaleOnAxis();
+
     final target = Matrix4.identity()
-      ..translate(center.dx - nodeCenter.dx, center.dy - nodeCenter.dy);
+      ..translate(center.dx - nodeCenter.dx + offset.dx, center.dy - nodeCenter.dy + offset.dy);
+    // ..scale(scale);
 
     if (animated) {
       animateToMatrix(target);
@@ -737,8 +817,7 @@ class RenderCustomLayoutBox extends RenderBox
         final node = entry.key;
         final child = entry.value;
         final nodeData = child.parentData as NodeBoxData;
-        final pos =
-            Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
+        final pos = Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
         animatedPositions[node] = pos;
       }
 

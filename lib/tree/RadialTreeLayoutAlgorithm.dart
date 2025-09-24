@@ -1,5 +1,15 @@
 part of graphview;
 
+class TreeLayoutNodeData {
+  Rectangle? bounds;
+  int depth = 0;
+  bool visited = false;
+  List<Node> successorNodes = [];
+  Node? parent;
+
+  TreeLayoutNodeData();
+}
+
 class RadialTreeLayoutAlgorithm extends Algorithm {
   late BuchheimWalkerConfiguration config;
   final Map<Node, TreeLayoutNodeData> nodeData = {};
@@ -60,14 +70,14 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
       final source = edge.source;
       final target = edge.destination;
 
-      nodeData[source]!.children.add(target);
+      nodeData[source]!.successorNodes.add(target);
       nodeData[target]!.parent = source;
     }
   }
 
   List<Node> _findRoots(Graph graph) {
     return graph.nodes.where((node) {
-      return nodeData[node]!.parent == null && nodeData[node]!.children.isNotEmpty;
+      return nodeData[node]!.parent == null && successorsOf(node).isNotEmpty;
     }).toList();
   }
 
@@ -92,7 +102,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   int _calculateWidth(Node node, Set<Node> visited) {
     if (!visited.add(node)) return 0;
 
-    final children = nodeData[node]!.children;
+    final children = successorsOf(node);
     if (children.isEmpty) {
       final width = max(node.width.toInt(), config.siblingSeparation);
       baseBounds[node] = Size(width.toDouble(), 0);
@@ -114,7 +124,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   int _calculateHeight(Node node, Set<Node> visited) {
     if (!visited.add(node)) return 0;
 
-    final children = nodeData[node]!.children;
+    final children = successorsOf(node);
     if (children.isEmpty) {
       final height = max(node.height.toInt(), config.levelSeparation);
       final current = baseBounds[node]!;
@@ -151,7 +161,7 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
 
     node.position = Offset(x, y);
 
-    final children = nodeData[node]!.children;
+    final children = successorsOf(node);
     if (children.isEmpty) return;
 
     final nextY = y + config.levelSeparation;
@@ -280,6 +290,11 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   void setDimensions(double width, double height) {
     // Implementation can be added if needed
   }
+
+  List<Node> successorsOf(Node? node) {
+    return nodeData[node]!.successorNodes;
+  }
+
 
 
   @override

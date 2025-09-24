@@ -21,12 +21,12 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   void _detectCycles(Graph graph) {
-    Set<Node> visiting = {};
+    var visiting = <Node>{};
 
     bool hasCycle(Node node) {
       if (visiting.contains(node)) return true;
       visiting.add(node);
-      bool cycleFound = successorsOf(node).any(hasCycle);
+      var cycleFound = successorsOf(node).any(hasCycle);
       visiting.remove(node);
       return cycleFound;
     }
@@ -38,7 +38,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
 
   @override
   Size run(Graph? graph, double shiftX, double shiftY) {
-    if(graph ==null) return Size.zero;
+    if (graph == null) return Size.zero;
     nodeData.clear();
     if (graph.nodes.length == 1) {
       final node = graph.nodes.first;
@@ -56,7 +56,8 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     return graph.calculateGraphSize();
   }
 
-  Node getFirstNode(Graph graph) => graph.nodes.firstWhere((element) => !hasPredecessor(element));
+  Node getFirstNode(Graph graph) =>
+      graph.nodes.firstWhere((element) => !hasPredecessor(element));
 
   void checkUnconnectedNotes(Graph graph) {
     graph.nodes.forEach((element) {
@@ -511,5 +512,4 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     // graphWidth = width;
     // graphHeight = height;
   }
-
 }

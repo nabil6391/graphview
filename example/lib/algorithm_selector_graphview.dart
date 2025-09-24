@@ -6,7 +6,6 @@ import 'package:graphview/GraphView.dart';
 // Enum for algorithm types
 enum LayoutAlgorithmType {
   tidierTree,
-  regularTree,
   buchheimWalker,
   balloon,
   radialTree,
@@ -170,8 +169,6 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage> with TickerPro
     switch (type) {
       case LayoutAlgorithmType.tidierTree:
         return 'Tidier Tree Layout';
-      case LayoutAlgorithmType.regularTree:
-        return 'Regular Tree Layout';
       case LayoutAlgorithmType.buchheimWalker:
         return 'Buchheim Walker Tree Layout';
       case LayoutAlgorithmType.balloon:
@@ -187,9 +184,6 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage> with TickerPro
     switch (_selectedAlgorithm) {
       case LayoutAlgorithmType.tidierTree:
         _currentAlgorithm = TidierTreeLayoutAlgorithm(builder, null);
-        break;
-      case LayoutAlgorithmType.regularTree:
-        _currentAlgorithm = TreeLayoutAlgorithm(builder, null);
         break;
       case LayoutAlgorithmType.buchheimWalker:
         _currentAlgorithm = BuchheimWalkerAlgorithm(builder, null);

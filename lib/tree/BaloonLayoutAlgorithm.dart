@@ -76,7 +76,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
       final source = edge.source;
       final target = edge.destination;
 
-      nodeData[source]!.children.add(target);
+      nodeData[source]!.successorNodes.add(target);
       nodeData[target]!.parent = source;
     }
   }
@@ -96,7 +96,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
       // Single tree - place root at center
       final root = roots.first;
       _setRootPolar(root, center);
-      final children = nodeData[root]!.children;
+      final children = successorsOf(root);
       _setPolars(children, center, 0, defaultRadius, <Node>{});
     } else if (roots.length > 1) {
       // Multiple trees - arrange roots in circle
@@ -148,7 +148,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
         parentLocation.dx - position.dx,
       );
 
-      final grandChildren = nodeData[child]!.children
+      final grandChildren = successorsOf(child)
           .where((node) => !seen.contains(node))
           .toList();
 
@@ -226,7 +226,10 @@ class BalloonLayoutAlgorithm extends Algorithm {
     return spanningTree.calculateGraphSize();
   }
 
-  // Utility methods to get polar coordinates and radii
+  List<Node> successorsOf(Node? node) {
+    return nodeData[node]!.successorNodes;
+  }
+
   PolarPoint? getPolarLocation(Node node) {
     return polarLocations[node];
   }

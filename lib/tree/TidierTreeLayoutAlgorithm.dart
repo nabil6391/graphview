@@ -8,6 +8,8 @@ class TidierTreeNodeData {
   int x = 0;
   int change = 0;
   int childCount = 0;
+  List<Node> successorNodes = [];
+  List<Node> predecessorNodes = [];
 
   TidierTreeNodeData();
 }
@@ -63,21 +65,14 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   void _clearMetadata() {
     heights.clear();
     baseBounds.clear();
-    nodeData.clear();
     bounds = Rect.zero;
   }
 
   void _buildTree(Graph graph) {
-    if (graph.nodes.length == 1) {
-      final loner = graph.nodes.first;
-      loner.position = Offset(200, 200);
-      roots = [loner];
-      return;
-    }
-
     nodeData.clear();
     heights.clear();
 
+    _initializeData(graph);
     roots = _findRoots(graph);
 
     if (roots.isEmpty) {
@@ -92,9 +87,26 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
     _firstWalk(virtualRoot, null);
     _computeMaxHeights(virtualRoot, 0);
-    _secondWalk(virtualRoot, virtualRoot != null ? -_nodeData(virtualRoot).x : 0, 0, 0);
+    _secondWalk(
+        virtualRoot, virtualRoot != null ? -_nodeData(virtualRoot).x : 0, 0, 0);
 
     _normalizePositions(graph);
+  }
+
+  void _initializeData(Graph graph) {
+    // Initialize node data
+    for (final node in graph.nodes) {
+      nodeData[node] = TidierTreeNodeData();
+    }
+
+    // Build tree structure from edges
+    for (final edge in graph.edges) {
+      final source = edge.source;
+      final target = edge.destination;
+
+      nodeData[source]?.successorNodes.add(target);
+      nodeData[target]?.predecessorNodes.add(source);
+    }
   }
 
   List<Node> _findRoots(Graph graph) {
@@ -104,7 +116,8 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     }
 
     for (final edge in graph.edges) {
-      incomingCounts[edge.destination] = (incomingCounts[edge.destination] ?? 0) + 1;
+      incomingCounts[edge.destination] =
+          (incomingCounts[edge.destination] ?? 0) + 1;
     }
 
     return graph.nodes.where((node) => incomingCounts[node] == 0).toList();
@@ -116,13 +129,14 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   }
 
   void _firstWalk(Node? v, Node? leftSibling) {
-    if (_successors(v).isEmpty) {
+    if (successorsOf(v).isEmpty) {
       if (leftSibling != null) {
-        _nodeData(v).x = _nodeData(leftSibling).x + _getDistance(v, leftSibling, true);
+        _nodeData(v).x =
+            _nodeData(leftSibling).x + _getDistance(v, leftSibling, true);
       }
     } else {
-      final children = _successors(v);
-      Node? defaultAncestor = children.isNotEmpty ? children.first : null;
+      final children = successorsOf(v);
+      var defaultAncestor = children.isNotEmpty ? children.first : null;
       Node? previousChild;
 
       for (final child in children) {
@@ -137,10 +151,12 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
       final lastChild = children.isNotEmpty ? children.last : null;
 
       if (firstChild != null && lastChild != null) {
-        final midpoint = (_nodeData(firstChild).x + _nodeData(lastChild).x) ~/ 2;
+        final midpoint =
+            (_nodeData(firstChild).x + _nodeData(lastChild).x) ~/ 2;
 
         if (leftSibling != null) {
-          _nodeData(v).x = _nodeData(leftSibling).x + _getDistance(v, leftSibling, true);
+          _nodeData(v).x =
+              _nodeData(leftSibling).x + _getDistance(v, leftSibling, true);
           _nodeData(v).mod = _nodeData(v).x - midpoint;
         } else {
           _nodeData(v).x = midpoint;
@@ -152,8 +168,8 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   void _secondWalk(Node? v, int m, int depth, int yOffset) {
     if (v == null) {
       // Handle multiple roots with subtree separation
-      int rootOffset = 0;
-      for (int i = 0; i < roots.length; i++) {
+      var rootOffset = 0;
+      for (var i = 0; i < roots.length; i++) {
         _secondWalk(roots[i], m + rootOffset, depth, yOffset);
         if (i < roots.length - 1) {
           rootOffset += config.subtreeSeparation;
@@ -162,14 +178,15 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
       return;
     }
 
-    final levelHeight = depth < heights.length ? heights[depth] : config.levelSeparation;
+    final levelHeight =
+        depth < heights.length ? heights[depth] : config.levelSeparation;
     final x = _nodeData(v).x + m;
     final y = yOffset + levelHeight ~/ 2;
 
     v.position = Offset(x.toDouble(), y.toDouble());
     _updateBounds(v, x, y);
 
-    final children = _successors(v);
+    final children = successorsOf(v);
     if (children.isNotEmpty) {
       final newYOffset = yOffset + levelHeight + config.levelSeparation;
       for (final child in children) {
@@ -186,8 +203,10 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     final top = centerY - height ~/ 2;
     final bottom = centerY + height ~/ 2;
 
-    final nodeBounds = Rect.fromLTRB(left.toDouble(), top.toDouble(), right.toDouble(), bottom.toDouble());
-    bounds = bounds == Rect.zero ? nodeBounds : bounds.expandToInclude(nodeBounds);
+    final nodeBounds = Rect.fromLTRB(
+        left.toDouble(), top.toDouble(), right.toDouble(), bottom.toDouble());
+    bounds =
+        bounds == Rect.zero ? nodeBounds : bounds.expandToInclude(nodeBounds);
   }
 
   void _computeMaxHeights(Node? node, int depth) {
@@ -207,46 +226,18 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
         : max(node.width.toInt(), config.levelSeparation);
     heights[depth] = max(heights[depth], nodeHeight);
 
-    for (final child in _successors(node)) {
+    for (final child in successorsOf(node)) {
       _computeMaxHeights(child, depth + 1);
     }
   }
 
-  List<Node> _successors(Node? v) {
-    if (v == null) {
-      return roots;
-    }
-
-    final successors = <Node>[];
-    for (final edge in tree.edges) {
-      if (edge.source == v) {
-        successors.add(edge.destination);
-      }
-    }
-    return successors;
-  }
-
-  List<Node> _predecessors(Node v) {
-    if (roots.contains(v)) {
-      return [];
-    }
-
-    final predecessors = <Node>[];
-    for (final edge in tree.edges) {
-      if (edge.destination == v) {
-        predecessors.add(edge.source);
-      }
-    }
-    return predecessors;
-  }
-
   Node? _leftChild(Node? v) {
-    final children = _successors(v);
+    final children = successorsOf(v);
     return children.isNotEmpty ? children.first : _nodeData(v).thread;
   }
 
   Node? _rightChild(Node? v) {
-    final children = _successors(v);
+    final children = successorsOf(v);
     return children.isNotEmpty ? children.last : _nodeData(v).thread;
   }
 
@@ -254,7 +245,8 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     if (v == null || w == null) return config.siblingSeparation;
 
     // Use appropriate separation based on relationship
-    final separation = isSibling ? config.siblingSeparation : config.subtreeSeparation;
+    final separation =
+        isSibling ? config.siblingSeparation : config.subtreeSeparation;
 
     // Consider node sizes in the calculation
     final vSize = isVertical() ? v.width.toInt() : v.height.toInt();
@@ -263,21 +255,24 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     return (vSize + wSize) ~/ 2 + separation;
   }
 
-  Node? _apportion(Node? v, Node? defaultAncestor, Node? leftSibling, Node? parentOfV) {
+  Node? _apportion(
+      Node? v, Node? defaultAncestor, Node? leftSibling, Node? parentOfV) {
     if (leftSibling == null) return defaultAncestor;
 
-    Node? vor = v;
-    Node? vir = v;
+    var vor = v;
+    var vir = v;
     Node? vil = leftSibling;
-    Node? vol = _successors(parentOfV).isNotEmpty ? _successors(parentOfV).first : null;
+    var vol = successorsOf(parentOfV).isNotEmpty
+        ? successorsOf(parentOfV).first
+        : null;
 
-    int innerRight = _nodeData(vir).mod;
-    int outerRight = _nodeData(vor).mod;
-    int innerLeft = _nodeData(vil).mod;
-    int outerLeft = _nodeData(vol).mod;
+    var innerRight = _nodeData(vir).mod;
+    var outerRight = _nodeData(vor).mod;
+    var innerLeft = _nodeData(vil).mod;
+    var outerLeft = _nodeData(vol).mod;
 
-    Node? nextRightOfVil = _rightChild(vil);
-    Node? nextLeftOfVir = _leftChild(vir);
+    var nextRightOfVil = _rightChild(vil);
+    var nextLeftOfVir = _leftChild(vir);
 
     while (nextRightOfVil != null && nextLeftOfVir != null) {
       vil = nextRightOfVil;
@@ -289,10 +284,13 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
         _nodeData(vor).ancestor = v;
       }
 
-      final shift = (_nodeData(vil).x + innerLeft) - (_nodeData(vir).x + innerRight) + _getDistance(vil, vir, true);
+      final shift = (_nodeData(vil).x + innerLeft) -
+          (_nodeData(vir).x + innerRight) +
+          _getDistance(vil, vir, true);
 
       if (shift > 0) {
-        _moveSubtree(_ancestor(vil, parentOfV, defaultAncestor), v, parentOfV, shift);
+        _moveSubtree(
+            _ancestor(vil, parentOfV, defaultAncestor), v, parentOfV, shift);
         innerRight += shift;
         outerRight += shift;
       }
@@ -322,7 +320,7 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
 
   Node? _ancestor(Node? vil, Node? parentOfV, Node? defaultAncestor) {
     final ancestor = _nodeData(vil).ancestor ?? vil;
-    final predecessors = _predecessors(ancestor!);
+    final predecessors = predecessorsOf(ancestor!);
 
     if (predecessors.contains(parentOfV)) {
       return ancestor;
@@ -330,10 +328,12 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     return defaultAncestor;
   }
 
-  void _moveSubtree(Node? leftNode, Node? rightNode, Node? parentNode, int shift) {
+  void _moveSubtree(
+      Node? leftNode, Node? rightNode, Node? parentNode, int shift) {
     if (leftNode == null || rightNode == null) return;
 
-    final subtreeCount = _childPosition(rightNode, parentNode) - _childPosition(leftNode, parentNode);
+    final subtreeCount = _childPosition(rightNode, parentNode) -
+        _childPosition(leftNode, parentNode);
 
     if (subtreeCount > 0) {
       final rightData = _nodeData(rightNode);
@@ -356,8 +356,8 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
       return _nodeData(node).childCount;
     }
 
-    final children = _successors(parentNode);
-    for (int i = 0; i < children.length; i++) {
+    final children = successorsOf(parentNode);
+    for (var i = 0; i < children.length; i++) {
       _nodeData(children[i]).childCount = i + 1;
     }
 
@@ -365,10 +365,10 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   }
 
   void _shift(Node? v) {
-    final children = _successors(v);
+    final children = successorsOf(v);
 
-    int shift = 0;
-    int change = 0;
+    var shift = 0;
+    var change = 0;
 
     for (final child in children.reversed) {
       final childData = _nodeData(child);
@@ -393,7 +393,8 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
   }
 
   void _applyOrientation(Graph graph) {
-    if (config.orientation == BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM) {
+    if (config.orientation ==
+        BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM) {
       return;
     }
 
@@ -448,7 +449,8 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
           if (edge.source == current && !visited.contains(edge.destination)) {
             neighbor = edge.destination;
             spanningEdges.add(edge);
-          } else if (edge.destination == current && !visited.contains(edge.source)) {
+          } else if (edge.destination == current &&
+              !visited.contains(edge.source)) {
             neighbor = edge.source;
             spanningEdges.add(Edge(current, edge.source));
           }
@@ -462,6 +464,18 @@ class TidierTreeLayoutAlgorithm extends Algorithm {
     }
 
     return Graph()..addEdges(spanningEdges);
+  }
+
+  List<Node> successorsOf(Node? v) {
+    if (v == null) return roots;
+    var nodes = nodeData[v]!.successorNodes;
+    return nodes;
+  }
+
+  List<Node> predecessorsOf(Node v) {
+    if (roots.contains(v)) return [];
+
+    return nodeData[v]!.predecessorNodes;
   }
 
   @override

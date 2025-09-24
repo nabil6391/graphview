@@ -31,7 +31,6 @@ void main() {
       'Balloon': BalloonLayoutAlgorithm(BuchheimWalkerConfiguration(), null),
       'RadialTree': RadialTreeLayoutAlgorithm(BuchheimWalkerConfiguration(), null),
       'TidierTree': TidierTreeLayoutAlgorithm(BuchheimWalkerConfiguration(), null),
-      'TreeLayout': TreeLayoutAlgorithm(BuchheimWalkerConfiguration(), null),
       'Eiglsperger': EiglspergerAlgorithm(SugiyamaConfiguration()),
       'Sugiyama': SugiyamaAlgorithm(SugiyamaConfiguration()),
       'Circle': CircleLayoutAlgorithm(CircleLayoutConfiguration(), null),

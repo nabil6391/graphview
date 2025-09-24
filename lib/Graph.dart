@@ -5,7 +5,13 @@ class Graph {
   final List<Edge> _edges = [];
   List<GraphObserver> graphObserver = [];
 
-  List<Node> get nodes => _nodes; //  List<Node> nodes = _nodes;
+  // Cache
+  final Map<Node, List<Node>> _successorCache = {};
+  final Map<Node, List<Node>> _predecessorCache = {};
+  bool _cacheValid = false;
+
+  List<Node> get nodes => _nodes;
+
   List<Edge> get edges => _edges;
 
   var isTree = false;
@@ -13,28 +19,24 @@ class Graph {
   int nodeCount() => _nodes.length;
 
   void addNode(Node node) {
-    // if (!_nodes.contains(node)) {
     _nodes.add(node);
+    _cacheValid = false;
     notifyGraphObserver();
-    // }
   }
 
   void addNodes(List<Node> nodes) => nodes.forEach((it) => addNode(it));
 
   void removeNode(Node? node) {
-    if (!_nodes.contains(node)) {
-//            throw IllegalArgumentException("Unable to find node in graph.")
-    }
+    if (!_nodes.contains(node)) return;
 
     if (isTree) {
       successorsOf(node).forEach((element) => removeNode(element));
     }
 
     _nodes.remove(node);
-
     _edges
         .removeWhere((edge) => edge.source == node || edge.destination == node);
-
+    _cacheValid = false;
     notifyGraphObserver();
   }
 
@@ -43,7 +45,6 @@ class Graph {
   Edge addEdge(Node source, Node destination, {Paint? paint}) {
     final edge = Edge(source, destination, paint: paint);
     addEdgeS(edge);
-
     return edge;
   }
 
@@ -68,19 +69,24 @@ class Graph {
 
     if (!_edges.contains(edge)) {
       _edges.add(edge);
+      _cacheValid = false;
       notifyGraphObserver();
     }
   }
 
   void addEdges(List<Edge> edges) => edges.forEach((it) => addEdgeS(it));
 
-  void removeEdge(Edge edge) => _edges.remove(edge);
+  void removeEdge(Edge edge) {
+    _edges.remove(edge);
+    _cacheValid = false;
+  }
 
   void removeEdges(List<Edge> edges) => edges.forEach((it) => removeEdge(it));
 
   void removeEdgeFromPredecessor(Node? predecessor, Node? current) {
     _edges.removeWhere(
         (edge) => edge.source == predecessor && edge.destination == current);
+    _cacheValid = false;
   }
 
   bool hasNodes() => _nodes.isNotEmpty;
@@ -89,23 +95,42 @@ class Graph {
       _edges.firstWhereOrNull((element) =>
           element.source == source && element.destination == destination);
 
-  bool hasSuccessor(Node? node) =>
-      _edges.any((element) => element.source == node);
+  bool hasSuccessor(Node? node) => successorsOf(node).isNotEmpty;
 
-  List<Node> successorsOf(Node? node) =>
-      getOutEdges(node!).map((e) => e.destination).toList();
+  List<Node> successorsOf(Node? node) {
+    if (node == null) return [];
+    if (!_cacheValid) _buildCache();
+    return _successorCache[node] ?? [];
+  }
 
-  bool hasPredecessor(Node node) =>
-      _edges.any((element) => element.destination == node);
+  bool hasPredecessor(Node node) => predecessorsOf(node).isNotEmpty;
 
-  List<Node> predecessorsOf(Node? node) =>
-      getInEdges(node!).map((edge) => edge.source).toList();
+  List<Node> predecessorsOf(Node? node) {
+    if (node == null) return [];
+    if (!_cacheValid) _buildCache();
+    return _predecessorCache[node] ?? [];
+  }
+
+  void _buildCache() {
+    _successorCache.clear();
+    _predecessorCache.clear();
+
+    for (var node in _nodes) {
+      _successorCache[node] = [];
+      _predecessorCache[node] = [];
+    }
+
+    for (Edge edge in _edges) {
+      _successorCache[edge.source]!.add(edge.destination);
+      _predecessorCache[edge.destination]!.add(edge.source);
+    }
+
+    _cacheValid = true;
+  }
 
   bool contains({Node? node, Edge? edge}) =>
       node != null && _nodes.contains(node) ||
       edge != null && _edges.contains(edge);
-
-//  bool contains(Edge edge) => _edges.contains(edge);
 
   bool containsData(data) => _nodes.any((element) => element.data == data);
 
@@ -156,53 +181,20 @@ class Graph {
     return json.encode(jsonString);
   }
 
-  bool _isNodeVisible(Node node) {
-    Node? current = node;
-    while (current != null) {
-      final parent = predecessorsOf(current).firstOrNull;
-      if (parent == null) break;
+}
 
-      if (parent.collapse) {
-        return false;
-      }
-
-      current = parent;
-    }
-    return true;
-  }
-
-  // Get visible nodes only
-  List<Node> get visibleNodes => nodes.where((n) => isNodeVisible(n)).toList();
-
-  List<Edge> get visibleEdges =>
-      edges.where((e) =>
-      isNodeVisible(e.source) && isNodeVisible(e.destination)
-      ).toList();
-
-  bool isNodeVisible(Node node) => _isNodeVisible(node); // delegate
-
-  void collapseNode(Node node) => node.collapse = true;
-
-  void expandNode(Node node) => node.collapse = false;
-
-  bool isNodeCollapsed(Node node) => node.collapse;
-
-  void toggleNode(Node node) => node.collapse = !node.collapse;
-
+extension GraphExtension on Graph {
   Rect calculateGraphBounds() {
-    final visibleNodes = nodes.toList();
-    if (visibleNodes.isEmpty) return Rect.zero;
-
     var minX = double.infinity;
     var minY = double.infinity;
     var maxX = double.negativeInfinity;
     var maxY = double.negativeInfinity;
 
-    for (final node in visibleNodes) {
-      minX = min(minX, node.x);
-      minY = min(minY, node.y);
-      maxX = max(maxX, node.x + node.width);
-      maxY = max(maxY, node.y + node.height);
+    for (final node in nodes) {
+        minX = min(minX, node.x);
+        minY = min(minY, node.y);
+        maxX = max(maxX, node.x + node.width);
+        maxY = max(maxY, node.y + node.height);
     }
 
     return Rect.fromLTRB(minX, minY, maxX, maxY);
@@ -210,7 +202,7 @@ class Graph {
 
   Size calculateGraphSize() {
     final bounds = calculateGraphBounds();
-    return Size(bounds.right - bounds.left, bounds.bottom - bounds.top);
+    return bounds.size;
   }
 }
 
@@ -242,8 +234,6 @@ class Node {
 
   LineType lineType = LineType.Default;
 
-  bool collapse = false;
-
   double get height => size.height;
 
   double get width => size.width;
@@ -271,7 +261,7 @@ class Node {
 
   @override
   String toString() {
-    return 'Node{position: $position, key: $key, _size: $size, lineType: $lineType, hidden:}';
+    return 'Node{position: $position, key: $key, _size: $size, lineType: $lineType}';
   }
 }
 

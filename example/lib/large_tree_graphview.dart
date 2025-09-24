@@ -3,12 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
-class TreeViewPage extends StatefulWidget {
+class LargeTreeViewPage extends StatefulWidget {
   @override
-  _TreeViewPageState createState() => _TreeViewPageState();
+  _LargeTreeViewPageState createState() => _LargeTreeViewPageState();
 }
 
-class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMixin {
+class _LargeTreeViewPageState extends State<LargeTreeViewPage> with TickerProviderStateMixin {
 
   GraphViewController _controller = GraphViewController();
   final Random r = Random();
@@ -101,9 +101,18 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
                 controller: _controller,
                 graph: graph,
                 algorithm: algorithm,
-                initialNode: ValueKey(1),
+                // initialNode: ValueKey(1),
                 panAnimationDuration: Duration(milliseconds: 600),
                 toggleAnimationDuration: Duration(milliseconds: 600),
+                // edgeBuilder: (Edge edge, EdgeGeometry geometry) {
+                //   return InteractiveEdge(
+                //     edge: edge,
+                //     geometry: geometry,
+                //     onTap: () => print('Edge tapped: ${edge.key}'),
+                //     color: Colors.red,
+                //     strokeWidth: 3.0,
+                //   );
+                // },
                 builder: (Node node) => InkWell(
                   onTap: () => _toggleCollapse(node),
                   child: Container(
@@ -192,126 +201,19 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
   void initState() {
     super.initState();
 
+    var n = 1000;
+    final nodes = List.generate(n, (i) => Node.Id(i + 1));
 
+// Generate tree edges using a queue-based approach
+    int currentChild = 1; // Start from node 1 (node 0 is root)
 
-// Create all nodes
-    final root = Node.Id(1);  // Central topic
+    for (var i = 0; i < n && currentChild < n; i++) {
+      final children = (i < n ~/ 3) ? 3 : 2;
 
-// Left side - Technology branch (will be large)
-    final tech = Node.Id(2);
-    final ai = Node.Id(3);
-    final web = Node.Id(4);
-    final mobile = Node.Id(5);
-    final aiSubtopics = [
-      Node.Id(6),   // Machine Learning
-      Node.Id(7),   // Deep Learning
-      Node.Id(8),   // NLP
-      Node.Id(9),   // Computer Vision
-    ];
-    final webSubtopics = [
-      Node.Id(10),  // Frontend
-      Node.Id(11),  // Backend
-      Node.Id(12),  // DevOps
-    ];
-    final frontendDetails = [
-      Node.Id(13),  // React
-      Node.Id(14),  // Vue
-      Node.Id(15),  // Angular
-    ];
-    final backendDetails = [
-      Node.Id(16),  // Node.js
-      Node.Id(17),  // Python
-      Node.Id(18),  // Java
-      Node.Id(19),  // Go
-    ];
-
-// Right side - Business branch (will be smaller to test balancing)
-    final business = Node.Id(20);
-    final marketing = Node.Id(21);
-    final sales = Node.Id(22);
-    final finance = Node.Id(23);
-    final marketingDetails = [
-      Node.Id(24),  // Digital Marketing
-      Node.Id(25),  // Content Strategy
-    ];
-    final salesDetails = [
-      Node.Id(26),  // B2B Sales
-      Node.Id(27),  // Customer Success
-    ];
-
-// Additional right side - Personal branch
-    final personal = Node.Id(28);
-    final health = Node.Id(29);
-    final hobbies = Node.Id(30);
-    final healthDetails = [
-      Node.Id(31),  // Exercise
-      Node.Id(32),  // Nutrition
-      Node.Id(33),  // Mental Health
-    ];
-    final exerciseDetails = [
-      Node.Id(34),  // Cardio
-      Node.Id(35),  // Strength Training
-      Node.Id(36),  // Yoga
-    ];
-
-    _controller.setInitiallyCollapsedNodes([tech, business, personal]);
-    // Build the graph structure
-    graph.addEdge(root, tech);
-    graph.addEdge(root, business, paint: Paint()..color = Colors.blue);
-    graph.addEdge(root, personal, paint: Paint()..color = Colors.green);
-
-// Technology branch (left side - large subtree)
-    graph.addEdge(tech, ai);
-    graph.addEdge(tech, web);
-    graph.addEdge(tech, mobile);
-
-// AI subtree
-    for (final aiNode in aiSubtopics) {
-      graph.addEdge(ai, aiNode, paint: Paint()..color = Colors.purple);
-    }
-
-// Web subtree with deep nesting
-    for (final webNode in webSubtopics) {
-      graph.addEdge(web, webNode, paint: Paint()..color = Colors.orange);
-    }
-
-// Frontend details (3rd level)
-    for (final frontendNode in frontendDetails) {
-      graph.addEdge(webSubtopics[0], frontendNode, paint: Paint()..color = Colors.cyan);
-    }
-
-// Backend details (3rd level) - even deeper
-    for (final backendNode in backendDetails) {
-      graph.addEdge(webSubtopics[1], backendNode, paint: Paint()..color = Colors.teal);
-    }
-
-// Business branch (right side - smaller subtree)
-    graph.addEdge(business, marketing);
-    graph.addEdge(business, sales);
-    graph.addEdge(business, finance);
-
-// Marketing details
-    for (final marketingNode in marketingDetails) {
-      graph.addEdge(marketing, marketingNode, paint: Paint()..color = Colors.red);
-    }
-
-// Sales details
-    for (final salesNode in salesDetails) {
-      graph.addEdge(sales, salesNode, paint: Paint()..color = Colors.indigo);
-    }
-
-// Personal branch (right side - medium subtree)
-    graph.addEdge(personal, health);
-    graph.addEdge(personal, hobbies);
-
-// Health details
-    for (final healthNode in healthDetails) {
-      graph.addEdge(health, healthNode, paint: Paint()..color = Colors.lightGreen);
-    }
-
-// Exercise details (3rd level)
-    for (final exerciseNode in exerciseDetails) {
-      graph.addEdge(healthDetails[0], exerciseNode, paint: Paint()..color = Colors.amber);
+      for (var j = 0; j < children && currentChild < n; j++) {
+        graph.addEdge(nodes[i], nodes[currentChild]);
+        currentChild++;
+      }
     }
 
     builder

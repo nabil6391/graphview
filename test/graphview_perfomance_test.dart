@@ -7,7 +7,7 @@ void main() {
   group('GraphView Performance Tests', () {
 
     testWidgets('hitTest performance with 500+ nodes', (WidgetTester tester) async {
-      final graph = _createLargeGraph(500);
+      final graph = _createLargeGraph(1000);
 
       final _configuration = BuchheimWalkerConfiguration()
         ..siblingSeparation = (100)
@@ -58,7 +58,7 @@ void main() {
     });
 
     testWidgets('paint performance with 500+ nodes', (WidgetTester tester) async {
-      final graph = _createLargeGraph(500);
+      final graph = _createLargeGraph(1000);
 
       final _configuration = BuchheimWalkerConfiguration()
         ..siblingSeparation = (100)
@@ -98,7 +98,7 @@ void main() {
     });
 
     test('algorithm run performance with 500+ nodes', () {
-      final graph = _createLargeGraph(500);
+      final graph = _createLargeGraph(1000);
 
       final _configuration = BuchheimWalkerConfiguration()
         ..siblingSeparation = (100)
