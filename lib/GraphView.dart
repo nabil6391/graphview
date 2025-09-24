@@ -42,8 +42,8 @@ class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
 
-  final Set<Node> _collapsedNodes = {};
-  final Set<Node> _hiddenNodes = {};
+  final Map<Node, bool> _collapsedNodes = {};
+  final Map<Node, bool> _hiddenNodes = {};
   bool _visibilityValid = false;
 
   Node? _lastCollapsedNode;
@@ -53,26 +53,31 @@ class GraphViewController {
   });
 
   void _attach(_GraphViewState? state) => _state = state;
+
   void _detach() => _state = null;
 
-  void animateToNode(ValueKey key, {Offset offset = Offset.zero, double? scale}) =>
-      _state?.jumpToNode(key, true, offset: offset, scale: scale);
+  void animateToNode(ValueKey key) =>
+      _state?.jumpToNode(key, true);
 
-  void jumpToNode(ValueKey key, {Offset offset = Offset.zero, double? scale}) =>
-      _state?.jumpToNode(key, false, offset: offset, scale: scale);
+  void jumpToNode(ValueKey key) =>
+      _state?.jumpToNode(key, false);
 
   void animateToMatrix(Matrix4 target) => _state?.animateToMatrix(target);
+
   void resetView() => _state?.resetView();
+
   void zoomToFit() => _state?.zoomToFit();
+
   void forceRecalculation() => _state?.forceRecalculation();
 
   // Visibility management methods
-  bool isNodeCollapsed(Node node) => _collapsedNodes.contains(node);
-  bool isNodeHidden(Node node) => _hiddenNodes.contains(node);
+  bool isNodeCollapsed(Node node) => _collapsedNodes.containsKey(node);
+
+  bool isNodeHidden(Node node) => _hiddenNodes.containsKey(node);
 
   bool isNodeVisible(Graph graph, Node node) {
     if (!_visibilityValid) _buildVisibilityCache(graph);
-    return !_hiddenNodes.contains(node);
+    return !_hiddenNodes.containsKey(node);
   }
 
   void _buildVisibilityCache(Graph graph) {
@@ -80,13 +85,13 @@ class GraphViewController {
 
     void markDescendantsHidden(Node node) {
       for (final child in graph.successorsOf(node)) {
-        _hiddenNodes.add(child);
+        _hiddenNodes[child] = true;
         markDescendantsHidden(child); // Recursively hide descendants
       }
     }
 
     // Find all collapsed nodes and hide their descendants
-    for (final node in _collapsedNodes) {
+    for (final node in _collapsedNodes.keys) {
       markDescendantsHidden(node);
     }
 
@@ -120,7 +125,7 @@ class GraphViewController {
 
   void collapseNode(Graph graph, Node node) {
     if (graph.hasSuccessor(node)) {
-      _collapsedNodes.add(node);
+      _collapsedNodes[node] = true;
       _lastCollapsedNode = node;
       _invalidateVisibilityCache();
       forceRecalculation();
@@ -139,18 +144,20 @@ class GraphViewController {
     if (_lastCollapsedNode == null) return [];
 
     final collapsingEdges = <Edge>[];
-    final visitedNodes = <Node>{};
+    final visitedNodes = <Node, bool>{};
 
     void collectCollapsingEdgesRecursively(Node node) {
-      if (visitedNodes.contains(node)) return;
-      visitedNodes.add(node);
+      if (visitedNodes.containsKey(node)) return;
+      visitedNodes[node] = true;
+
+      if(_hiddenNodes.containsKey(node) && _collapsedNodes.containsKey(node)) return;
 
       // Get all outgoing edges from this node
       for (final edge in graph.getOutEdges(node)) {
         final destination = edge.destination;
 
         // Add edge if destination is being hidden (collapsing)
-        if (_hiddenNodes.contains(destination)) {
+        if (_hiddenNodes.containsKey(destination)) {
           collapsingEdges.add(edge);
           // Recursively collect edges from hidden descendants
           collectCollapsingEdgesRecursively(destination);
@@ -163,13 +170,11 @@ class GraphViewController {
     return collapsingEdges;
   }
 
-  // Get all collapsed nodes (for debugging or other purposes)
-  Set<Node> get collapsedNodes => Set.unmodifiable(_collapsedNodes);
-  Set<Node> get hiddenNodes => Set.unmodifiable(_hiddenNodes);
-
   // Additional convenience methods for setting initial state
   void setInitiallyCollapsedNodes(List<Node> nodes) {
-    _collapsedNodes.addAll(nodes);
+    for (final node in nodes) {
+      _collapsedNodes[node] = true;
+    }
     _invalidateVisibilityCache();
   }
 
@@ -177,7 +182,7 @@ class GraphViewController {
     for (final key in keys) {
       try {
         final node = graph.getNodeUsingKey(key);
-        _collapsedNodes.add(node);
+        _collapsedNodes[node] = true;
       } catch (e) {
         // Node with key not found, ignore
       }
@@ -185,7 +190,6 @@ class GraphViewController {
     _invalidateVisibilityCache();
   }
 }
-
 class GraphChildDelegate {
   final Graph graph;
   final Algorithm algorithm;
@@ -216,7 +220,6 @@ class GraphChildDelegate {
       }
     }
 
-    // Add collapsing edges for animation
     if (controller != null) {
       final collapsingEdges = controller!.getCollapsingEdges(graph);
       visibleGraph.addEdges(collapsingEdges);
@@ -405,15 +408,14 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
         boundaryMargin: EdgeInsets.all(double.infinity),
         minScale: 0.01,
         maxScale: 10,
-        child: Container(
-            color: Colors.amber, child: view),
+        child: view,
       );
     }
 
     return view;
   }
 
-  void jumpToNode(ValueKey key, bool animated, {Offset offset = Offset.zero, double? scale}) {
+  void jumpToNode(ValueKey key, bool animated) {
     final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
     if (node == null) return;
 
@@ -425,12 +427,14 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final nodeCenter = Offset(
         node.position.dx + node.width / 2, node.position.dy + node.height / 2);
 
-    // Use current scale if not specified
-    final currentScale = scale ?? _transformationController.value.getMaxScaleOnAxis();
+    final currentScale = _transformationController.value.getMaxScaleOnAxis();
+
+    final scaledNodeCenter = nodeCenter * currentScale;
+    final translation = center - scaledNodeCenter;
 
     final target = Matrix4.identity()
-      ..translate(center.dx - nodeCenter.dx + offset.dx, center.dy - nodeCenter.dy + offset.dy);
-    // ..scale(scale);
+      ..translate(translation.dx, translation.dy)
+      ..scale(currentScale);
 
     if (animated) {
       animateToMatrix(target);
@@ -817,7 +821,8 @@ class RenderCustomLayoutBox extends RenderBox
         final node = entry.key;
         final child = entry.value;
         final nodeData = child.parentData as NodeBoxData;
-        final pos = Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
+        final pos =
+            Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
         animatedPositions[node] = pos;
       }
 
@@ -897,6 +902,21 @@ class RenderCustomLayoutBox extends RenderBox
     }
   }
 
+  void _paintExpandingNode(PaintingContext context, RenderBox child,
+      Offset offset, Offset pos, double t) {
+    final progress = t.clamp(0.0, 1.0); // Scale from 0 to 1 (opposite of collapsing)
+    final center =
+        pos + offset + Offset(child.size.width * 0.5, child.size.height * 0.5);
+
+    context.canvas.save();
+    context.canvas.translate(center.dx, center.dy);
+    context.canvas.scale(progress, progress);
+    context.canvas.translate(-center.dx, -center.dy);
+    context.paintChild(child, offset + pos);
+    context.canvas.restore();
+  }
+
+
   void _paintCollapsingNode(PaintingContext context, RenderBox child,
       Offset offset, Offset pos, double t) {
     final progress = (1.0 - t).clamp(0.0, 1.0);
@@ -927,7 +947,6 @@ class RenderCustomLayoutBox extends RenderBox
   }
 
   void _layoutNodesLazily(BoxConstraints constraints) {
-    // Build children lazily through buildOrObtainChildFor
     for (final node in graph.nodes) {
       final child = buildOrObtainChildFor(node);
       if (child != null) {
@@ -1007,7 +1026,6 @@ class RenderCustomLayoutBox extends RenderBox
         final child = entry.value;
 
         final childParentData = child.parentData as BoxParentData;
-
         final isHit = result.addWithPaintOffset(
           offset: childParentData.offset,
           position: position,
@@ -1018,7 +1036,6 @@ class RenderCustomLayoutBox extends RenderBox
         if (isHit) return true;
       }
     }
-
     return false;
   }
 
