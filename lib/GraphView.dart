@@ -250,16 +250,12 @@ class GraphChildDelegate {
 
   Widget? build(Node node) {
     var child = node.data ?? builder(node);
-    if (addRepaintBoundaries) {
-      child = RepaintBoundary(child: child);
-    }
     return KeyedSubtree(key: node.key, child: child);
   }
 
   bool shouldRebuild(GraphChildDelegate oldDelegate) {
     final result = graph != oldDelegate.graph ||
-        algorithm != oldDelegate.algorithm ||
-        addRepaintBoundaries != oldDelegate.addRepaintBoundaries;
+        algorithm != oldDelegate.algorithm;
     if (result) _needsRecalculation = true;
     return result;
   }
@@ -1037,6 +1033,24 @@ class RenderCustomLayoutBox extends RenderBox
       }
     }
     return false;
+  }
+
+  // Add this helper method to RenderCustomLayoutBox
+  Rect _getViewportBounds() {
+    final controller = _delegate.controller?.transformationController;
+    if (controller == null) return Rect.largest;
+
+    final matrix = controller.value;
+    final scale = matrix.getMaxScaleOnAxis();
+    final translation = matrix.getTranslation();
+
+    final viewportSize = size;
+    return Rect.fromLTWH(
+      -translation.x / scale,
+      -translation.y / scale,
+      viewportSize.width / scale,
+      viewportSize.height / scale,
+    );
   }
 
   @override
