@@ -219,7 +219,8 @@ class GraphView extends StatefulWidget {
   final GraphViewController? controller;
   final bool _isBuilder;
 
-  Duration? animationDuration;
+  Duration? cameraAnimationDuration;
+  Duration? nodeAnimationDuration;
   ValueKey? initialNode;
   bool autoZoomToFit = false;
   late GraphChildDelegate delegate;
@@ -250,7 +251,8 @@ class GraphView extends StatefulWidget {
     this.animated = true,
     this.initialNode,
     this.autoZoomToFit = false,
-    this.animationDuration,
+    this.cameraAnimationDuration,
+    this.nodeAnimationDuration,
   })  : _isBuilder = true,
         delegate = GraphChildDelegate(
             graph: graph,
@@ -280,12 +282,14 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
     _cameraController = AnimationController(
       vsync: this,
-      duration: widget.animationDuration ?? const Duration(milliseconds: 600),
+      duration:
+          widget.cameraAnimationDuration ?? const Duration(milliseconds: 600),
     );
 
     _nodeController = AnimationController(
       vsync: this,
-      duration: widget.animationDuration ?? const Duration(milliseconds: 600),
+      duration:
+          widget.nodeAnimationDuration ?? const Duration(milliseconds: 600),
     );
 
     widget.controller?._attach(this);
@@ -376,10 +380,10 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
   void animateToMatrix(Matrix4 target) {
     _cameraController.reset();
-    _cameraAnimation =
-        Matrix4Tween(begin: _transformationController.value, end: target)
-            .animate(CurvedAnimation(
-                parent: _cameraController, curve: Curves.easeInOut));
+    _cameraAnimation = Matrix4Tween(
+            begin: _transformationController.value, end: target)
+        .animate(
+            CurvedAnimation(parent: _cameraController, curve: Curves.linear));
     _cameraAnimation!.addListener(_onCameraTick);
     _cameraController.forward();
   }
@@ -915,6 +919,8 @@ class RenderCustomLayoutBox extends RenderBox
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    if (enableAnimation && !_nodeAnimationController.isCompleted) return false;
+
     for (final entry in _children.entries) {
       final node = entry.key;
 
