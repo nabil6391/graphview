@@ -12,81 +12,78 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
   var  json =   {
     "edges": [
       {
-        "from": "254022114",
-        "to": "435737192"
+        "from": "1",
+        "to": "2"
       },
       {
-        "from": "102061118",
-        "to": "435737192"
+        "from": "3",
+        "to": "2"
       },
       {
-        "from": "864374573",
-        "to": "676874082"
+        "from": "4",
+        "to": "5"
       },
       {
-        "from": "564905731",
-        "to": "864374573"
+        "from": "6",
+        "to": "4"
       },
       {
-        "from": "435737192",
-        "to": "864374573"
+        "from": "2",
+        "to": "4"
       },
       {
-        "from": "435737192",
-        "to": "183014792"
+        "from": "2",
+        "to": "7"
       },
       {
-        "from": "435737192",
-        "to": "222855694"
+        "from": "2",
+        "to": "8"
       },
       {
-        "from": "864342115",
-        "to": "652678503"
+        "from": "9",
+        "to": "10"
       },
       {
-        "from": "864342115",
-        "to": "469600377"
+        "from": "9",
+        "to": "11"
       },
       {
-        "from": "676874082",
-        "to": "684761235"
+        "from": "5",
+        "to": "12"
       },
       {
-        "from": "864374573",
-        "to": "864342115"
+        "from": "4",
+        "to": "9"
       },
       {
-        "from": "564905731",
-        "to": "176177853"
+        "from": "6",
+        "to": "13"
       },
       {
-        "from": "564905731",
-        "to": "983393593"
+        "from": "6",
+        "to": "14"
       },
       {
-        "from": "564905731",
-        "to": "818531897"
+        "from": "6",
+        "to": "15"
       },
       {
-        "from": "584192116",
-        "to": "102061118"
+        "from": "16",
+        "to": "3"
       },
       {
-        "from": "598554018",
-        "to": "102061118"
+        "from": "17",
+        "to": "3"
       },
       {
-        "from": "207392962",
-        "to": "584192116"
+        "from": "18",
+        "to": "16"
       },
       {
-        "from": "161904647",
-        "to": "598554018"
+        "from": "19",
+        "to": "17"
       },
-      {
-        "from": "469600377",
-        "to": "254022114"
-      }
+
     ]
   };
 
@@ -228,8 +225,7 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
     );
   }
 
-  final Graph graph = Graph()
-    ..isTree = true;
+  final Graph graph = Graph();
   @override
   void initState() {
     var edges = json['edges']!;

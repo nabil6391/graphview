@@ -165,7 +165,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
     setState(() {});
 
     Future.delayed(Duration(milliseconds: 100), (){
-      // _controller.animateToNode(node.key!);
+      _controller.animateToNode(node.key!);
     });
   }
 

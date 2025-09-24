@@ -98,7 +98,7 @@ void main() {
       );
     });
 
-    test('Buchheim Performance for 1000 nodes to be less than 2000ms', () {
+    test('Buchheim Performance for 1000 nodes to be less than 20ms', () {
       Graph _createGraph(int n) {
         final graph = Graph();
         final nodes = List.generate(n, (i) => Node.Id(i + 1));
@@ -132,12 +132,12 @@ void main() {
       }
 
       var stopwatch = Stopwatch()..start();
-      var size = algorithm.run(graph, 10, 10);
+      var size = algorithm.run(graph, 0, 0);
       var timeTaken = stopwatch.elapsed.inMilliseconds;
 
       print('Timetaken $timeTaken for ${graph.nodeCount()} nodes');
 
-      expect(timeTaken < 2000, true);
+      expect(timeTaken < 20, true);
     });
   });
 }

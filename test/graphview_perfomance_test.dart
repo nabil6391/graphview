@@ -6,7 +6,7 @@ import 'package:graphview/GraphView.dart';
 void main() {
   group('GraphView Performance Tests', () {
 
-    testWidgets('hitTest performance with 500+ nodes', (WidgetTester tester) async {
+    testWidgets('hitTest performance with 1000+ nodes', (WidgetTester tester) async {
       final graph = _createLargeGraph(1000);
 
       final _configuration = BuchheimWalkerConfiguration()
@@ -53,11 +53,11 @@ void main() {
       stopwatch.stop();
       final hitTestTime = stopwatch.elapsedMilliseconds;
 
-      print('HitTest time for 500 nodes (10 tests): ${hitTestTime}ms');
-      // expect(hitTestTime, lessThan(500), reason: 'HitTest should complete in under 100ms');
+      print('HitTest time for 1000 nodes (10 tests): ${hitTestTime}ms');
+      expect(hitTestTime, lessThan(10), reason: 'HitTest should complete in under 10ms');
     });
 
-    testWidgets('paint performance with 500+ nodes', (WidgetTester tester) async {
+    testWidgets('paint performance with 1000+ nodes', (WidgetTester tester) async {
       final graph = _createLargeGraph(1000);
 
       final _configuration = BuchheimWalkerConfiguration()
@@ -93,11 +93,11 @@ void main() {
       stopwatch.stop();
       final paintTime = stopwatch.elapsedMilliseconds;
 
-      print('Paint time for 500 nodes (10 repaints): ${paintTime}ms');
-      // expect(paintTime, lessThan(500), reason: 'Paint should complete in under 500ms');
+      print('Paint time for 1000 nodes (10 repaints): ${paintTime}ms');
+      expect(paintTime, lessThan(50), reason: 'Paint should complete in under 50ms');
     });
 
-    test('algorithm run performance with 500+ nodes', () {
+    test('algorithm run performance with 1000+ nodes', () {
       final graph = _createLargeGraph(1000);
 
       final _configuration = BuchheimWalkerConfiguration()
@@ -116,8 +116,8 @@ void main() {
       stopwatch.stop();
       final algorithmTime = stopwatch.elapsedMilliseconds;
 
-      print('Algorithm run time for 500 nodes: ${algorithmTime}ms');
-      // expect(algorithmTime, lessThan(1000), reason: 'Algorithm should complete in under 1 second');
+      print('Algorithm run time for 1000 nodes: ${algorithmTime}ms');
+      expect(algorithmTime, lessThan(10), reason: 'Algorithm should complete in under 10 milisecond');
     });
 
   });

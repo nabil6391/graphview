@@ -83,6 +83,11 @@ class SugiyamaAlgorithm extends Algorithm {
     graph.edges.forEach((edge) {
       edgeData[edge] = SugiyamaEdgeData();
     });
+
+    graph.edges.forEach((element) {
+      nodeData[element.source]?.successorNodes.add(element.destination);
+      nodeData[element.destination]?.predecessorNodes.add(element.source);
+    });
   }
 
   void dfs(Node node) {
@@ -156,7 +161,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
     while (U.length != graph.nodes.length) {
       var candidates = V
-          .where((v) => !U.contains(v) && Z.containsAll(graph.successorsOf(v)));
+          .where((v) => !U.contains(v) && Z.containsAll(successorsOf(v)));
 
       if (candidates.isNotEmpty) {
         var node = candidates.first;
@@ -204,13 +209,13 @@ class SugiyamaAlgorithm extends Algorithm {
 
     while (U.length != graph.nodes.length) {
       var candidates = V
-          .where((v) => !U.contains(v) && U.containsAll(graph.successorsOf(v)));
+          .where((v) => !U.contains(v) && U.containsAll(successorsOf(v)));
 
       if (candidates.isNotEmpty) {
         var got = candidates.reduce((a, b) => lambda[a]! > lambda[b]! ? a : b);
 
         if (layers[k].length < width &&
-            Z.containsAll(graph.successorsOf(got))) {
+            Z.containsAll(successorsOf(got))) {
           layers[k].add(got);
         } else {
           Z.addAll(layers[k]);
@@ -353,11 +358,6 @@ class SugiyamaAlgorithm extends Algorithm {
     // We will modify it directly. There is no need for a separate 'best' copy
     // with the current iterative improvement strategy.
 
-    // Precalculate predecessor and successor info
-    graph.edges.forEach((element) {
-      nodeData[element.source]?.successorNodes.add(element.destination);
-      nodeData[element.destination]?.predecessorNodes.add(element.source);
-    });
 
     for (var i = 0; i < configuration.iterations; i++) {
       // Apply the median heuristic to reorder nodes in each layer.
@@ -582,10 +582,10 @@ class SugiyamaAlgorithm extends Algorithm {
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
   int crossingCount(HashMap<Node, int> northernNodes, Node? n1, Node? n2) {
-    final indexOf = (Node node) => northernNodes[node]!;
+    final indexOf = (Node node) => northernNodes[node] ?? -1;
     var crossing = 0;
-    final parentNodesN1 = nodeData[n1]!.predecessorNodes;
-    final parentNodesN2 = nodeData[n2]!.predecessorNodes;
+    final parentNodesN1 = predecessorsOf(n1);
+    final parentNodesN2 = predecessorsOf(n2);
     parentNodesN2.forEach((pn2) {
       final indexOfPn2 = indexOf(pn2);
       parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) {
@@ -1143,8 +1143,8 @@ class SugiyamaAlgorithm extends Algorithm {
       while (iterator.moveNext()) {
         final current = iterator.current;
         if (nodeData[current]!.isDummy) {
-          final predecessor = graph.predecessorsOf(current)[0];
-          final successor = graph.successorsOf(current)[0];
+          final predecessor = predecessorsOf(current)[0];
+          final successor = successorsOf(current)[0];
           final bendPoints =
               edgeData[graph.getEdgeBetween(predecessor, current)!]!.bendPoints;
 
@@ -1211,7 +1211,6 @@ class SugiyamaAlgorithm extends Algorithm {
   }
 
   void _dfsRecursiveCycleRemoval() {
-    // Existing DFS implementation
     graph.nodes.forEach((node) {
       dfs(node);
     });
@@ -1418,7 +1417,7 @@ class GreedyCycleRemoval {
   void _removeCycles(Graph g) {
     while (g.nodes.isNotEmpty) {
       // Remove sinks
-      var sinks = g.nodes.where((n) => g.getOutEdges(n).isEmpty).toList();
+      var sinks = g.nodes.where((n) => !g.hasSuccessor(n)).toList();
       if (sinks.isNotEmpty) {
         for (var sink in sinks) {
           g.removeNode(sink);
@@ -1427,7 +1426,7 @@ class GreedyCycleRemoval {
       }
 
       // Remove sources
-      var sources = g.nodes.where((n) => g.getInEdges(n).isEmpty).toList();
+      var sources = g.nodes.where((n) => !g.hasPredecessor(n)).toList();
       if (sources.isNotEmpty) {
         for (var source in sources) {
           g.removeNode(source);
@@ -1448,4 +1447,3 @@ class GreedyCycleRemoval {
     }
   }
 }
-

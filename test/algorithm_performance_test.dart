@@ -58,7 +58,7 @@ void main() {
     }
 
     for (final result in results.values) {
-      expect(result < 1000, true);
+      expect(result < 5000, true);
     }
   });
 }

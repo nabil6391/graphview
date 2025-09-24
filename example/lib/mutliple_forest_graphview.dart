@@ -3,12 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
-class MutlipleForestTreeViewPage extends StatefulWidget {
+class MultipleForestTreeViewPage extends StatefulWidget {
   @override
   _TreeViewPageState createState() => _TreeViewPageState();
 }
 
-class _TreeViewPageState extends State<MutlipleForestTreeViewPage> with TickerProviderStateMixin {
+class _TreeViewPageState extends State<MultipleForestTreeViewPage> with TickerProviderStateMixin {
 
   GraphViewController _controller = GraphViewController();
   final Random r = Random();
