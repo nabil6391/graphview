@@ -111,24 +111,20 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
                   ..style = PaintingStyle.stroke,
                 builder: (Node node) {
                   var a = node.key!.value as int?;
-                  return rectangleWidget(a);
+                  return Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
+                        ],
+                      ),
+                      child: Text('${a}'));
                 },
               ),
             ),
           ],
         ));
-  }
-
-  Widget rectangleWidget(int? a) {
-    return Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
-          ],
-        ),
-        child: Text('${a}'));
   }
 
   final Graph graph = Graph();

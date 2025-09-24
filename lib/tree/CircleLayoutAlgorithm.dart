@@ -28,7 +28,6 @@ class CircleLayoutAlgorithm extends Algorithm {
       return Size.zero;
     }
 
-
     // Handle single node case
     if (graph.nodes.length == 1) {
       final node = graph.nodes.first;

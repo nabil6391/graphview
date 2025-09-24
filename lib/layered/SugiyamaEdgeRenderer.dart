@@ -18,9 +18,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       ..style = PaintingStyle.fill;
 
     graph.edges.forEach((edge) {
-      final source = edge.source;
-      final destination = edge.destination;
-
       Paint? edgeTrianglePaint;
       if (edge.paint != null) {
         edgeTrianglePaint = Paint()
@@ -32,15 +29,16 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         ..style = PaintingStyle.stroke;
 
       if (hasBendEdges(edge)) {
-        _renderEdgeWithBendPoints(canvas, edge, source, destination, currentPaint, edgeTrianglePaint ?? trianglePaint);
+        _renderEdgeWithBendPoints(canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);
       } else {
-        _renderStraightEdge(canvas, edge, source, destination, currentPaint, edgeTrianglePaint ?? trianglePaint);
+        _renderStraightEdge(canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);
       }
     });
   }
 
-  void _renderEdgeWithBendPoints(Canvas canvas, Edge edge, Node source,
-      Node destination, Paint currentPaint, Paint trianglePaint) {
+  void _renderEdgeWithBendPoints(Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
+    final source = edge.source;
+    final destination = edge.destination;
     var bendPoints = edgeData[edge]!.bendPoints;
 
     var sourceCenter = _getNodeCenter(source);
@@ -103,8 +101,9 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     canvas.drawPath(path, currentPaint);
   }
 
-  void _renderStraightEdge(Canvas canvas, Edge edge, Node source,
-      Node destination, Paint currentPaint, Paint trianglePaint) {
+  void _renderStraightEdge(Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
+    final source = edge.source;
+    final destination = edge.destination;
     final sourceCenter = _getNodeCenter(source);
     var destCenter = _getNodeCenter(destination);
 

@@ -19,7 +19,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
     }
   }
 
-  void renderEdge(Canvas canvas, dynamic node, dynamic child, Paint edgePaint) {
+  void renderEdge(Canvas canvas, Node node, Node child, Paint edgePaint) {
     final parentPos = getNodePosition(node);
     final childPos = getNodePosition(child);
 
@@ -30,12 +30,12 @@ class TreeEdgeRenderer extends EdgeRenderer {
     canvas.drawPath(linePath, edgePaint);
   }
 
-  int getEffectiveOrientation(dynamic node, dynamic child) {
+  int getEffectiveOrientation(Node node, Node child) {
     return configuration.orientation;
   }
 
   /// Builds the path for the edge based on orientation
-  void buildEdgePath(dynamic node, dynamic child, Offset parentPos, Offset childPos, int orientation) {
+  void buildEdgePath(Node node, Node child, Offset parentPos, Offset childPos, int orientation) {
     final parentCenterX = parentPos.dx + node.width * 0.5;
     final parentCenterY = parentPos.dy + node.height * 0.5;
     final childCenterX = childPos.dx + child.width * 0.5;
@@ -61,7 +61,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
   }
 
   /// Builds path for top-bottom orientation
-  void buildTopBottomPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+  void buildTopBottomPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
     final parentBottomY = parentPos.dy + node.height;
     final childTopY = childPos.dy;
@@ -87,7 +87,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
   }
 
   /// Builds path for bottom-top orientation
-  void buildBottomTopPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+  void buildBottomTopPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
     final parentTopY = parentPos.dy;
     final childBottomY = childPos.dy + child.height;
@@ -111,7 +111,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
   }
 
   /// Builds path for left-right orientation
-  void buildLeftRightPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+  void buildLeftRightPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
     final parentRightX = parentPos.dx + node.width;
     final childLeftX = childPos.dx;
@@ -135,7 +135,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
   }
 
   /// Builds path for right-left orientation
-  void buildRightLeftPath(dynamic node, dynamic child, Offset parentPos, Offset childPos,
+  void buildRightLeftPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
     final parentLeftX = parentPos.dx;
     final childRightX = childPos.dx + child.width;

@@ -173,7 +173,7 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage> with TickerPro
       case LayoutAlgorithmType.regularTree:
         return 'Regular Tree Layout';
       case LayoutAlgorithmType.buchheimWalker:
-        return 'Multi-Row Tree Layout';
+        return 'Buchheim Walker Tree Layout';
       case LayoutAlgorithmType.balloon:
         return 'Balloon Layout';
       case LayoutAlgorithmType.radialTree:

@@ -38,7 +38,13 @@ class BuchheimWalkerAlgorithm extends Algorithm {
 
   @override
   Size run(Graph? graph, double shiftX, double shiftY) {
+    if(graph ==null) return Size.zero;
     nodeData.clear();
+    if (graph.nodes.length == 1) {
+      final node = graph.nodes.first;
+      node.position = Offset(shiftX, shiftY);
+      return node.size * 2;
+    }
     initData(graph);
     _detectCycles(graph!);
     var firstNode = getFirstNode(graph!);
@@ -148,7 +154,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     if (hasLeftSibling(graph, node)) {
       var leftSibling = getLeftSibling(graph, node);
       Node? vop = node;
-      Node? vom = getLeftMostChild(graph, graph.predecessorsOf(node).first);
+      Node? vom = getLeftMostChild(graph, predecessorsOf(node).first);
       var sip = getModifier(node);
 
       var sop = getModifier(node);
