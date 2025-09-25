@@ -582,10 +582,10 @@ class SugiyamaAlgorithm extends Algorithm {
 
   // counts the number of edge crossings if n2 appears to the left of n1 in their layer.;
   int crossingCount(HashMap<Node, int> northernNodes, Node? n1, Node? n2) {
-    final indexOf = (Node node) => northernNodes[node] ?? -1;
+    final indexOf = (Node node) => northernNodes[node]!;
     var crossing = 0;
-    final parentNodesN1 = predecessorsOf(n1);
-    final parentNodesN2 = predecessorsOf(n2);
+    final parentNodesN1 = graph.predecessorsOf(n1);
+    final parentNodesN2 = graph.predecessorsOf(n2);
     parentNodesN2.forEach((pn2) {
       final indexOfPn2 = indexOf(pn2);
       parentNodesN1.where((it) => indexOfPn2 < indexOf(it)).forEach((element) {

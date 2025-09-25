@@ -102,8 +102,8 @@ class _LargeTreeViewPageState extends State<LargeTreeViewPage> with TickerProvid
                 graph: graph,
                 algorithm: algorithm,
                 // initialNode: ValueKey(1),
-                panAnimationDuration: Duration(milliseconds: 600),
-                toggleAnimationDuration: Duration(milliseconds: 600),
+                panAnimationDuration: Duration(milliseconds: 750),
+                toggleAnimationDuration: Duration(milliseconds: 750),
                 // edgeBuilder: (Edge edge, EdgeGeometry geometry) {
                 //   return InteractiveEdge(
                 //     edge: edge,
@@ -118,12 +118,11 @@ class _LargeTreeViewPageState extends State<LargeTreeViewPage> with TickerProvid
                   child: Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
+                      shape: BoxShape.circle,
                       boxShadow: [BoxShadow(color: Colors.blue[100]!, spreadRadius: 1)],
                     ),
                     child: Text(
-                      'Node ${node.key?.value}',
+                      '${node.key?.value}',
                     ),
                   ),
                 ),
@@ -133,49 +132,12 @@ class _LargeTreeViewPageState extends State<LargeTreeViewPage> with TickerProvid
         ));
   }
 
-  Widget rectangleWidget(int? a) {
-    return InkWell(
-      onTap: () {
-        print('clicked node $a');
-      },
-      child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
-            ],
-          ),
-          child: Text('Node ${a} ')),
-    );
-  }
-
-  Graph _createGraph(int n) {
-    final graph = Graph();
-    final nodes = List.generate(n, (i) => Node.Id(i + 1));
-    for (var i = 0; i < n - 1; i++) {
-      final children = (i < n / 3) ? 3 : 2;
-      for (var j = 1; j <= children && i * children + j < n; j++) {
-        graph.addEdge(nodes[i], nodes[i * children + j]);
-      }
-    }
-    // for (var i = 0; i < graph.nodeCount(); i++) {
-    //   graph.getNodeAtPosition(i).size = const Size(itemWidth, itemHeight);
-    // }
-    return graph;
-  }
-
   final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
   late final algorithm = BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder));
 
   void _toggleCollapse(Node node) {
-    _controller.toggleNodeExpanded(graph, node);
-    setState(() {});
-
-    Future.delayed(Duration(milliseconds: 100), (){
-      // _controller.animateToNode(node.key!);
-    });
+    _controller.toggleNodeExpanded(graph, node, animate: true);
   }
 
   void _navigateToRandomNode() {
@@ -217,11 +179,11 @@ class _LargeTreeViewPageState extends State<LargeTreeViewPage> with TickerProvid
     }
 
     builder
-      ..siblingSeparation = (100)
-      ..levelSeparation = (150)
-      ..subtreeSeparation = (150)
+      ..siblingSeparation = (10)
+      ..levelSeparation = (100)
+      ..subtreeSeparation = (10)
       ..useCurvedConnections = true
-      ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
+      ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT);
   }
 
 }

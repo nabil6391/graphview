@@ -47,6 +47,7 @@ class GraphViewController {
   bool _visibilityValid = false;
 
   Node? _lastCollapsedNode;
+  Node? focusedNode;
 
   GraphViewController({
     this.transformationController,
@@ -56,11 +57,9 @@ class GraphViewController {
 
   void _detach() => _state = null;
 
-  void animateToNode(ValueKey key) =>
-      _state?.jumpToNode(key, true);
+  void animateToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, true);
 
-  void jumpToNode(ValueKey key) =>
-      _state?.jumpToNode(key, false);
+  void jumpToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, false);
 
   void animateToMatrix(Matrix4 target) => _state?.animateToMatrix(target);
 
@@ -116,27 +115,33 @@ class GraphViewController {
     return null;
   }
 
-  void expandNode(Node node) {
+  void expandNode(Node node, {animate = false}) {
     _collapsedNodes.remove(node);
     _invalidateVisibilityCache();
     _lastCollapsedNode = null;
+    if (animate) {
+      focusedNode = node;
+    }
     forceRecalculation();
   }
 
-  void collapseNode(Graph graph, Node node) {
+  void collapseNode(Graph graph, Node node, {animate = false}) {
     if (graph.hasSuccessor(node)) {
       _collapsedNodes[node] = true;
       _lastCollapsedNode = node;
+      if (animate) {
+        focusedNode = node;
+      }
       _invalidateVisibilityCache();
       forceRecalculation();
     }
   }
 
-  void toggleNodeExpanded(Graph graph, Node node) {
+  void toggleNodeExpanded(Graph graph, Node node, {animate = false}) {
     if (isNodeCollapsed(node)) {
-      expandNode(node);
+      expandNode(node, animate: animate);
     } else {
-      collapseNode(graph, node);
+      collapseNode(graph, node, animate: animate);
     }
   }
 
@@ -150,7 +155,8 @@ class GraphViewController {
       if (visitedNodes.containsKey(node)) return;
       visitedNodes[node] = true;
 
-      if(_hiddenNodes.containsKey(node) && _collapsedNodes.containsKey(node)) return;
+      if (_hiddenNodes.containsKey(node) && _collapsedNodes.containsKey(node))
+        return;
 
       // Get all outgoing edges from this node
       for (final edge in graph.getOutEdges(node)) {
@@ -190,6 +196,7 @@ class GraphViewController {
     _invalidateVisibilityCache();
   }
 }
+
 class GraphChildDelegate {
   final Graph graph;
   final Algorithm algorithm;
@@ -199,12 +206,11 @@ class GraphChildDelegate {
   Graph? _cachedVisibleGraph;
   bool _needsRecalculation = true;
 
-  GraphChildDelegate({
-    required this.graph,
-    required this.algorithm,
-    required this.builder,
-    required this.controller
-  });
+  GraphChildDelegate(
+      {required this.graph,
+      required this.algorithm,
+      required this.builder,
+      required this.controller});
 
   Graph getVisibleGraph() {
     if (_cachedVisibleGraph != null && !_needsRecalculation) {
@@ -252,8 +258,8 @@ class GraphChildDelegate {
   }
 
   bool shouldRebuild(GraphChildDelegate oldDelegate) {
-    final result = graph != oldDelegate.graph ||
-        algorithm != oldDelegate.algorithm;
+    final result =
+        graph != oldDelegate.graph || algorithm != oldDelegate.algorithm;
     if (result) _needsRecalculation = true;
     return result;
   }
@@ -371,7 +377,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
         if (widget.autoZoomToFit) {
           zoomToFit();
         } else if (widget.initialNode != null) {
-          jumpToNode(widget.initialNode!, false);
+          jumpToNodeUsingKey(widget.initialNode!, false);
         }
       });
     }
@@ -391,7 +397,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final view = GraphViewWidget(
       paint: widget.paint,
       nodeAnimationController: _nodeController,
-      enableAnimation: true,
+      enableAnimation: widget.animated,
       delegate: widget.delegate,
     );
 
@@ -409,10 +415,14 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     return view;
   }
 
-  void jumpToNode(ValueKey key, bool animated) {
+  void jumpToNodeUsingKey(ValueKey key, bool animated) {
     final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
     if (node == null) return;
 
+    jumpToNode(node, animated);
+  }
+
+  void jumpToNode(Node node, bool animated) {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
@@ -458,10 +468,10 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
   void animateToMatrix(Matrix4 target) {
     _cameraController.reset();
-    _cameraAnimation = Matrix4Tween(
-            begin: _transformationController.value, end: target)
-        .animate(
-            CurvedAnimation(parent: _cameraController, curve: Curves.linear));
+    _cameraAnimation =
+        Matrix4Tween(begin: _transformationController.value, end: target)
+            .animate(CurvedAnimation(
+                parent: _cameraController, curve: Curves.easeInOut));
     _cameraAnimation!.addListener(_onCameraTick);
     _cameraController.forward();
   }
@@ -678,6 +688,12 @@ class GraphViewElement extends RenderObjectElement
     _newNodeToElement = null;
     _newKeyToElement = null;
     assert(!_debugIsDoingLayout);
+
+    if (widget.delegate.controller?.focusedNode != null) {
+      widget.delegate.controller?._state
+          ?.jumpToNode(widget.delegate.controller!.focusedNode!, true);
+      widget.delegate.controller?.focusedNode = null;
+    }
   }
 }
 
@@ -898,7 +914,8 @@ class RenderCustomLayoutBox extends RenderBox
 
   void _paintExpandingNode(PaintingContext context, RenderBox child,
       Offset offset, Offset pos, double t) {
-    final progress = t.clamp(0.0, 1.0); // Scale from 0 to 1 (opposite of collapsing)
+    final progress =
+        t.clamp(0.0, 1.0); // Scale from 0 to 1 (opposite of collapsing)
     final center =
         pos + offset + Offset(child.size.width * 0.5, child.size.height * 0.5);
 
@@ -909,7 +926,6 @@ class RenderCustomLayoutBox extends RenderBox
     context.paintChild(child, offset + pos);
     context.canvas.restore();
   }
-
 
   void _paintCollapsingNode(PaintingContext context, RenderBox child,
       Offset offset, Offset pos, double t) {
@@ -964,10 +980,8 @@ class RenderCustomLayoutBox extends RenderBox
       }
     }
 
-    if (enableAnimation && algorithm is! FruchtermanReingoldAlgorithm) {
-      _nodeAnimationController.reset();
-      _nodeAnimationController.forward();
-    }
+    _nodeAnimationController.reset();
+    _nodeAnimationController.forward();
   }
 
   bool _updateVisibleNodeAnimation(NodeBoxData nodeData, Node graphNode) {
