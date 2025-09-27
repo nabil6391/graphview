@@ -104,7 +104,8 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
                 initialNode: ValueKey(1),
                 panAnimationDuration: Duration(milliseconds: 600),
                 toggleAnimationDuration: Duration(milliseconds: 600),
-                builder: (Node node) => InkWell(
+                centerGraph: true,
+                builder: (Node node) => GestureDetector(
                   onTap: () => _toggleCollapse(node),
                   child: Container(
                     padding: EdgeInsets.all(16),
@@ -124,49 +125,12 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
         ));
   }
 
-  Widget rectangleWidget(int? a) {
-    return InkWell(
-      onTap: () {
-        print('clicked node $a');
-      },
-      child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
-            ],
-          ),
-          child: Text('Node ${a} ')),
-    );
-  }
-
-  Graph _createGraph(int n) {
-    final graph = Graph();
-    final nodes = List.generate(n, (i) => Node.Id(i + 1));
-    for (var i = 0; i < n - 1; i++) {
-      final children = (i < n / 3) ? 3 : 2;
-      for (var j = 1; j <= children && i * children + j < n; j++) {
-        graph.addEdge(nodes[i], nodes[i * children + j]);
-      }
-    }
-    // for (var i = 0; i < graph.nodeCount(); i++) {
-    //   graph.getNodeAtPosition(i).size = const Size(itemWidth, itemHeight);
-    // }
-    return graph;
-  }
-
   final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
   late final algorithm = BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder));
 
   void _toggleCollapse(Node node) {
-    _controller.toggleNodeExpanded(graph, node);
-    setState(() {});
-
-    Future.delayed(Duration(milliseconds: 100), (){
-      _controller.animateToNode(node.key!);
-    });
+    _controller.toggleNodeExpanded(graph, node, animate: true);
   }
 
   void _navigateToRandomNode() {
@@ -260,7 +224,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
     graph.addEdge(root, business, paint: Paint()..color = Colors.blue);
     graph.addEdge(root, personal, paint: Paint()..color = Colors.green);
 
-// Technology branch (left side - large subtree)
+// // Technology branch (left side - large subtree)
     graph.addEdge(tech, ai);
     graph.addEdge(tech, web);
     graph.addEdge(tech, mobile);

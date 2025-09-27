@@ -48,7 +48,7 @@ class GraphViewController {
   final Map<Node, bool> _expandingNodes = {};
   bool _visibilityValid = false;
 
-  Node? _lastClickedNode;
+  Node? _collapsedNode;
   Node? focusedNode;
 
   GraphViewController({
@@ -145,13 +145,14 @@ class GraphViewController {
   void collapseNode(Graph graph, Node node, {animate = false}) {
     if (graph.hasSuccessor(node)) {
       _collapsedNodes[node] = true;
-      _lastClickedNode = node;
+      _collapsedNode = node;
       if (animate) {
         focusedNode = node;
       }
       _invalidateVisibilityCache();
       forceRecalculation();
     }
+    _expandingNodes.clear();
   }
 
   void toggleNodeExpanded(Graph graph, Node node, {animate = false}) {
@@ -163,7 +164,7 @@ class GraphViewController {
   }
 
   List<Edge> getCollapsingEdges(Graph graph) {
-    if (_lastClickedNode == null) return [];
+    if (_collapsedNode == null) return [];
 
     final collapsingEdges = <Edge>[];
     final visitedNodes = <Node, bool>{};
@@ -189,7 +190,7 @@ class GraphViewController {
     }
 
     // Start collection from the last collapsed node
-    collectCollapsingEdgesRecursively(_lastClickedNode!);
+    collectCollapsingEdgesRecursively(_collapsedNode!);
     return collapsingEdges;
   }
 
@@ -214,6 +215,10 @@ class GraphViewController {
   }
 
   bool isNodeExpanding(Node node) => _expandingNodes.containsKey(node);
+
+  void removeCollapsingNodes() {
+    _collapsedNode = null;
+  }
 }
 
 class GraphChildDelegate {
@@ -450,19 +455,22 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   }
 
   void jumpToNode(Node node, bool animated) {
+    final nodeCenter = Offset(
+        node.position.dx + node.width / 2, node.position.dy + node.height / 2);
+
+    jumpToOffset(nodeCenter, animated);
+  }
+
+  void jumpToOffset(Offset offset, bool animated) {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final viewport = renderBox.size;
     final center = Offset(viewport.width / 2, viewport.height / 2);
-    final nodeCenter = Offset(
-        node.position.dx + node.width / 2, node.position.dy + node.height / 2);
-
-    debugPrint('$node viewport: $viewport, center: $center, nodeCenter: $nodeCenter');
 
     final currentScale = _transformationController.value.getMaxScaleOnAxis();
 
-    final scaledNodeCenter = nodeCenter * currentScale;
+    final scaledNodeCenter = offset * currentScale;
     final translation = center - scaledNodeCenter;
 
     final target = Matrix4.identity()
@@ -497,10 +505,10 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
   void animateToMatrix(Matrix4 target) {
     _cameraController.reset();
-    _cameraAnimation =
-        Matrix4Tween(begin: _transformationController.value, end: target)
-            .animate(CurvedAnimation(
-                parent: _cameraController, curve: Curves.linear));
+    _cameraAnimation = Matrix4Tween(
+            begin: _transformationController.value, end: target)
+        .animate(
+            CurvedAnimation(parent: _cameraController, curve: Curves.linear));
     _cameraAnimation!.addListener(_onCameraTick);
     _cameraController.forward();
   }
@@ -515,7 +523,12 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     }
   }
 
-  void forceRecalculation() => setState(() {});
+  void forceRecalculation() {
+    // Invalidate the delegate's cached graph
+    widget.delegate._needsRecalculation = true;
+
+    setState(() {});
+  }
 }
 
 abstract class GraphChildManager {
@@ -722,12 +735,12 @@ class GraphViewElement extends RenderObjectElement
   }
 
   void centerNodeWhileToggling() {
-     if (widget.delegate.controller?.focusedNode != null) {
-      widget.delegate.controller?._state
-          ?.jumpToNode(widget.delegate.controller!.focusedNode!, true);
-      debugPrint('centerNodeWhileToggling ${widget.delegate.controller?.focusedNode}');
+    if (widget.delegate.controller?.focusedNode != null) {
+      widget.delegate.controller?._state?.jumpToOffset(
+          widget.delegate.controller!.focusedNode!.position, true);
       widget.delegate.controller?.focusedNode = null;
     }
+    widget.delegate.controller?.removeCollapsingNodes();
   }
 }
 
@@ -743,12 +756,12 @@ class RenderCustomLayoutBox extends RenderBox
   Size? _cachedSize;
   bool _isInitialized = false;
   bool _needsFullRecalculation = false;
-  final animatedPositions = <Node, Offset>{};
   late bool enableAnimation;
   final opacityPaint = Paint();
 
-  final Map<Node, RenderBox> _children = <Node, RenderBox>{};
-  final Map<Node, RenderBox> _activeChildrenForLayoutPass = <Node, RenderBox>{};
+  final animatedPositions = <Node, Offset>{};
+  final _children = <Node, RenderBox>{};
+  final _activeChildrenForLayoutPass = <Node, RenderBox>{};
 
   RenderCustomLayoutBox(
     GraphChildDelegate delegate,
@@ -798,6 +811,12 @@ class RenderCustomLayoutBox extends RenderBox
     _delegate = value;
     markNeedsLayout();
     // }
+  }
+
+  void markNeedsRecalculation() {
+    _needsFullRecalculation = false;
+    _isInitialized = false;
+    markNeedsLayout();
   }
 
   @override
@@ -864,9 +883,20 @@ class RenderCustomLayoutBox extends RenderBox
         final node = entry.key;
         final child = entry.value;
         final nodeData = child.parentData as NodeBoxData;
-        final pos =
-            Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
-        animatedPositions[node] = pos;
+
+        final isExpanding =
+            _delegate.controller?.isNodeExpanding(node) ?? false;
+        if (isExpanding) {
+          final parent = graph.predecessorsOf(node).firstOrNull;
+          final pos =
+              Offset.lerp(animatedPositions[parent], nodeData.targetOffset, t)!;
+          animatedPositions[node] = pos;
+        } else {
+          final pos =
+              Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
+
+          animatedPositions[node] = pos;
+        }
       }
 
       context.canvas.save();
@@ -931,7 +961,7 @@ class RenderCustomLayoutBox extends RenderBox
       if (isVisible) {
         final isExpanding =
             _delegate.controller?.isNodeExpanding(node) ?? false;
-        if (isExpanding) {
+        if (_nodeAnimationController.isAnimating && isExpanding) {
           _paintExpandingNode(context, child, offset, pos, t);
         } else {
           context.paintChild(child, offset + pos);
