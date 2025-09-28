@@ -177,9 +177,9 @@ void main() {
 
       expect(timeTaken < 1000, true);
 
-      expect(graph.getNodeUsingId(1).position, Offset(10.0, 17.5));
-      expect(graph.getNodeUsingId(3).position, Offset(125.0, 10.0));
-      expect(graph.getNodeUsingId(9).position, Offset(470.0, 67.5));
+      expect(graph.getNodeUsingId(1).position, Offset(125.0, 10.0));
+      expect(graph.getNodeUsingId(3).position, Offset(240.0, 10.0));
+      expect(graph.getNodeUsingId(9).position, Offset(10.0, 17.5));
 
       expect(size, Size(560.0, 157.5));
     });
@@ -215,7 +215,7 @@ void main() {
         expect(graph.getNodeAtPosition(3).position, Offset(660.0, 240.0));
         expect(graph.getNodeAtPosition(4).position, Offset(920.0, 125.0));
 
-        expect(size, Size(1530.0, 1135.0));
+        expect(size, Size(1270.0, 1135.0));
       });
 
       test('TopDown Strategy - Node Positioning LEFT_RIGHT', () {
@@ -248,7 +248,7 @@ void main() {
         expect(graph.getNodeUsingId(3).position, Offset(125.0, 465.0));
         expect(graph.getNodeUsingId(4).position, Offset(240.0, 342.5));
 
-        expect(size, Size(1135.0, 865.0));
+        expect(size, Size(1135.0, 835.0));
       });
 
       test('LongestPath Strategy - Node Positioning', () {
@@ -280,7 +280,7 @@ void main() {
         expect(graph.getNodeAtPosition(4).position, Offset(1115.0, 125.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(2050.0, 1135.0));
+        expect(size, Size(1660.0, 1135.0));
       });
 
       test('CoffmanGraham Strategy - Node Positioning', () {
@@ -304,15 +304,15 @@ void main() {
         print('CoffmanGraham Strategy - Time: ${timeTaken}ms, Size: $size');
 
         // Test exact positions
-        expect(graph.getNodeAtPosition(0).position, Offset(1245.0, 10.0));
-        expect(graph.getNodeAtPosition(6).position, Offset(400.0, 1045.0));
+        expect(graph.getNodeAtPosition(0).position, Offset(1440.0, 10.0));
+        expect(graph.getNodeAtPosition(6).position, Offset(335.0, 1160.0));
         expect(graph.getNodeAtPosition(13).position, Offset(140.0, 470.0));
-        expect(graph.getNodeAtPosition(22).position, Offset(465.0, 930.0));
-        expect(graph.getNodeAtPosition(3).position, Offset(1180.0, 240.0));
-        expect(graph.getNodeAtPosition(4).position, Offset(985.0, 125.0));
+        expect(graph.getNodeAtPosition(22).position, Offset(400.0, 1045.0));
+        expect(graph.getNodeAtPosition(3).position, Offset(1375.0, 240.0));
+        expect(graph.getNodeAtPosition(4).position, Offset(1050.0, 125.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(2375.0, 1135.0));
+        expect(size, Size(1530.0, 1250.0));
       });
 
       test('NetworkSimplex Strategy - Node Positioning', () {
@@ -344,7 +344,7 @@ void main() {
         expect(graph.getNodeAtPosition(4).position, Offset(1115.0, 125.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(2050.0, 1135.0));
+        expect(size, Size(1660.0, 1135.0));
       });
     });
 
@@ -377,7 +377,7 @@ void main() {
         expect(graph.getNodeAtPosition(4).position, Offset(125.0, 465.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(1135.0, 865.0));
+        expect(size, Size(1135.0, 835.0));
       });
 
       test('AccumulatorTree CrossMinimization - Positioning', () {
@@ -410,7 +410,7 @@ void main() {
         expect(graph.getNodeAtPosition(4).position, Offset(125.0, 465.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(1135.0, 865.0));
+        expect(size, Size(1135.0, 805.0));
       });
     });
 
@@ -455,7 +455,7 @@ void main() {
         expect(graph.getNodeAtPosition(2).position, Offset(10.0, 240.0));
         expect(graph.getNodeAtPosition(3).position, Offset(140.0, 355.0));
         expect(timeTaken < 1000, true);
-        expect(size, Size(360, 445.0));
+        expect(size, Size(230, 445.0));
       });
 
       test('Greedy Cycle Removal - Positioning', () {
@@ -483,7 +483,7 @@ void main() {
         expect(graph.getNodeAtPosition(2).position, Offset(140.0, 355.0));
         expect(graph.getNodeAtPosition(3).position, Offset(75.0, 10.0));
         expect(timeTaken < 1000, true);
-        expect(size, Size(295.0, 445.0));
+        expect(size, Size(230.0, 445.0));
       });
     });
 
@@ -514,7 +514,7 @@ void main() {
         expect(graph.getNodeAtPosition(3).position, Offset(530.0, 240.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(2050.0, 1135.0));
+        expect(size, Size(1790.0, 1135.0));
       });
 
       test('DownLeft Coordinate Assignment', () {
@@ -576,7 +576,7 @@ void main() {
         expect(graph.getNodeUsingId(4).position, Offset(660.0, 240.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(1530.0, 1135.0));
+        expect(size, Size(1270.0, 1135.0));
       });
 
       test('UpRight Coordinate Assignment', () {
@@ -608,7 +608,7 @@ void main() {
         expect(graph.getNodeAtPosition(4).position, Offset(1050.0, 125.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(1400.0, 1135.0));
+        expect(size, Size(1140.0, 1135.0));
       });
 
       test('UpLeft Coordinate Assignment', () {
@@ -640,7 +640,7 @@ void main() {
         expect(graph.getNodeAtPosition(4).position, Offset(1440.0, 125.0));
 
         expect(timeTaken < 1000, true);
-        expect(size, Size(1790.0, 1135.0));
+        expect(size, Size(1660.0, 1135.0));
       });
     });
 
@@ -860,15 +860,15 @@ void main() {
 
       print('Timetaken $timeTaken ${graph.nodeCount()}');
 
-    expect(graph.getNodeAtPosition(0).position, Offset(10.0, 397.5));
-    expect(graph.getNodeAtPosition(6).position, Offset(700.0, 10.0));
-    expect(graph.getNodeAtPosition(10).position, Offset(1045.0, 125.0));
-    expect(graph.getNodeAtPosition(13).position, Offset(1160.0, 240.0));
-    expect(graph.getNodeAtPosition(22).position, Offset(1505.0, 722.5));
-    expect(graph.getNodeAtPosition(50).position, Offset(1620.0, 2432.5));
-    expect(graph.getNodeAtPosition(67).position, Offset(2770, 2950.0));
-    expect(graph.getNodeAtPosition(100).position, Offset(930.0, 1620.0));
-    expect(graph.getNodeAtPosition(122).position, Offset(1850.0, 3252.5));
+    expect(graph.getNodeAtPosition(0).position, Offset(10.0, 1715.0));
+    expect(graph.getNodeAtPosition(6).position, Offset(815.0, 1757.5));
+    expect(graph.getNodeAtPosition(10).position, Offset(1160.0, 1872.5));
+    expect(graph.getNodeAtPosition(13).position, Offset(1275.0, 2117.5));
+    expect(graph.getNodeAtPosition(22).position, Offset(1620.0, 2635.0));
+    expect(graph.getNodeAtPosition(50).position, Offset(1505.0, 1232.5));
+    expect(graph.getNodeAtPosition(67).position, Offset(2655.0, 1700.0));
+    expect(graph.getNodeAtPosition(100).position, Offset(815.0, 412.5));
+    expect(graph.getNodeAtPosition(122).position, Offset(1735.0,2060.0));
   });
 
     test('Sugiyama child nodes never overlaps', () {

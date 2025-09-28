@@ -8,147 +8,249 @@ class LayeredGraphViewPage extends StatefulWidget {
 }
 
 class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
-  GraphViewController _controller = GraphViewController();
+  final GraphViewController _controller = GraphViewController();
   final Random r = Random();
   int nextNodeId = 0;
+  bool _showControls = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(),
-        body: Column(
-          mainAxisSize: MainAxisSize.max,
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: Text('Graph Visualizer', style: TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.grey[800],
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(_showControls ? Icons.visibility_off : Icons.visibility),
+            onPressed: () => setState(() => _showControls = !_showControls),
+            tooltip: 'Toggle Controls',
+          ),
+          IconButton(
+            icon: Icon(Icons.shuffle),
+            onPressed: _navigateToRandomNode,
+            tooltip: 'Random Node',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: _showControls ? null : 0,
+            child: AnimatedOpacity(
+              duration: Duration(milliseconds: 300),
+              opacity: _showControls ? 1.0 : 0.0,
+              child: _buildControlPanel(),
+            ),
+          ),
+          Expanded(child: _buildGraphView()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControlPanel() {
+    return Container(
+      margin: EdgeInsets.all(16),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 16),
+          _buildNumericControls(),
+          SizedBox(height: 16),
+          _buildShapeControls(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumericControls() {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _buildSliderControl('Node Sep', builder.nodeSeparation, 5, 50, (v) => builder.nodeSeparation = v),
+        _buildSliderControl('Level Sep', builder.levelSeparation, 5, 100, (v) => builder.levelSeparation = v),
+        _buildDropdown<CoordinateAssignment>('Alignment', builder.coordinateAssignment, CoordinateAssignment.values, (v) => builder.coordinateAssignment = v),
+        _buildDropdown<LayeringStrategy>('Layering', builder.layeringStrategy, LayeringStrategy.values, (v) => builder.layeringStrategy = v),
+        _buildDropdown<CrossMinimizationStrategy>('Cross Min', builder.crossMinimizationStrategy, CrossMinimizationStrategy.values, (v) => builder.crossMinimizationStrategy = v),
+        _buildDropdown<CycleRemovalStrategy>('Cycle Removal', builder.cycleRemovalStrategy, CycleRemovalStrategy.values, (v) => builder.cycleRemovalStrategy = v),
+      ],
+    );
+  }
+
+  Widget _buildSliderControl(String label, int value, int min, int max, Function(int) onChanged) {
+    return Container(
+      width: 200,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          Slider(
+            value: value.toDouble().clamp(min.toDouble(), max.toDouble()),
+            min: min.toDouble(),
+            max: max.toDouble(),
+            divisions: max - min,
+            label: value.toString(),
+            onChanged: (v) => setState(() => onChanged(v.round())),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownControls() {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 12,
+      children: [
+        ],
+    );
+  }
+
+  Widget _buildDropdown<T>(String label, T value, List<T> items, Function(T) onChanged) {
+    return Container(
+      width: 160,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          SizedBox(height: 4),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                items: items.map((item) => DropdownMenuItem(value: item, child: Text(item.toString().split('.').last, style: TextStyle(fontSize: 12)))).toList(),
+                onChanged: (v) => setState(() => onChanged(v!)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShapeControls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Edge Shape', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        SizedBox(height: 8),
+        Row(
           children: [
-            Wrap(
+            _buildShapeButton('Sharp', builder.bendPointShape is SharpBendPointShape, () => builder.bendPointShape = SharpBendPointShape()),
+            SizedBox(width: 8),
+            _buildShapeButton('Curved', builder.bendPointShape is CurvedBendPointShape, () => builder.bendPointShape = CurvedBendPointShape(curveLength: 20)),
+            SizedBox(width: 8),
+            _buildShapeButton('Max Curved', builder.bendPointShape is MaxCurvedBendPointShape, () => builder.bendPointShape = MaxCurvedBendPointShape()),
+            Spacer(),
+            Row(
               children: [
-                Container(
-                  width: 100,
-                  child: TextFormField(
-                    initialValue: builder.nodeSeparation.toString(),
-                    decoration: InputDecoration(labelText: 'Node Separation'),
-                    onChanged: (text) {
-                      builder.nodeSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
-                    },
-                  ),
-                ),
-                Container(
-                  width: 100,
-                  child: TextFormField(
-                    initialValue: builder.levelSeparation.toString(),
-                    decoration: InputDecoration(labelText: 'Level Separation'),
-                    onChanged: (text) {
-                      builder.levelSeparation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
-                    },
-                  ),
-                ),
-                Container(
-                  width: 100,
-                  child: TextFormField(
-                    initialValue: builder.orientation.toString(),
-                    decoration: InputDecoration(labelText: 'Orientation'),
-                    onChanged: (text) {
-                      builder.orientation = int.tryParse(text) ?? 100;
-                      this.setState(() {});
-                    },
-                  ),
-                ),
-                Container(
-                  width: 120,
-                  child: Column(
-                    children: [
-                      Text('Alignment'),
-                      DropdownButton<CoordinateAssignment>(
-                        value: builder.coordinateAssignment,
-                        items: CoordinateAssignment.values.map((coordinateAssignment) {
-                          return DropdownMenuItem<CoordinateAssignment>(
-                            value: coordinateAssignment,
-                            child: Text(coordinateAssignment.name),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            builder.coordinateAssignment = value!;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final node12 = Node.Id(r.nextInt(100));
-                    var edge = graph.getNodeAtPosition(r.nextInt(graph.nodeCount()));
-                    print(edge);
-                    graph.addEdge(edge, node12);
-                    setState(() {});
-                  },
-                  child: Text('Add'),
-                ),
-                ElevatedButton(
-                  onPressed: () => _navigateToRandomNode(),
-                  child: Text('Go to Node $nextNodeId'),
-                ),
-                ElevatedButton(
-                  onPressed: () => _controller.resetView(),
-                  child: Text('Reset View'),
-                ),
-                ElevatedButton(
-                  onPressed: () => _controller.zoomToFit(),
-                  child: Text("Zoom to fit"),
+                Text('Post Straighten', style: TextStyle(fontSize: 12)),
+                Switch(
+                  value: builder.postStraighten,
+                  onChanged: (v) => setState(() => builder.postStraighten = v),
+                  activeColor: Colors.blue,
                 ),
               ],
             ),
-            Expanded(
-              child: GraphView.builder(
-                controller: _controller,
-                graph: graph,
-                algorithm: SugiyamaAlgorithm(builder),
-                paint: Paint()
-                  ..color = Colors.green
-                  ..strokeWidth = 1
-                  ..style = PaintingStyle.stroke,
-                builder: (Node node) {
-                  var a = node.key!.value as int?;
-                  return Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
-                        ],
-                      ),
-                      child: Text('${a}'));
-                },
-              ),
-            ),
           ],
-        ));
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShapeButton(String text, bool isSelected, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: () => setState(onPressed),
+      child: Text(text, style: TextStyle(fontSize: 11)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? Colors.blue : Colors.grey[100],
+        foregroundColor: isSelected ? Colors.white : Colors.grey[700],
+        elevation: isSelected ? 2 : 0,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
+
+  Widget _buildGraphView() {
+    return Container(
+      margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 2))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: GraphView.builder(
+          controller: _controller,
+          graph: graph,
+          algorithm: SugiyamaAlgorithm(builder),
+          paint: Paint()
+            ..color = Colors.blue[300]!
+            ..strokeWidth = 2
+            ..style = PaintingStyle.stroke,
+          builder: (Node node) {
+            final nodeId = node.key!.value as int;
+            return Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue[400]!, Colors.blue[600]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.blue[100]!, blurRadius: 8, offset: Offset(0, 2))],
+              ),
+              child: Center(
+                child: Text('$nodeId', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   final Graph graph = Graph();
   SugiyamaConfiguration builder = SugiyamaConfiguration()
-    ..bendPointShape = CurvedBendPointShape(curveLength: 20);
+    ..bendPointShape = CurvedBendPointShape(curveLength: 20)
+    ..nodeSeparation = 15
+    ..levelSeparation = 15
+    ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
 
   void _navigateToRandomNode() {
     if (graph.nodes.isEmpty) return;
-
-    final randomNode = graph.nodes.firstWhere(
-          (node) => node.key != null && node.key!.value == nextNodeId,
-      orElse: () => graph.nodes.first,
-    );
-    final nodeId = randomNode.key!;
-    _controller.animateToNode(nodeId);
-
-    setState(() {
-      nextNodeId = r.nextInt(graph.nodes.length) + 1;
-    });
+    final randomNode = graph.nodes[r.nextInt(graph.nodes.length)];
+    _controller.animateToNode(randomNode.key!);
   }
 
   @override
   void initState() {
     super.initState();
+    _initializeGraph();
+  }
+
+  void _initializeGraph() {
+    // Define edges more concisely
     final node1 = Node.Id(1);
     final node2 = Node.Id(2);
     final node3 = Node.Id(3);
@@ -209,13 +311,5 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     graph.addEdge(node22, node23);
     graph.addEdge(node1, node22);
     graph.addEdge(node7, node8);
-
-    builder
-      ..nodeSeparation = (15)
-      ..levelSeparation = (15)
-      ..orientation = SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM;
-
-    // Set initial random node for navigation
-    nextNodeId = r.nextInt(22); // 0-21 nodes exist
   }
 }

@@ -20,10 +20,9 @@ class SugiyamaConfiguration {
 
   LayeringStrategy layeringStrategy = LayeringStrategy.topDown;
   CrossMinimizationStrategy crossMinimizationStrategy = CrossMinimizationStrategy.simple;
-  CycleRemovalStrategy cycleRemovalStrategy = CycleRemovalStrategy.dfs;
+  CycleRemovalStrategy cycleRemovalStrategy = CycleRemovalStrategy.greedy;
 
-  bool postStraighten = false;
-  int coffmanGrahamWidth = 10000;
+  bool postStraighten = true;
 
   bool addTriangleToEdge = true;
 

@@ -55,8 +55,6 @@ class SugiyamaAlgorithm extends Algorithm {
     return graphSize;
   }
 
-
-
   void shiftCoordinates(double shiftX, double shiftY) {
     layers.forEach((List<Node?> arrayList) {
       arrayList.forEach((it) {
@@ -84,10 +82,6 @@ class SugiyamaAlgorithm extends Algorithm {
       edgeData[edge] = SugiyamaEdgeData();
     });
 
-    graph.edges.forEach((element) {
-      nodeData[element.source]?.successorNodes.add(element.destination);
-      nodeData[element.destination]?.predecessorNodes.add(element.source);
-    });
   }
 
   void dfs(Node node) {
@@ -161,7 +155,7 @@ class SugiyamaAlgorithm extends Algorithm {
 
     while (U.length != graph.nodes.length) {
       var candidates = V
-          .where((v) => !U.contains(v) && Z.containsAll(successorsOf(v)));
+          .where((v) => !U.contains(v) && Z.containsAll(graph.successorsOf(v)));
 
       if (candidates.isNotEmpty) {
         var node = candidates.first;
@@ -187,8 +181,7 @@ class SugiyamaAlgorithm extends Algorithm {
   void layerAssignmentCoffmanGraham() {
     if (graph.nodes.isEmpty) return;
 
-    var width = configuration.coffmanGrahamWidth;
-    if (width == 0) width = (graph.nodes.length / 10).ceil();
+    var width = (graph.nodes.length / 10).ceil();
 
     var Z = <Node>{};
     var lambda = <Node, int>{};
@@ -209,13 +202,13 @@ class SugiyamaAlgorithm extends Algorithm {
 
     while (U.length != graph.nodes.length) {
       var candidates = V
-          .where((v) => !U.contains(v) && U.containsAll(successorsOf(v)));
+          .where((v) => !U.contains(v) && U.containsAll(graph.successorsOf(v)));
 
       if (candidates.isNotEmpty) {
         var got = candidates.reduce((a, b) => lambda[a]! > lambda[b]! ? a : b);
 
         if (layers[k].length < width &&
-            Z.containsAll(successorsOf(got))) {
+            Z.containsAll(graph.successorsOf(got))) {
           layers[k].add(got);
         } else {
           Z.addAll(layers[k]);
@@ -358,6 +351,11 @@ class SugiyamaAlgorithm extends Algorithm {
     // We will modify it directly. There is no need for a separate 'best' copy
     // with the current iterative improvement strategy.
 
+    // Precalculate predecessor and successor info, must be done here after adding the dummy nodes
+    graph.edges.forEach((element) {
+      nodeData[element.source]?.successorNodes.add(element.destination);
+      nodeData[element.destination]?.predecessorNodes.add(element.source);
+    });
 
     for (var i = 0; i < configuration.iterations; i++) {
       // Apply the median heuristic to reorder nodes in each layer.
@@ -786,7 +784,6 @@ class SugiyamaAlgorithm extends Algorithm {
 
     resolveOverlaps(coordinates);
 
-
     graph.nodes.forEach((v) {
       v.x = coordinates[v]!;
     });
@@ -1143,8 +1140,8 @@ class SugiyamaAlgorithm extends Algorithm {
       while (iterator.moveNext()) {
         final current = iterator.current;
         if (nodeData[current]!.isDummy) {
-          final predecessor = predecessorsOf(current)[0];
-          final successor = successorsOf(current)[0];
+          final predecessor = graph.predecessorsOf(current)[0];
+          final successor = graph.successorsOf(current)[0];
           final bendPoints =
               edgeData[graph.getEdgeBetween(predecessor, current)!]!.bendPoints;
 
