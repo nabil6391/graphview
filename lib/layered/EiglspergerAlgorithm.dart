@@ -236,6 +236,11 @@ class EiglspergerAlgorithm extends Algorithm {
     graph.edges.forEach((edge) {
       _edgeData[edge] = EiglspergerEdgeData();
     });
+
+    graph.edges.forEach((edge) {
+      nodeData[edge.source]?.successorNodes.add(edge.destination);
+      nodeData[edge.destination]?.predecessorNodes.add(edge.source);
+    });
   }
 
   void cycleRemoval() {
@@ -395,10 +400,7 @@ class EiglspergerAlgorithm extends Algorithm {
     final best = <List<Node>>[...layers];
 
     // Precalculate neighbor information
-    graph.edges.forEach((edge) {
-      nodeData[edge.source]?.successorNodes.add(edge.destination);
-      nodeData[edge.destination]?.predecessorNodes.add(edge.source);
-    });
+
 
     var bestCrossCount = double.infinity;
 
@@ -550,7 +552,7 @@ class EiglspergerAlgorithm extends Algorithm {
     for (var element in nextLayer) {
       if (element is NodeElement) {
         var node = element.node;
-        var predecessors = graph.predecessorsOf(node);
+        var predecessors = predecessorsOf(node);
 
         if (predecessors.isNotEmpty) {
           var positions = predecessors.map((p) => nodeData[p]?.position ?? 0).toList();
@@ -887,6 +889,485 @@ class EiglspergerAlgorithm extends Algorithm {
         x += width + separation;
       }
     }
+  }
+
+  void assignXx() {
+    // Existing implementation remains the same
+    final root = <Map<Node, Node>>[];
+    // each node points to its aligned neighbor in the layer below.;
+    final align = <Map<Node, Node>>[];
+    final sink = <Map<Node, Node>>[];
+    final x = <Map<Node, double>>[];
+    // minimal separation between the roots of different classes.;
+    final shift = <Map<Node, double>>[];
+    // the width of each block (max width of node in block);
+    final blockWidth = <Map<Node, double>>[];
+
+    for (var i = 0; i < 4; i++) {
+      root.add({});
+      align.add({});
+      sink.add({});
+      shift.add({});
+      x.add({});
+      blockWidth.add({});
+
+      graph.nodes.forEach((n) {
+        root[i][n] = n;
+        align[i][n] = n;
+        sink[i][n] = n;
+        shift[i][n] = double.infinity;
+        x[i][n] = double.negativeInfinity;
+        blockWidth[i][n] = 0;
+      });
+    }
+    var separation = configuration.nodeSeparation;
+
+    var vertical = isVertical();
+    for (var downward = 0; downward <= 1; downward++) {
+      var isDownward = downward == 0;
+      final type1Conflicts = <int, int>{};
+      for (var leftToRight = 0; leftToRight <= 1; leftToRight++) {
+        final k = 2 * downward + leftToRight;
+        var isLeftToRight = leftToRight == 0;
+        verticalAlignment(
+            root[k], align[k], type1Conflicts, isDownward, isLeftToRight);
+        graph.nodes.forEach((v) {
+          final r = root[k][v]!;
+          blockWidth[k][r] = max(
+              blockWidth[k][r]!, vertical ? v.width + separation : v.height);
+        });
+        horizontalCompactation(align[k], root[k], sink[k], shift[k], blockWidth[k], x[k], isLeftToRight, isDownward, layers, separation);
+      }
+    }
+
+    balance(x, blockWidth);
+  }
+
+  void balance(List<Map<Node, double>> x, List<Map<Node?, double>> blockWidth) {
+    final coordinates = <Node, double>{};
+
+    // switch (configuration.coordinateAssignment) {
+    //   case CoordinateAssignment.Average:
+    //     var minWidth = double.infinity;
+    //
+    //     var smallestWidthLayout = 0;
+    //     final minArray = List.filled(4, 0.0);
+    //     final maxArray = List.filled(4, 0.0);
+    //
+    //     // Get the layout with the smallest width and set minimum and maximum value for each direction;
+    //     for (var i = 0; i < 4; i++) {
+    //       minArray[i] = double.infinity;
+    //       maxArray[i] = 0;
+    //
+    //       graph.nodes.forEach((v) {
+    //         final bw = 0.5 * blockWidth[i][v]!;
+    //         var xp = x[i][v]! - bw;
+    //         if (xp < minArray[i]) {
+    //           minArray[i] = xp;
+    //         }
+    //         xp = x[i][v]! + bw;
+    //         if (xp > maxArray[i]) {
+    //           maxArray[i] = xp;
+    //         }
+    //       });
+    //
+    //       final width = maxArray[i] - minArray[i];
+    //       if (width < minWidth) {
+    //         minWidth = width;
+    //         smallestWidthLayout = i;
+    //       }
+    //     }
+    //
+    //     // Align the layouts to the one with the smallest width
+    //     for (var layout = 0; layout < 4; layout++) {
+    //       if (layout != smallestWidthLayout) {
+    //         // Align the left to right layouts to the left border of the smallest layout
+    //         var diff = 0.0;
+    //         if (layout < 2) {
+    //           diff = minArray[layout] - minArray[smallestWidthLayout];
+    //         } else {
+    //           // Align the right to left layouts to the right border of the smallest layout
+    //           diff = maxArray[layout] - maxArray[smallestWidthLayout];
+    //         }
+    //         if (diff > 0) {
+    //           x[layout].keys.forEach((n) {
+    //             x[layout][n] = x[layout][n]! - diff;
+    //           });
+    //         } else {
+    //           x[layout].keys.forEach((n) {
+    //             x[layout][n] = x[layout][n]! + diff;
+    //           });
+    //         }
+    //       }
+    //     }
+    //
+    //     // Get the average median of each coordinate
+    //     var values = List.filled(4, 0.0);
+    //     graph.nodes.forEach((n) {
+    //       for (var i = 0; i < 4; i++) {
+    //         values[i] = x[i][n]!;
+    //       }
+    //       values.sort();
+    //       var average = (values[1] + values[2]) * 0.5;
+    //       coordinates[n] = average;
+    //     });
+    //     break;
+    //   case CoordinateAssignment.DownRight:
+    //     graph.nodes.forEach((n) {
+    //       coordinates[n] = x[0][n] ?? 0.0;
+    //     });
+    //     break;
+    //   case CoordinateAssignment.DownLeft:
+    //     graph.nodes.forEach((n) {
+    //       coordinates[n] = x[1][n] ?? 0.0;
+    //     });
+    //     break;
+    //   case CoordinateAssignment.UpRight:
+    //     graph.nodes.forEach((n) {
+    //       coordinates[n] = x[2][n] ?? 0.0;
+    //     });
+    //     break;
+    //   case CoordinateAssignment.UpLeft:
+    //     graph.nodes.forEach((n) {
+    //       coordinates[n] = x[3][n] ?? 0.0;
+    //     });
+    //     break;
+    // }
+
+    graph.nodes.forEach((n) {
+      coordinates[n] = x[3][n] ?? 0.0;
+    });
+    // Get the minimum coordinate value
+    var minValue = coordinates.values.reduce(min);
+
+    // Set left border to 0
+    if (minValue != 0) {
+      coordinates.keys.forEach((n) {
+        coordinates[n] = coordinates[n]! - minValue;
+      });
+    }
+
+    // resolveOverlaps(coordinates);
+
+
+    graph.nodes.forEach((v) {
+      v.x = coordinates[v]!;
+    });
+  }
+
+  void resolveOverlaps(Map<Node, double> coordinates) {
+    for (var layer in layers) {
+      var layerNodes = List<Node>.from(layer);
+      layerNodes.sort(
+              (a, b) => nodeData[a]!.position.compareTo(nodeData[b]!.position));
+
+      var data = nodeData[layerNodes.first];
+      if (data?.layer != 0) {
+        var leftCoordinate = 0.0;
+        for (var i = 1; i < layerNodes.length; i++) {
+          var currentNode = layerNodes[i];
+          if (!nodeData[currentNode]!.isDummy) {
+            var previousNode = getPreviousNonDummyNode(layerNodes, i);
+
+            if (previousNode != null) {
+              leftCoordinate = coordinates[previousNode]! +
+                  previousNode.width +
+                  configuration.nodeSeparation;
+            } else {
+              leftCoordinate = 0.0;
+            }
+
+            if (leftCoordinate > coordinates[currentNode]!) {
+              var adjustment = leftCoordinate - coordinates[currentNode]!;
+              if (coordinates[currentNode] != null) {
+                coordinates[currentNode] =
+                    coordinates[currentNode]! + adjustment;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Node? getPreviousNonDummyNode(List<Node> layerNodes, int currentIndex) {
+    for (var i = currentIndex - 1; i >= 0; i--) {
+      var previousNode = layerNodes[i];
+      if (!nodeData[previousNode]!.isDummy) {
+        return previousNode;
+      }
+    }
+    return null;
+  }
+
+  // Map<int, int> markType1Conflicts(bool downward) {
+  //   if (layers.length >= 4) {
+  //     int upper;
+  //     int lower; // iteration bounds;
+  //     int k1; // node position boundaries of closest inner segments;
+  //     if (downward) {
+  //       lower = 1;
+  //       upper = layers.length - 2;
+  //     } else {
+  //       lower = layers.length - 1;
+  //       upper = 2;
+  //     }
+  //     /*;
+  //            * iterate level[2..h-2] in the given direction;
+  //            * available 1 levels to h;
+  //            */
+  //     for (var i = lower;
+  //     downward ? i <= upper : i >= upper;
+  //     i += downward ? 1 : -1) {
+  //       var k0 = 0;
+  //       var firstIndex = 0; // index of first node on layer;
+  //       final currentLevel = layers[i];
+  //       final nextLevel = downward ? layers[i + 1] : layers[i - 1];
+  //
+  //       // for all nodes on next level;
+  //       for (var l1 = 0; l1 < nextLevel.length; l1++) {
+  //         final virtualTwin = virtualTwinNode(nextLevel[l1], downward);
+  //
+  //         if (l1 == nextLevel.length - 1 || virtualTwin != null) {
+  //           k1 = currentLevel.length - 1;
+  //
+  //           if (virtualTwin != null) {
+  //             k1 = positionOfNode(virtualTwin);
+  //           }
+  //
+  //           while (firstIndex <= l1) {
+  //             final upperNeighbours = getAdjNodes(nextLevel[l1], downward);
+  //
+  //             for (var currentNeighbour in upperNeighbours) {
+  //               /*;
+  //               *  XXX< 0 in first iteration is still ok for indizes starting;
+  //               * with 0 because no index can be smaller than 0;
+  //                */
+  //               final currentNeighbourIndex = positionOfNode(currentNeighbour);
+  //
+  //               if (currentNeighbourIndex < k0 || currentNeighbourIndex > k1) {
+  //                 type1Conflicts[l1] = currentNeighbourIndex;
+  //               }
+  //             }
+  //             firstIndex++;
+  //           }
+  //
+  //           k0 = k1;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   return type1Conflicts;
+  // }
+
+  void verticalAlignment(Map<Node?, Node?> root, Map<Node?, Node?> align,
+      Map<int, int> type1Conflicts, bool downward, bool leftToRight) {
+    // for all Level;
+
+    var layersa = downward ? layers : layers.reversed;
+
+    for (var layer in layersa) {
+      // As with layers, we need a reversed iterator for blocks for different directions
+      var nodes = leftToRight ? layer : layer.reversed;
+      // Do an initial placement for all blocks
+      var r = leftToRight ? -1 : double.infinity;
+      for (var v in nodes) {
+        final adjNodes = getAdjNodes(v, downward);
+        if (adjNodes.isNotEmpty) {
+          var midLevelValue = adjNodes.length / 2;
+          // Calculate medians
+          final medians = adjNodes.length % 2 == 1
+              ? [adjNodes[midLevelValue.floor()]]
+              : [
+            adjNodes[midLevelValue.toInt() - 1],
+            adjNodes[midLevelValue.toInt()]
+          ];
+
+          // For all median neighbours in direction of H
+          for (var m in medians) {
+            final posM = positionOfNode(m);
+            // if segment (u,v) not marked by type1 conflicts AND ...;
+            if (align[v] == v &&
+                type1Conflicts[positionOfNode(v)] != posM &&
+                (leftToRight ? r < posM : r > posM)) {
+              align[m] = v;
+              root[v] = root[m];
+              align[v] = root[v];
+              r = posM;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void horizontalCompactation(
+      Map<Node, Node> align,
+      Map<Node, Node> root,
+      Map<Node, Node> sink,
+      Map<Node, double> shift,
+      Map<Node, double> blockWidth,
+      Map<Node, double> x,
+      bool leftToRight,
+      bool downward,
+      List<List<Node>> layers,
+      int separation) {
+    // calculate class relative coordinates for all roots;
+    // If the layers are traversed from right to left, a reverse iterator is needed (note that this does not change the original list of layers)
+    var layersa = leftToRight ? layers : layers.reversed;
+
+    for (var layer in layersa) {
+      // As with layers, we need a reversed iterator for blocks for different directions
+      var nodes = downward ? layer : layer.reversed;
+      // Do an initial placement for all blocks
+      for (var v in nodes) {
+        if (root[v] == v) {
+          placeBlock(v, sink, shift, x, align, blockWidth, root, leftToRight,
+              layers, separation);
+        }
+      }
+    }
+
+    var d = 0;
+    var i = downward ? 0 : layers.length - 1;
+    while (downward && i <= layers.length - 1 || !downward && i >= 0) {
+      final currentLevel = layers[i];
+      final v = currentLevel[leftToRight ? 0 : currentLevel.length - 1];
+      if (v == sink[root[v]]) {
+        final oldShift = shift[v]!;
+        if (oldShift < double.infinity) {
+          shift[v] = oldShift + d;
+          d += oldShift.toInt();
+        } else {
+          shift[v] = 0;
+        }
+      }
+      i = downward ? i + 1 : i - 1;
+    }
+
+    // apply root coordinates for all aligned nodes;
+    // (place block did this only for the roots)+;
+    graph.nodes.forEach((v) {
+      x[v] = x[root[v]]!;
+      final shiftVal = shift[sink[root[v]]]!;
+      if (shiftVal < double.infinity) {
+        x[v] = x[v]! + shiftVal; // apply shift for each class;
+      }
+    });
+  }
+
+  void placeBlock(
+      Node v,
+      Map<Node, Node> sink,
+      Map<Node, double> shift,
+      Map<Node, double> x,
+      Map<Node, Node> align,
+      Map<Node, double> blockWidth,
+      Map<Node, Node> root,
+      bool leftToRight,
+      List<List<Node>> layers,
+      int separation) {
+    if (x[v] == double.negativeInfinity) {
+      x[v] = 0;
+      var currentNode = v;
+
+      try {
+        do {
+          // if not first node on layer;
+          final hasPredecessor =
+              leftToRight && positionOfNode(currentNode) > 0 ||
+                  !leftToRight &&
+                      positionOfNode(currentNode) <
+                          layers[getLayerIndex(currentNode)].length - 1;
+          // print("Pred  $hasPredecessor ${getLayerIndex(currentNode)>0} ${positionOfNode(currentNode)>0}");
+          if (hasPredecessor) {
+            final pred = predecessor(currentNode, leftToRight);
+            /* Get the root of u (proceeding all the way upwards in the block) */
+            final u = root[pred]!;
+            /* Place the block of u recursively */
+            placeBlock(u, sink, shift, x, align, blockWidth, root, leftToRight,
+                layers, separation);
+            /* If v is its own sink yet, set its sink to the sink of u */
+            if (sink[v] == v) {
+              sink[v] = sink[u]!;
+            }
+            /* If v and u have different sinks (i.e. they are in different classes),
+             * shift the sink of u so that the two blocks are separated by the preferred gap  */
+            var gap = separation + 0.5 * (blockWidth[u]! + blockWidth[v]!);
+            if (sink[v] != sink[u]) {
+              if (leftToRight) {
+                shift[sink[u]!] = min(shift[sink[u]]!, x[v]! - x[u]! - gap);
+              } else {
+                shift[sink[u]!] = max(shift[sink[u]]!, x[v]! - x[u]! + gap);
+              }
+            } else {
+              /* v and u have the same sink, i.e. they are in the same level.
+              Make sure that v is separated from u by at least gap.*/
+              if (leftToRight) {
+                x[v] = max(x[v]!, x[u]! + gap);
+              } else {
+                x[v] = min(x[v]!, x[u]! - gap);
+              }
+            }
+          }
+          currentNode = align[currentNode]!;
+        } while (currentNode != v);
+      } catch (e) {
+        print(e);
+      }
+    }
+  }
+
+  List<Node> successorsOf(Node? node) {
+    return graph.successorsOf(node);
+  }
+
+  List<Node> predecessorsOf(Node? node) {
+    return graph.predecessorsOf(node);
+  }
+
+  List<Node> getAdjNodes(Node node, bool downward) {
+    if (downward) {
+      return predecessorsOf(node);
+    } else {
+      return successorsOf(node);
+    }
+  }
+
+  // predecessor;
+  Node? predecessor(Node? v, bool leftToRight) {
+    final pos = positionOfNode(v);
+    final rank = getLayerIndex(v);
+    final level = layers[rank];
+    if (leftToRight && pos != 0 || !leftToRight && pos != level.length - 1) {
+      return level[(leftToRight) ? pos - 1 : pos + 1];
+    } else {
+      return null;
+    }
+  }
+
+  Node? virtualTwinNode(Node node, bool downward) {
+    if (!isLongEdgeDummy(node)) {
+      return null;
+    }
+    final adjNodes = getAdjNodes(node, downward);
+    return adjNodes.isEmpty ? null : adjNodes[0];
+  }
+
+  // get node index in layer;
+  int positionOfNode(Node? node) {
+    return nodeData[node]?.position ?? -1;
+  }
+
+  int getLayerIndex(Node? node) {
+    return nodeData[node]?.layer ?? -1;
+  }
+
+  bool isLongEdgeDummy(Node? v) {
+    final successors = successorsOf(v);
+    return nodeData[v!]!.isDummy &&
+        successors.length == 1 &&
+        nodeData[successors[0]]!.isDummy;
   }
 
   void assignY() {

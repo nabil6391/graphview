@@ -46,8 +46,8 @@ class BuchheimWalkerAlgorithm extends Algorithm {
       return node.size * 2;
     }
     initData(graph);
-    _detectCycles(graph!);
-    var firstNode = getFirstNode(graph!);
+    _detectCycles(graph);
+    var firstNode = getFirstNode(graph);
     firstWalk(graph, firstNode, 0, 0);
     secondWalk(graph, firstNode, 0.0);
     checkUnconnectedNotes(graph);

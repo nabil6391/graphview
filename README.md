@@ -1,10 +1,8 @@
 GraphView
 ===========
-Get it from 
+Get it from
 [![pub package](https://img.shields.io/pub/v/graphview.svg)](https://pub.dev/packages/graphview)
-[![pub points](https://badges.bar/graphview/pub%20points)](https://pub.dev/packages/graphview/score) 
-[![popularity](https://badges.bar/graphview/popularity)](https://pub.dev/packages/graphview/score)
-[![likes](https://badges.bar/graphview/likes)](https://pub.dev/packages/graphview/score) |
+[![pub points](https://img.shields.io/pub/points/graphview/?color=2E8B57&label=pub%20points)](https://pub.dev/packages/graphview/score)
 
 Flutter GraphView is used to display data in graph structures. It can display Tree layout, Directed and Layered graph. Useful for Family Tree, Hierarchy View.
 
@@ -14,10 +12,19 @@ Flutter GraphView is used to display data in graph structures. It can display Tr
 
 Overview
 ========
-The library is designed to support different graph layouts and currently works excellent with small graphs.
+The library is designed to support different graph layouts and currently works excellent with small graphs. It now includes advanced features like node animations, expand/collapse functionality, and automatic camera positioning.
 
 You can have a look at the flutter web implementation here:
 http://graphview.surge.sh/
+
+Features
+========
+- **Multiple Layout Algorithms**: Tree, Directed Graph, Layered Graph, Balloon, Circular, Radial, Tidier Tree, and Mindmap layouts
+- **Node Animations**: Smooth expand/collapse animations with customizable duration
+- **Interactive Navigation**: Jump to nodes, zoom to fit, auto-centering capabilities
+- **Node Expand/Collapse**: Hierarchical node visibility control with animated transitions
+- **Customizable Rendering**: Custom edge renderers, paint styling, and node builders
+- **Touch Interactions**: Pan, zoom, and tap handling with InteractiveViewer integration
 
 Layouts
 ======
@@ -25,20 +32,57 @@ Layouts
 Uses Walker's algorithm with Buchheim's runtime improvements (`BuchheimWalkerAlgorithm` class). Supports different orientations. All you have to do is using the `BuchheimWalkerConfiguration.orientation` with either `ORIENTATION_LEFT_RIGHT`, `ORIENTATION_RIGHT_LEFT`, `ORIENTATION_TOP_BOTTOM` and
 `ORIENTATION_BOTTOM_TOP` (default). Furthermore parameters like sibling-, level-, subtree separation can be set.
 
-Useful for: Family Tree, Hierarchy View, Flutter Widget Tree, 
+Useful for: Family Tree, Hierarchy View, Flutter Widget Tree
+
+### Tidier Tree
+An improved tree layout algorithm (`TidierTreeLayoutAlgorithm` class) that provides better spacing and positioning for complex hierarchical structures. Supports all orientations and provides cleaner node arrangements.
+
+![alt Example](image/TidierTree.gif "Tidier Tree Animation")
+
+Useful for: Complex hierarchies, Organizational charts, Decision trees
+
 ### Directed graph
 Directed graph drawing by simulating attraction/repulsion forces. For this the algorithm by Fruchterman and Reingold (`FruchtermanReingoldAlgorithm` class) was implemented.
 
-Useful for: Social network, Mind Map, Cluster, Graphs, Intercity Road Network,
+Useful for: Social network, Mind Map, Cluster, Graphs, Intercity Road Network
 
 ### Layered graph
 Algorithm from Sugiyama et al. for drawing multilayer graphs, taking advantage of the hierarchical structure of the graph (SugiyamaAlgorithm class). You can also set the parameters for node and level separation using the SugiyamaConfiguration. Supports different orientations. All you have to do is using the `SugiyamaConfiguration.orientation` with either `ORIENTATION_LEFT_RIGHT`, `ORIENTATION_RIGHT_LEFT`, `ORIENTATION_TOP_BOTTOM` and `ORIENTATION_BOTTOM_TOP` (default).
 
 Useful for: Hierarchical Graph which it can have weird edges/multiple paths
 
+### Balloon Layout
+A radial tree layout (`BalloonLayoutAlgorithm` class) that arranges child nodes in circular patterns around their parents. Creates balloon-like structures that are visually appealing for hierarchical data.
+
+![alt Example](image/BalloonLayout.gif "Balloon Layout Animation")
+
+Useful for: Mind maps, Radial trees, Circular hierarchies
+
+### Circular Layout
+Arranges all nodes in a circle (`CircleLayoutAlgorithm` class). Includes edge crossing reduction algorithms for better readability. Supports automatic radius calculation and custom positioning.
+
+![alt Example](image/CircularLayout.gif "Circular Layout Animation")
+
+Useful for: Network visualization, Relationship diagrams, Cyclic structures
+
+### Radial Tree Layout
+A tree layout that converts traditional tree structures into radial/polar coordinates (`RadialTreeLayoutAlgorithm` class). Nodes are positioned based on their distance from the root and angular position.
+
+![alt Example](image/RadialTree.gif "Radial Tree Animation")
+
+Useful for: Radial dendrograms, Phylogenetic trees, Sunburst-style hierarchies
+
+### Mindmap Layout
+Specialized layout for mindmap-style visualizations (`MindmapAlgorithm` class) where child nodes are distributed on left and right sides of the root node.
+
+![alt Example](image/MindmapLayout.gif "Mindmap Layout Animation")
+
+Useful for: Mind maps, Concept maps, Brainstorming diagrams
+
 Usage
 ======
 
+### Basic Setup
 Currently GraphView must be used together with a Zoom Engine like [InteractiveViewer](https://api.flutter.dev/flutter/widgets/InteractiveViewer-class.html). To change the zoom values just use the different attributes described in the InteractiveViewer class.
 
 To create a graph, we need to instantiate the `Graph` class. Then we need to pass the layout and also optional the edge renderer.
@@ -61,6 +105,8 @@ class TreeViewPage extends StatefulWidget {
 }
 
 class _TreeViewPageState extends State<TreeViewPage> {
+  final GraphViewController controller = GraphViewController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,24 +172,18 @@ class _TreeViewPageState extends State<TreeViewPage> {
           ],
         ),
         Expanded(
-          child: InteractiveViewer(
-              constrained: false,
-              boundaryMargin: EdgeInsets.all(100),
-              minScale: 0.01,
-              maxScale: 5.6,
-              child: GraphView(
-                graph: graph,
-                algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
-                paint: Paint()
-                  ..color = Colors.green
-                  ..strokeWidth = 1
-                  ..style = PaintingStyle.stroke,
-                builder: (Node node) {
-                  // I can decide what widget should be shown here based on the id
-                  var a = node.key.value as int;
-                  return rectangleWidget(a);
-                },
-              )),
+          child: GraphView.builder(
+              graph: graph,
+              algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
+              controller: controller,
+              animated: true,
+              autoZoomToFit: true,
+              builder: (Node node) {
+                // I can decide what widget should be shown here based on the id
+                var a = node.key.value as int;
+                return rectangleWidget(a);
+              },
+          ),
         ),
       ],
     ));
@@ -206,6 +246,136 @@ class _TreeViewPageState extends State<TreeViewPage> {
   }
 }
 ```
+
+### Advanced Features
+
+#### GraphView.builder
+The enhanced `GraphView.builder` constructor provides additional capabilities:
+
+```dart
+GraphView.builder(
+  graph: graph,
+  algorithm: BuchheimWalkerAlgorithm(config, TreeEdgeRenderer(config)),
+  controller: controller,
+  animated: true,                    // Enable smooth animations
+  autoZoomToFit: true,              // Automatically zoom to fit all nodes
+  initialNode: ValueKey('startNode'), // Jump to specific node on init
+  panAnimationDuration: Duration(milliseconds: 600),
+  toggleAnimationDuration: Duration(milliseconds: 400),
+  centerGraph: true,                // Center the graph in viewport
+  builder: (Node node) {
+    return YourCustomWidget(node);
+  },
+)
+```
+
+#### Node Expand/Collapse
+Use the `GraphViewController` to manage node visibility:
+
+```dart
+final controller = GraphViewController();
+
+// Collapse a node (hide its children)
+controller.collapseNode(graph, node, animate: true);
+
+// Expand a collapsed node
+controller.expandNode(graph, node, animate: true);
+
+// Toggle collapse/expand state
+controller.toggleNodeExpanded(graph, node, animate: true);
+
+// Check if node is collapsed
+bool isCollapsed = controller.isNodeCollapsed(node);
+
+// Set initially collapsed nodes
+controller.setInitiallyCollapsedNodes([node1, node2]);
+```
+
+#### Navigation and Camera Control
+Navigate programmatically through the graph:
+
+```dart
+// Jump to a specific node
+controller.jumpToNode(ValueKey('nodeId'));
+
+// Animate to a node
+controller.animateToNode(ValueKey('nodeId'));
+
+// Zoom to fit all visible nodes
+controller.zoomToFit();
+
+// Reset view to origin
+controller.resetView();
+
+// Force recalculation of layout
+controller.forceRecalculation();
+```
+
+### Algorithm Examples
+
+#### Balloon Layout
+```dart
+GraphView.builder(
+  graph: graph,
+  algorithm: BalloonLayoutAlgorithm(
+    BuchheimWalkerConfiguration(), 
+    null
+  ),
+  builder: (node) => nodeWidget(node),
+)
+```
+
+#### Circular Layout
+```dart
+GraphView.builder(
+  graph: graph,
+  algorithm: CircleLayoutAlgorithm(
+    CircleLayoutConfiguration(
+      radius: 200.0,
+      reduceEdgeCrossing: true,
+    ), 
+    null
+  ),
+  builder: (node) => nodeWidget(node),
+)
+```
+
+#### Radial Tree Layout
+```dart
+GraphView.builder(
+  graph: graph,
+  algorithm: RadialTreeLayoutAlgorithm(
+    BuchheimWalkerConfiguration(), 
+    null
+  ),
+  builder: (node) => nodeWidget(node),
+)
+```
+
+#### Tidier Tree Layout
+```dart
+GraphView.builder(
+  graph: graph,
+  algorithm: TidierTreeLayoutAlgorithm(
+    BuchheimWalkerConfiguration(), 
+    TreeEdgeRenderer(config)
+  ),
+  builder: (node) => nodeWidget(node),
+)
+```
+
+#### Mindmap Layout
+```dart
+GraphView.builder(
+  graph: graph,
+  algorithm: MindmapAlgorithm(
+    BuchheimWalkerConfiguration(), 
+    MindmapEdgeRenderer(config)
+  ),
+  builder: (node) => nodeWidget(node),
+)
+```
+
 ### Using builder mechanism to build Nodes
 You can use any widget inside the node:
 
@@ -236,7 +406,7 @@ getGraphView() {
 }
 ```
 
-### Color Edges individually 
+### Color Edges individually
 Add an additional parameter paint. Applicable for ArrowEdgeRenderer for now.
 
 ```dart
@@ -258,9 +428,6 @@ You can focus on a specific node. This will allow scrolling to that node in the 
         });
       },
 ```
-
-### Add drag nodes feature with animation
-The code is there but not enabled yet due to dart null safety migration being more important
 
 ### Extract info from any json to Graph Object
 Now its a bit easy to use Ids to extract info from any json to Graph Object
@@ -329,6 +496,7 @@ getNodeText() {
         child: Text("Node ${n++}"));
   }
 ```
+
 Examples
 ========
 #### Rooted Tree
@@ -350,6 +518,27 @@ Examples
 #### Layered Graph
 ![alt Example](image/LayeredGraph.png "Layered Graph Example")
 
+#### Balloon Layout
+![alt Example](image/BalloonTreeLayout.gif "Balloon Layout Example")
+
+#### Circular Layout
+![alt Example](image/CircleLayout.gif "Circular Layout Example")
+
+#### Radial Tree Layout
+![alt Example](image/RadialTreeLayout.gif "Radial Tree Layout Example")
+
+#### Tidier Tree Layout
+![alt Example](image/TidierTreeLayout.gif "Tidier Tree Layout Example")
+
+#### Mindmap Layout
+![alt Example](image/MindMapLayout.gif "Mindmap Layout Example")
+
+#### Node Expand/Collapse Animation
+![alt Example](image/NodeExpandCollapseAnimation.gif "Node Expand/Collapse Animation")
+
+#### Auto Navigation
+![alt Example](image/AutoNavigationExample.gif "Auto Navigation Example")
+
 Inspirations
 ========
 This library is basically a dart representation of the excellent Android Library [GraphView](https://github.com/Team-Blox/GraphView) by Team-Blox
@@ -361,10 +550,14 @@ Future Works
 
 - [x] Add nodeOnTap
 - [x] Add Layered Graph
-- [] Use a builder pattern to draw items on demand.
-- [] Animations
-- [] Dynamic Node Position update for directed graph
-
+- [x] Animations
+- [x] Dynamic Node Position update for directed graph
+- [x] Node expand/collapse functionality
+- [x] Auto-navigation and camera control
+- [x] Multiple new layout algorithms (Balloon, Circular, Radial, Tidier, Mindmap)
+- [ ] Finish Eiglsperger Algorithm
+- [ ] Custom Edge Label Rendering
+- [ ] Use a builder pattern to draw items on demand.
 
 License
 =======
