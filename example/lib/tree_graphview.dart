@@ -92,7 +92,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
                 SizedBox(width: 8,),
                 ElevatedButton(onPressed: (){
                   _controller.zoomToFit();
-                }, child: Text("Zoom to fit"))
+                }, child: Text('Zoom to fit'))
               ],
             ),
 

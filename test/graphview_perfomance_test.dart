@@ -130,7 +130,7 @@ Graph _createLargeGraph(int n) {
   final nodes = List.generate(n, (i) => Node.Id(i + 1));
 
 // Generate tree edges using a queue-based approach
-  int currentChild = 1; // Start from node 1 (node 0 is root)
+  var currentChild = 1; // Start from node 1 (node 0 is root)
 
   for (var i = 0; i < n && currentChild < n; i++) {
     final children = (i < n ~/ 3) ? 3 : 2;

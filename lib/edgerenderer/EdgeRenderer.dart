@@ -107,7 +107,6 @@ abstract class EdgeRenderer {
     var phase = 0.0;
 
     final path = Path()..moveTo(source.dx, source.dy);
-    var currentSource = source;
 
     while (distanceTraveled < distance) {
       final segmentLength = min(lineLength, distance - distanceTraveled);
@@ -131,7 +130,6 @@ abstract class EdgeRenderer {
       path.lineTo(segmentDestination.dx + perpX, segmentDestination.dy + perpY);
 
       distanceTraveled += segmentLength;
-      currentSource = segmentDestination;
       phase += pi * segmentLength / lineLength;
     }
 

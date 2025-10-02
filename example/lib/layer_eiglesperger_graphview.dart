@@ -96,7 +96,7 @@ class _LayeredEiglspergerGraphViewPageState extends State<LayeredEiglspergerGrap
                 ),
                 ElevatedButton(
                   onPressed: () => _controller.zoomToFit(),
-                  child: Text("Zoom to fit"),
+                  child: Text('Zoom to fit'),
                 ),
               ],
             ),

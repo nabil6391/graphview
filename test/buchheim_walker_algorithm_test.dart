@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -132,7 +131,7 @@ void main() {
       }
 
       var stopwatch = Stopwatch()..start();
-      var size = algorithm.run(graph, 0, 0);
+      algorithm.run(graph, 0, 0);
       var timeTaken = stopwatch.elapsed.inMilliseconds;
 
       print('Timetaken $timeTaken for ${graph.nodeCount()} nodes');

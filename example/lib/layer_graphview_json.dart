@@ -10,82 +10,82 @@ class LayerGraphPageFromJson extends StatefulWidget {
 
 class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
   var  json =   {
-    "edges": [
+    'edges': [
       {
-        "from": "1",
-        "to": "2"
+        'from': '1',
+        'to': '2'
       },
       {
-        "from": "3",
-        "to": "2"
+        'from': '3',
+        'to': '2'
       },
       {
-        "from": "4",
-        "to": "5"
+        'from': '4',
+        'to': '5'
       },
       {
-        "from": "6",
-        "to": "4"
+        'from': '6',
+        'to': '4'
       },
       {
-        "from": "2",
-        "to": "4"
+        'from': '2',
+        'to': '4'
       },
       {
-        "from": "2",
-        "to": "7"
+        'from': '2',
+        'to': '7'
       },
       {
-        "from": "2",
-        "to": "8"
+        'from': '2',
+        'to': '8'
       },
       {
-        "from": "9",
-        "to": "10"
+        'from': '9',
+        'to': '10'
       },
       {
-        "from": "9",
-        "to": "11"
+        'from': '9',
+        'to': '11'
       },
       {
-        "from": "5",
-        "to": "12"
+        'from': '5',
+        'to': '12'
       },
       {
-        "from": "4",
-        "to": "9"
+        'from': '4',
+        'to': '9'
       },
       {
-        "from": "6",
-        "to": "13"
+        'from': '6',
+        'to': '13'
       },
       {
-        "from": "6",
-        "to": "14"
+        'from': '6',
+        'to': '14'
       },
       {
-        "from": "6",
-        "to": "15"
+        'from': '6',
+        'to': '15'
       },
       {
-        "from": "16",
-        "to": "3"
+        'from': '16',
+        'to': '3'
       },
       {
-        "from": "17",
-        "to": "3"
+        'from': '17',
+        'to': '3'
       },
       {
-        "from": "18",
-        "to": "16"
+        'from': '18',
+        'to': '16'
       },
       {
-        "from": "19",
-        "to": "17"
+        'from': '19',
+        'to': '17'
       },
       {
-        "from": "11",
-        "to": "1"
+        'from': '11',
+        'to': '1'
       },
 
     ]
@@ -169,7 +169,7 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
                 ),
                 ElevatedButton(
                   onPressed: () => _controller.zoomToFit(),
-                  child: Text("Zoom to fit"),
+                  child: Text('Zoom to fit'),
                 ),
               ],
             ),
@@ -232,6 +232,7 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
   final Graph graph = Graph();
   @override
   void initState() {
+    super.initState();
     var edges = json['edges']!;
     edges.forEach((element) {
       var fromNodeId = element['from'];

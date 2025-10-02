@@ -141,7 +141,7 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage> with TickerPro
                     onPressed: (){
                       _controller.zoomToFit();
                     },
-                    child: Text("Zoom to fit")
+                    child: Text('Zoom to fit')
                 )
               ],
             ),

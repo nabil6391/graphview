@@ -214,7 +214,7 @@ class Home extends StatelessWidget {
         child: Material(
           borderRadius: BorderRadius.circular(16),
           elevation: 4,
-          shadowColor: Colors.black.withOpacity(0.1),
+          shadowColor: Colors.black.withValues(alpha: 0.1),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () => Navigator.push(
@@ -229,12 +229,12 @@ class Home extends StatelessWidget {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    color.withOpacity(0.1),
+                    color.withValues(alpha: 0.1),
                     Colors.white,
                   ],
                 ),
                 border: Border.all(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -244,7 +244,7 @@ class Home extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -306,7 +306,7 @@ class Home extends StatelessWidget {
         child: Material(
           borderRadius: BorderRadius.circular(16),
           elevation: 4,
-          shadowColor: Colors.black.withOpacity(0.1),
+          shadowColor: Colors.black.withValues(alpha: 0.1),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
@@ -329,12 +329,12 @@ class Home extends StatelessWidget {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    color.withOpacity(0.1),
+                    color.withValues(alpha: 0.1),
                     Colors.white,
                   ],
                 ),
                 border: Border.all(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -344,7 +344,7 @@ class Home extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(

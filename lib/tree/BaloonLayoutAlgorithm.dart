@@ -123,7 +123,7 @@ class BalloonLayoutAlgorithm extends Algorithm {
     final angleBetweenKids = 2 * pi / childCount;
     final offset = angleBetweenKids / 2 - angleToParent;
 
-    for (int i = 0; i < nodes.length; i++) {
+    for (var i = 0; i < nodes.length; i++) {
       final child = nodes[i];
       if (seen.contains(child)) continue;
 

@@ -1,7 +1,6 @@
 linter:
   rules:
     - always_declare_return_types
-    - always_require_non_null_named_parameters
     - annotate_overrides
     - avoid_empty_else
     - avoid_init_to_null
@@ -23,7 +22,7 @@ linter:
     - prefer_collection_literals
     - prefer_conditional_assignment
     - prefer_contains
-    - prefer_equal_for_default_values
+    # REMOVED: prefer_equal_for_default_values (removed in Dart 3.0)
     - prefer_final_fields
     - prefer_for_elements_to_map_fromIterable
     - prefer_generic_function_type_aliases
