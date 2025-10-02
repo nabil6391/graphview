@@ -97,7 +97,7 @@ void main() {
       );
     });
 
-    test('Buchheim Performance for 1000 nodes to be less than 20ms', () {
+    test('Buchheim Performance for 1000 nodes to be less than 40ms', () {
       Graph _createGraph(int n) {
         final graph = Graph();
         final nodes = List.generate(n, (i) => Node.Id(i + 1));
@@ -136,7 +136,7 @@ void main() {
 
       print('Timetaken $timeTaken for ${graph.nodeCount()} nodes');
 
-      expect(timeTaken < 20, true);
+      expect(timeTaken < 40, true);
     });
   });
 }

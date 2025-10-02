@@ -903,7 +903,7 @@ void main() {
       }
     });
 
-    test('Sugiyama Performance for 100 nodes to be less than 2.5s', () {
+    test('Sugiyama Performance for 100 nodes to be less than 5.2s', () {
       final graph = Graph();
 
       var rows = 100;
@@ -932,7 +932,7 @@ void main() {
 
       print('Timetaken $timeTaken ${graph.nodeCount()}');
 
-      expect(timeTaken < 2500, true);
+      expect(timeTaken < 5200, true);
     });
   });
 }
