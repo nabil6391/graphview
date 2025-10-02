@@ -5,11 +5,16 @@ const double ARROW_LENGTH = 10;
 
 class ArrowEdgeRenderer extends EdgeRenderer {
   var trianglePath = Path();
+  final bool noArrow;
+
+  ArrowEdgeRenderer({this.noArrow = false});
 
   Offset _getNodeCenter(Node node) {
     final nodePosition = getNodePosition(node);
-    return Offset(nodePosition.dx + node.width * 0.5,
-        nodePosition.dy + node.height * 0.5);
+    return Offset(
+      nodePosition.dx + node.width * 0.5,
+      nodePosition.dy + node.height * 0.5,
+    );
   }
 
   @override
@@ -45,40 +50,70 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         destination.width,
         destination.height);
 
-    Paint? edgeTrianglePaint;
-    if (edge.paint != null) {
-      edgeTrianglePaint = Paint()
-        ..color = edge.paint?.color ?? paint.color
-        ..style = PaintingStyle.fill;
-    }
+    final currentPaint = edge.paint ?? paint;
 
-    var triangleCentroid = drawTriangle(
+    if (noArrow) {
+      // Draw line without arrow, respecting line type
+      drawStyledLine(
         canvas,
-        edgeTrianglePaint ?? trianglePaint,
-        clippedLine[0],
-        clippedLine[1],
-        clippedLine[2],
-        clippedLine[3]);
+        Offset(clippedLine[0], clippedLine[1]),
+        Offset(clippedLine[2], clippedLine[3]),
+        currentPaint,
+        lineType: _getLineType(destination),
+      );
+    } else {
+      // Draw line with arrow
+      Paint? edgeTrianglePaint;
+      if (edge.paint != null) {
+        edgeTrianglePaint = Paint()
+          ..color = edge.paint?.color ?? paint.color
+          ..style = PaintingStyle.fill;
+      }
 
-    canvas.drawLine(Offset(clippedLine[0], clippedLine[1]), triangleCentroid,
-        edge.paint ?? paint);
+      var triangleCentroid = drawTriangle(
+          canvas,
+          edgeTrianglePaint ?? trianglePaint,
+          clippedLine[0],
+          clippedLine[1],
+          clippedLine[2],
+          clippedLine[3]);
+
+      // Draw the line with the appropriate style
+      drawStyledLine(
+        canvas,
+        Offset(clippedLine[0], clippedLine[1]),
+        triangleCentroid,
+        currentPaint,
+        lineType: _getLineType(destination),
+      );
+    }
+  }
+
+  /// Helper to get line type from node data if available
+  LineType? _getLineType(Node node) {
+    // This assumes you have a way to access node data
+    // You may need to adjust this based on your actual implementation
+    if (node is SugiyamaNodeData) {
+      return node.lineType;
+    }
+    return null;
   }
 
   Offset drawTriangle(Canvas canvas, Paint paint, double lineStartX,
       double lineStartY, double arrowTipX, double arrowTipY) {
     // Calculate direction from line start to arrow tip, then flip 180° to point backwards from tip
     var lineDirection =
-        (atan2(arrowTipY - lineStartY, arrowTipX - lineStartX) + pi);
+    (atan2(arrowTipY - lineStartY, arrowTipX - lineStartX) + pi);
 
     // Calculate the two base points of the arrowhead triangle
     var leftWingX =
-        (arrowTipX + ARROW_LENGTH * cos((lineDirection - ARROW_DEGREES)));
+    (arrowTipX + ARROW_LENGTH * cos((lineDirection - ARROW_DEGREES)));
     var leftWingY =
-        (arrowTipY + ARROW_LENGTH * sin((lineDirection - ARROW_DEGREES)));
+    (arrowTipY + ARROW_LENGTH * sin((lineDirection - ARROW_DEGREES)));
     var rightWingX =
-        (arrowTipX + ARROW_LENGTH * cos((lineDirection + ARROW_DEGREES)));
+    (arrowTipX + ARROW_LENGTH * cos((lineDirection + ARROW_DEGREES)));
     var rightWingY =
-        (arrowTipY + ARROW_LENGTH * sin((lineDirection + ARROW_DEGREES)));
+    (arrowTipY + ARROW_LENGTH * sin((lineDirection + ARROW_DEGREES)));
 
     // Draw the triangle: tip -> left wing -> right wing -> back to tip
     trianglePath.moveTo(arrowTipX, arrowTipY); // Arrow tip

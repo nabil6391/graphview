@@ -26,7 +26,63 @@ class TreeEdgeRenderer extends EdgeRenderer {
 
     linePath.reset();
     buildEdgePath(node, child, parentPos, childPos, orientation);
-    canvas.drawPath(linePath, edgePaint);
+
+    // Check if the destination node has a specific line type
+    final lineType = child.lineType;
+
+    if (lineType != LineType.Default) {
+      // For styled lines, we need to draw path segments with the appropriate style
+      _drawStyledPath(canvas, linePath, edgePaint, lineType);
+    } else {
+      canvas.drawPath(linePath, edgePaint);
+    }
+  }
+
+  /// Draws a path with the specified line type by converting it to line segments
+  void _drawStyledPath(Canvas canvas, Path path, Paint paint, LineType lineType) {
+    // Extract path points for styled rendering
+    final points = _extractPathPoints(path);
+
+    // Draw each segment with the appropriate style
+    for (var i = 0; i < points.length - 1; i++) {
+      drawStyledLine(
+        canvas,
+        points[i],
+        points[i + 1],
+        paint,
+        lineType: lineType,
+      );
+    }
+  }
+
+  /// Extracts key points from a path for segment drawing
+  List<Offset> _extractPathPoints(Path path) {
+    // This is a simplified extraction that works for the L-shaped and curved paths
+    // For more complex paths, you might need a more sophisticated approach
+    final points = <Offset>[];
+    final metrics = path.computeMetrics();
+
+    for (var metric in metrics) {
+      final length = metric.length;
+      const sampleDistance = 10.0; // Sample every 10 pixels
+      var distance = 0.0;
+
+      while (distance <= length) {
+        final tangent = metric.getTangentForOffset(distance);
+        if (tangent != null) {
+          points.add(tangent.position);
+        }
+        distance += sampleDistance;
+      }
+
+      // Add the final point
+      final finalTangent = metric.getTangentForOffset(length);
+      if (finalTangent != null) {
+        points.add(finalTangent.position);
+      }
+    }
+
+    return points;
   }
 
   int getEffectiveOrientation(Node node, Node child) {
@@ -40,7 +96,7 @@ class TreeEdgeRenderer extends EdgeRenderer {
     final childCenterX = childPos.dx + child.width * 0.5;
     final childCenterY = childPos.dy + child.height * 0.5;
 
-    if (parentCenterY==childCenterY && parentCenterX == childCenterX) return;
+    if (parentCenterY == childCenterY && parentCenterX == childCenterX) return;
 
     switch (orientation) {
       case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
@@ -87,7 +143,6 @@ class TreeEdgeRenderer extends EdgeRenderer {
     }
   }
 
-  /// Builds path for bottom-top orientation
   /// Builds path for bottom-top orientation
   void buildBottomTopPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
