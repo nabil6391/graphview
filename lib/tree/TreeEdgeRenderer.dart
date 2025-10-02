@@ -40,6 +40,8 @@ class TreeEdgeRenderer extends EdgeRenderer {
     final childCenterX = childPos.dx + child.width * 0.5;
     final childCenterY = childPos.dy + child.height * 0.5;
 
+    if (parentCenterY==childCenterY && parentCenterX == childCenterX) return;
+
     switch (orientation) {
       case BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM:
         buildTopBottomPath(node, child, parentPos, childPos, parentCenterX, parentCenterY, childCenterX, childCenterY);
@@ -62,8 +64,8 @@ class TreeEdgeRenderer extends EdgeRenderer {
   /// Builds path for top-bottom orientation
   void buildTopBottomPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
-    final parentBottomY = parentPos.dy + node.height;
-    final childTopY = childPos.dy;
+    final parentBottomY = parentPos.dy + node.height * 0.5;
+    final childTopY = childPos.dy + child.height * 0.5;
     final midY = (parentBottomY + childTopY) * 0.5;
 
     if (configuration.useCurvedConnections) {
@@ -86,10 +88,11 @@ class TreeEdgeRenderer extends EdgeRenderer {
   }
 
   /// Builds path for bottom-top orientation
+  /// Builds path for bottom-top orientation
   void buildBottomTopPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
-    final parentTopY = parentPos.dy;
-    final childBottomY = childPos.dy + child.height;
+    final parentTopY = parentPos.dy + node.height * 0.5;
+    final childBottomY = childPos.dy + child.height * 0.5;
     final midY = (parentTopY + childBottomY) * 0.5;
 
     if (configuration.useCurvedConnections) {
@@ -112,8 +115,8 @@ class TreeEdgeRenderer extends EdgeRenderer {
   /// Builds path for left-right orientation
   void buildLeftRightPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
-    final parentRightX = parentPos.dx + node.width;
-    final childLeftX = childPos.dx;
+    final parentRightX = parentPos.dx + node.width * 0.5;
+    final childLeftX = childPos.dx + child.width * 0.5;
     final midX = (parentRightX + childLeftX) * 0.5;
 
     if (configuration.useCurvedConnections) {
@@ -136,8 +139,8 @@ class TreeEdgeRenderer extends EdgeRenderer {
   /// Builds path for right-left orientation
   void buildRightLeftPath(Node node, Node child, Offset parentPos, Offset childPos,
       double parentCenterX, double parentCenterY, double childCenterX, double childCenterY) {
-    final parentLeftX = parentPos.dx;
-    final childRightX = childPos.dx + child.width;
+    final parentLeftX = parentPos.dx + node.width * 0.5;
+    final childRightX = childPos.dx + child.width * 0.5;
     final midX = (parentLeftX + childRightX) * 0.5;
 
     if (configuration.useCurvedConnections) {
