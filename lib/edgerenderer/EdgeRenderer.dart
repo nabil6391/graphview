@@ -7,7 +7,7 @@ abstract class EdgeRenderer {
 
   Offset getNodePosition(Node node) => _animatedPositions?[node] ?? node.position;
 
-  void render(Canvas canvas, Graph graph, Paint paint);
+  void renderEdge(Canvas canvas, Edge edge, Paint paint);
 
   Offset getNodeCenter(Node node) {
     final nodePosition = getNodePosition(node);

@@ -40,12 +40,11 @@ class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
 
-  final Map<Node, bool> _collapsedNodes = {};
-  final Map<Node, bool> _hiddenNodes = {};
-  final Map<Node, bool> _expandingNodes = {};
-  bool _visibilityValid = false;
+  final Map<Node, bool> collapsedNodes = {};
+  final Map<Node, bool> expandingNodes = {};
+  final Map<Node, Node> hiddenBy = {};
 
-  Node? _collapsedNode;
+  Node? collapsedNode;
   Node? focusedNode;
 
   GraphViewController({
@@ -69,35 +68,12 @@ class GraphViewController {
   void forceRecalculation() => _state?.forceRecalculation();
 
   // Visibility management methods
-  bool isNodeCollapsed(Node node) => _collapsedNodes.containsKey(node);
+  bool isNodeCollapsed(Node node) => collapsedNodes.containsKey(node);
 
-  bool isNodeHidden(Node node) => _hiddenNodes.containsKey(node);
+  bool isNodeHidden(Node node) => hiddenBy.containsKey(node);
 
   bool isNodeVisible(Graph graph, Node node) {
-    if (!_visibilityValid) _buildVisibilityCache(graph);
-    return !_hiddenNodes.containsKey(node);
-  }
-
-  void _buildVisibilityCache(Graph graph) {
-    _hiddenNodes.clear();
-
-    void markDescendantsHidden(Node node) {
-      for (final child in graph.successorsOf(node)) {
-        _hiddenNodes[child] = true;
-        markDescendantsHidden(child); // Recursively hide descendants
-      }
-    }
-
-    // Find all collapsed nodes and hide their descendants
-    for (final node in _collapsedNodes.keys) {
-      markDescendantsHidden(node);
-    }
-
-    _visibilityValid = true;
-  }
-
-  void _invalidateVisibilityCache() {
-    _visibilityValid = false;
+    return !hiddenBy.containsKey(node);
   }
 
   Node? findClosestVisibleAncestor(Graph graph, Node node) {
@@ -114,25 +90,40 @@ class GraphViewController {
     return null;
   }
 
+  void _markDescendantsHiddenBy(
+      Graph graph, Node collapsedNode, Node currentNode) {
+    for (final child in graph.successorsOf(currentNode)) {
+      // Only mark as hidden if:
+      // 1. Not already hidden, OR
+      // 2. Was hidden by a node that's no longer collapsed
+      if (!hiddenBy.containsKey(child) ||
+          !collapsedNodes.containsKey(hiddenBy[child])) {
+        hiddenBy[child] = collapsedNode;
+      }
+
+      // Recurse only if this child isn't itself a collapsed node
+      if (!collapsedNodes.containsKey(child)) {
+        _markDescendantsHiddenBy(graph, collapsedNode, child);
+      }
+    }
+  }
+
   void _markExpandingDescendants(Graph graph, Node node) {
-    // Mark all immediate visible children as expanding
     for (final child in graph.successorsOf(node)) {
-      // Only mark as expanding if the child will actually become visible
-      if (!_collapsedNodes.containsKey(child)) {
-        _expandingNodes[child] = true;
-        // Recursively mark descendants if this child is not collapsed
+        expandingNodes[child] = true;
+        if (!collapsedNodes.containsKey(child)) {
         _markExpandingDescendants(graph, child);
       }
     }
   }
 
   void expandNode(Graph graph, Node node, {animate = false}) {
-    _collapsedNodes.remove(node);
+    collapsedNodes.remove(node);
+    hiddenBy.removeWhere((hiddenNode, hiddenBy) => hiddenBy == node);
 
-    _expandingNodes.clear();
+    expandingNodes.clear();
     _markExpandingDescendants(graph, node);
 
-    _invalidateVisibilityCache();
     if (animate) {
       focusedNode = node;
     }
@@ -141,15 +132,15 @@ class GraphViewController {
 
   void collapseNode(Graph graph, Node node, {animate = false}) {
     if (graph.hasSuccessor(node)) {
-      _collapsedNodes[node] = true;
-      _collapsedNode = node;
+      collapsedNodes[node] = true;
+      collapsedNode = node;
       if (animate) {
         focusedNode = node;
       }
-      _invalidateVisibilityCache();
+      _markDescendantsHiddenBy(graph, node, node);
       forceRecalculation();
     }
-    _expandingNodes.clear();
+    expandingNodes.clear();
   }
 
   void toggleNodeExpanded(Graph graph, Node node, {animate = false}) {
@@ -161,61 +152,59 @@ class GraphViewController {
   }
 
   List<Edge> getCollapsingEdges(Graph graph) {
-    if (_collapsedNode == null) return [];
+    if (collapsedNode == null) return [];
 
-    final collapsingEdges = <Edge>[];
-    final visitedNodes = <Node, bool>{};
+    return graph.edges.where((edge) {
+      return hiddenBy[edge.destination] == collapsedNode;
+    }).toList();
+  }
 
-    void collectCollapsingEdgesRecursively(Node node) {
-      if (visitedNodes.containsKey(node)) return;
-      visitedNodes[node] = true;
+  List<Edge> getExpandingEdges(Graph graph) {
+    final expandingEdges = <Edge>[];
 
-      if (_hiddenNodes.containsKey(node) && _collapsedNodes.containsKey(node)) {
-        return;
-      }
-
-      // Get all outgoing edges from this node
-      for (final edge in graph.getOutEdges(node)) {
-        final destination = edge.destination;
-
-        // Add edge if destination is being hidden (collapsing)
-        if (_hiddenNodes.containsKey(destination)) {
-          collapsingEdges.add(edge);
-          // Recursively collect edges from hidden descendants
-          collectCollapsingEdgesRecursively(destination);
-        }
+    for (final node in expandingNodes.keys) {
+      // Get all incoming edges to expanding nodes
+      for (final edge in graph.getInEdges(node)) {
+        expandingEdges.add(edge);
       }
     }
 
-    // Start collection from the last collapsed node
-    collectCollapsingEdgesRecursively(_collapsedNode!);
-    return collapsingEdges;
+    return expandingEdges;
   }
 
   // Additional convenience methods for setting initial state
-  void setInitiallyCollapsedNodes(List<Node> nodes) {
+  void setInitiallyCollapsedNodes(Graph graph, List<Node> nodes) {
     for (final node in nodes) {
-      _collapsedNodes[node] = true;
+      collapsedNodes[node] = true;
+      // Mark descendants as hidden by this node
+      _markDescendantsHiddenBy(graph, node, node);
     }
-    _invalidateVisibilityCache();
   }
 
   void setInitiallyCollapsedByKeys(Graph graph, Set<ValueKey> keys) {
     for (final key in keys) {
       try {
         final node = graph.getNodeUsingKey(key);
-        _collapsedNodes[node] = true;
+        collapsedNodes[node] = true;
+        // Mark descendants as hidden by this node
+        _markDescendantsHiddenBy(graph, node, node);
       } catch (e) {
         // Node with key not found, ignore
       }
     }
-    _invalidateVisibilityCache();
   }
 
-  bool isNodeExpanding(Node node) => _expandingNodes.containsKey(node);
+  bool isNodeExpanding(Node node) => expandingNodes.containsKey(node);
 
   void removeCollapsingNodes() {
-    _collapsedNode = null;
+    collapsedNode = null;
+  }
+
+  void jumpToFocusedNode() {
+    if (focusedNode != null) {
+      _state?.jumpToOffset(focusedNode!.position, true);
+      focusedNode = null;
+    }
   }
 }
 
@@ -241,21 +230,10 @@ class GraphChildDelegate {
       return _cachedVisibleGraph!;
     }
 
-    final visibleGraph = Graph();
-    for (final edge in graph.edges) {
-      if (isNodeVisible(edge.source) && isNodeVisible(edge.destination)) {
-        visibleGraph.addEdgeS(edge);
-      }
-    }
+    final visibleGraph = getVisibleGraphOnly();
 
-    if (controller != null) {
-      final collapsingEdges = controller!.getCollapsingEdges(graph);
-      visibleGraph.addEdges(collapsingEdges);
-    }
-
-    if (visibleGraph.nodes.isEmpty && graph.nodes.isNotEmpty) {
-      visibleGraph.addNode(graph.nodes.first);
-    }
+    final collapsingEdges = controller?.getCollapsingEdges(graph) ?? [];
+    visibleGraph.addEdges(collapsingEdges);
 
     _cachedVisibleGraph = visibleGraph;
     _needsRecalculation = false;
@@ -485,15 +463,24 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   void resetView() => animateToMatrix(Matrix4.identity());
 
   void zoomToFit() {
-    if (widget.graph.nodes.isEmpty) return;
+    var graph = widget.delegate.getVisibleGraphOnly();
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final vp = renderBox.size;
-    final bounds = widget.graph.calculateGraphBounds();
-    final scale = (vp.shortestSide * 0.95 / bounds.longestSide);
-    final centerOffset = Offset(vp.width * 0.5 - bounds.center.dx * scale,
-        vp.height * 0.5 - bounds.center.dy * scale);
+    final bounds = graph.calculateGraphBounds();
+
+    const paddingFactor = 0.95;
+    final scaleX = (vp.width / bounds.width) * paddingFactor;
+    final scaleY = (vp.height / bounds.height) * paddingFactor;
+    final scale = min(scaleX, scaleY);
+
+    final scaledWidth = bounds.width * scale;
+    final scaledHeight = bounds.height * scale;
+
+    final centerOffset = Offset(
+        (vp.width - scaledWidth) * 0.5 - bounds.left * scale,
+        (vp.height - scaledHeight) * 0.5 - bounds.top * scale);
 
     final target = Matrix4.identity()
       ..translate(centerOffset.dx, centerOffset.dy)
@@ -733,12 +720,7 @@ class GraphViewElement extends RenderObjectElement
   }
 
   void centerNodeWhileToggling() {
-    if (widget.delegate.controller?.focusedNode != null) {
-      widget.delegate.controller?._state?.jumpToOffset(
-          widget.delegate.controller!.focusedNode!.position, true);
-      widget.delegate.controller?.focusedNode = null;
-    }
-    widget.delegate.controller?.removeCollapsingNodes();
+    widget.delegate.controller?.jumpToFocusedNode();
   }
 }
 
@@ -881,33 +863,49 @@ class RenderCustomLayoutBox extends RenderBox
         final node = entry.key;
         final child = entry.value;
         final nodeData = child.parentData as NodeBoxData;
-
-        final isExpanding =
-            _delegate.controller?.isNodeExpanding(node) ?? false;
-        if (isExpanding) {
-          final parent = graph.predecessorsOf(node).firstOrNull;
-          final pos =
-              Offset.lerp(animatedPositions[parent], nodeData.targetOffset, t)!;
-          animatedPositions[node] = pos;
-        } else {
-          final pos =
-              Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
-
-          animatedPositions[node] = pos;
-        }
+        final pos =
+            Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
+        animatedPositions[node] = pos;
       }
 
       context.canvas.save();
       context.canvas.translate(offset.dx, offset.dy);
       algorithm.renderer?.setAnimatedPositions(animatedPositions);
-      algorithm.renderer?.render(context.canvas, graph, edgePaint);
+
+      final collapsingEdges =
+          _delegate.controller?.getCollapsingEdges(graph).toSet() ?? {};
+      final expandingEdges =
+          _delegate.controller?.getExpandingEdges(graph).toSet() ?? {};
+
+     for (final edge in graph.edges) {
+        var edgePaintWithOpacity = Paint.from(edge.paint ?? edgePaint);
+
+        // Apply fade effect for collapsing edges (fade out)
+        if (collapsingEdges.contains(edge)) {
+          edgePaintWithOpacity.color =
+              edgePaint.color.withValues(alpha: 1.0 - t);
+        }
+        // Apply fade effect for expanding edges (fade in)
+        else if (expandingEdges.contains(edge)) {
+          edgePaintWithOpacity.color = edgePaint.color.withValues(alpha: t);
+        }
+
+        algorithm.renderer?.renderEdge(
+          context.canvas,
+          edge,
+          edgePaintWithOpacity,
+        );
+      }
+
       context.canvas.restore();
 
       _paintNodes(context, offset, t);
     } else {
       context.canvas.save();
       context.canvas.translate(offset.dx, offset.dy);
-      algorithm.renderer?.render(context.canvas, graph, edgePaint);
+      graph.edges.forEach((edge) {
+        algorithm.renderer?.renderEdge(context.canvas, edge, edgePaint);
+      });
       context.canvas.restore();
 
       for (final entry in _children.entries) {
@@ -977,12 +975,14 @@ class RenderCustomLayoutBox extends RenderBox
         nodeData.offset = node.position;
       }
     }
+
+    if (_nodeAnimationController.isCompleted) {
+      _delegate.controller?.removeCollapsingNodes();
+    }
   }
 
   void _paintExpandingNode(PaintingContext context, RenderBox child,
       Offset offset, Offset pos, double t) {
-    final progress = t.clamp(0.0, 1.0);
-    final opacity = progress; // Fade in as it expands
     final center =
         pos + offset + Offset(child.size.width * 0.5, child.size.height * 0.5);
 
@@ -990,14 +990,14 @@ class RenderCustomLayoutBox extends RenderBox
 
     // Apply scaling from center
     context.canvas.translate(center.dx, center.dy);
-    context.canvas.scale(progress, progress);
+    context.canvas.scale(t, t);
     context.canvas.translate(-center.dx, -center.dy);
 
     // Paint with opacity using saveLayer
     opacityPaint
-      ..color = Color.fromRGBO(255, 255, 255, opacity)
+      ..color = Color.fromRGBO(255, 255, 255, t)
       ..colorFilter = ColorFilter.mode(
-          Colors.white.withValues(alpha: opacity), BlendMode.modulate);
+          Colors.white.withValues(alpha: t), BlendMode.modulate);
 
     context.canvas.saveLayer(
         Rect.fromLTWH(pos.dx + offset.dx - 20, pos.dy + offset.dy - 20,
@@ -1012,8 +1012,7 @@ class RenderCustomLayoutBox extends RenderBox
 
   void _paintCollapsingNode(PaintingContext context, RenderBox child,
       Offset offset, Offset pos, double t) {
-    final progress = (1.0 - t).clamp(0.0, 1.0);
-    final opacity = progress; // Fade out as it collapses
+    final progress = (1.0 - t);
     final center =
         pos + offset + Offset(child.size.width * 0.5, child.size.height * 0.5);
 
@@ -1026,9 +1025,9 @@ class RenderCustomLayoutBox extends RenderBox
 
     // Paint with opacity using saveLayer
     opacityPaint
-      ..color = Color.fromRGBO(255, 255, 255, opacity)
+      ..color = Color.fromRGBO(255, 255, 255, progress)
       ..colorFilter = ColorFilter.mode(
-          Colors.white.withValues(alpha: opacity), BlendMode.modulate);
+          Colors.white.withValues(alpha: progress), BlendMode.modulate);
 
     context.canvas.saveLayer(
         Rect.fromLTWH(pos.dx + offset.dx - 20, pos.dy + offset.dy - 20,
@@ -1090,7 +1089,8 @@ class RenderCustomLayoutBox extends RenderBox
 
     if (prevTarget == null) {
       final parent = graph.predecessorsOf(graphNode).firstOrNull;
-      nodeData.startOffset = parent?.position ?? newPos;
+      final pastParentPosition = animatedPositions[parent];
+      nodeData.startOffset = pastParentPosition ?? parent?.position ?? newPos;
       nodeData.targetOffset = newPos;
     } else if (prevTarget != newPos) {
       nodeData.startOffset = prevTarget;
@@ -1256,7 +1256,7 @@ class _GraphViewCustomPainterState extends State<GraphViewCustomPainter> {
           return Positioned(
             child: GestureDetector(
               child:
-              graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
+                  graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
               onPanUpdate: (details) {
                 graph.getNodeAtPosition(index).position += details.delta;
                 update();
@@ -1295,7 +1295,9 @@ class EdgeRender extends CustomPainter {
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
 
-    algorithm.renderer!.render(canvas, graph, edgePaint);
+    for (var value in graph.edges) {
+      algorithm.renderer?.renderEdge(canvas, value, edgePaint);
+    }
     canvas.restore();
   }
 

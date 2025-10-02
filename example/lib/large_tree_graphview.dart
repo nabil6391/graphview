@@ -101,7 +101,8 @@ class _LargeTreeViewPageState extends State<LargeTreeViewPage> with TickerProvid
                 controller: _controller,
                 graph: graph,
                 algorithm: algorithm,
-                // initialNode: ValueKey(1),
+                centerGraph: true,
+                initialNode: ValueKey(1),
                 panAnimationDuration: Duration(milliseconds: 750),
                 toggleAnimationDuration: Duration(milliseconds: 750),
                 // edgeBuilder: (Edge edge, EdgeGeometry geometry) {

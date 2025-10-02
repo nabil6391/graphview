@@ -7,15 +7,15 @@ class TreeEdgeRenderer extends EdgeRenderer {
 
   var linePath = Path();
 
-  @override
   void render(Canvas canvas, Graph graph, Paint paint) {
     graph.edges.forEach((edge) {
-      final edgePaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
-      renderEdge(canvas, edge, edgePaint);
+      renderEdge(canvas, edge, paint);
     });
   }
 
-  void renderEdge(Canvas canvas, Edge edge, Paint edgePaint) {
+  @override
+  void renderEdge(Canvas canvas, Edge edge, Paint paint) {
+    final edgePaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
     var node = edge.source;
     var child = edge.destination;
 

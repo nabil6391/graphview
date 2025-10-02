@@ -17,18 +17,14 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     );
   }
 
-  @override
   void render(Canvas canvas, Graph graph, Paint paint) {
-    var trianglePaint = Paint()
-      ..color = paint.color
-      ..style = PaintingStyle.fill;
-
     graph.edges.forEach((edge) {
-      renderEdge(canvas, edge, paint, trianglePaint);
+      renderEdge(canvas, edge, paint);
     });
   }
 
-  void renderEdge(Canvas canvas, Edge edge, Paint paint, Paint trianglePaint) {
+  @override
+  void renderEdge(Canvas canvas, Edge edge, Paint paint) {
     var source = edge.source;
     var destination = edge.destination;
 
@@ -62,6 +58,10 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         lineType: _getLineType(destination),
       );
     } else {
+      var trianglePaint = Paint()
+        ..color = paint.color
+        ..style = PaintingStyle.fill;
+
       // Draw line with arrow
       Paint? edgeTrianglePaint;
       if (edge.paint != null) {

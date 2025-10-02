@@ -218,7 +218,6 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
       Node.Id(36),  // Yoga
     ];
 
-    _controller.setInitiallyCollapsedNodes([tech, business, personal]);
     // Build the graph structure
     graph.addEdge(root, tech);
     graph.addEdge(root, business, paint: Paint()..color = Colors.blue);
@@ -277,6 +276,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
     for (final exerciseNode in exerciseDetails) {
       graph.addEdge(healthDetails[0], exerciseNode, paint: Paint()..color = Colors.amber);
     }
+    _controller.setInitiallyCollapsedNodes(graph, [tech, business, personal]);
 
     builder
       ..siblingSeparation = (100)

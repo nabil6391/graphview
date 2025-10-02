@@ -11,13 +11,18 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
   bool hasBendEdges(Edge edge) => edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty;
 
-  @override
   void render(Canvas canvas, Graph graph, Paint paint) {
+    graph.edges.forEach((edge) {
+      renderEdge(canvas, edge, paint);
+    });
+  }
+
+  @override
+  void renderEdge(Canvas canvas, Edge edge, Paint paint) {
     var trianglePaint = Paint()
       ..color = paint.color
       ..style = PaintingStyle.fill;
 
-    graph.edges.forEach((edge) {
       Paint? edgeTrianglePaint;
       if (edge.paint != null) {
         edgeTrianglePaint = Paint()
@@ -33,8 +38,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       } else {
         _renderStraightEdge(canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);
       }
-    });
-  }
+    }
 
   void _renderEdgeWithBendPoints(Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
     final source = edge.source;
