@@ -18,6 +18,12 @@ class SugiyamaConfiguration {
   BendPointShape bendPointShape = SharpBendPointShape();
   CoordinateAssignment coordinateAssignment = CoordinateAssignment.Average;
 
+  LayeringStrategy layeringStrategy = LayeringStrategy.topDown;
+  CrossMinimizationStrategy crossMinimizationStrategy = CrossMinimizationStrategy.simple;
+  CycleRemovalStrategy cycleRemovalStrategy = CycleRemovalStrategy.greedy;
+
+  bool postStraighten = true;
+
   bool addTriangleToEdge = true;
 
   int getLevelSeparation() {
@@ -39,6 +45,23 @@ enum CoordinateAssignment {
   UpRight, // 2
   UpLeft, // 3
   Average, // 4
+}
+
+enum LayeringStrategy {
+  topDown,
+  longestPath,
+  coffmanGraham,
+  networkSimplex
+}
+
+enum CrossMinimizationStrategy {
+  simple,
+  accumulatorTree
+}
+
+enum CycleRemovalStrategy {
+  dfs,
+  greedy,
 }
 
 abstract class BendPointShape {}

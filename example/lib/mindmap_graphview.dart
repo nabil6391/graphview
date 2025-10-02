@@ -3,12 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
-class TreeViewPage extends StatefulWidget {
+class MindMapPage extends StatefulWidget {
   @override
-  _TreeViewPageState createState() => _TreeViewPageState();
+  _MindMapPageState createState() => _MindMapPageState();
 }
 
-class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMixin {
+class _MindMapPageState extends State<MindMapPage> with TickerProviderStateMixin {
 
   GraphViewController _controller = GraphViewController();
   final Random r = Random();
@@ -100,23 +100,18 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
               child: GraphView.builder(
                 controller: _controller,
                 graph: graph,
-                algorithm: algorithm,
-                initialNode: ValueKey(1),
-                panAnimationDuration: Duration(milliseconds: 600),
-                toggleAnimationDuration: Duration(milliseconds: 600),
-                centerGraph: true,
-                builder: (Node node) => GestureDetector(
-                  onTap: () => _toggleCollapse(node),
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: [BoxShadow(color: Colors.blue[100]!, spreadRadius: 1)],
-                    ),
-                    child: Text(
-                      'Node ${node.key?.value}',
-                    ),
+                algorithm: MindmapAlgorithm(
+                  builder, MindmapEdgeRenderer(builder)
+                ),
+                builder: (Node node) => Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: [BoxShadow(color: Colors.blue[100]!, spreadRadius: 1)],
+                  ),
+                  child: Text(
+                    'Node ${node.key?.value}',
                   ),
                 ),
               ),
@@ -125,13 +120,25 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
         ));
   }
 
+  Widget rectangleWidget(int? a) {
+    return InkWell(
+      onTap: () {
+        print('clicked node $a');
+      },
+      child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: [
+              BoxShadow(color: Colors.blue[100]!, spreadRadius: 1),
+            ],
+          ),
+          child: Text('Node ${a} ')),
+    );
+  }
+
   final Graph graph = Graph()..isTree = true;
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
-  late final algorithm = BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder));
-
-  void _toggleCollapse(Node node) {
-    _controller.toggleNodeExpanded(graph, node, animate: true);
-  }
 
   void _navigateToRandomNode() {
     if (graph.nodes.isEmpty) return;
@@ -144,12 +151,12 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
     _controller.animateToNode(nodeId);
 
     setState(() {
-      // nextNodeId = r.nextInt(graph.nodes.length) + 1;
+      nextNodeId = r.nextInt(graph.nodes.length) + 1;
     });
   }
 
   void _resetView() {
-    _controller.animateToNode(ValueKey(1));
+    _controller.resetView();
   }
 
   @override
@@ -157,6 +164,7 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
     super.initState();
 
 
+// Complex Mindmap Test - This will stress test the balancing algorithm
 
 // Create all nodes
     final root = Node.Id(1);  // Central topic
@@ -218,13 +226,12 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
       Node.Id(36),  // Yoga
     ];
 
-    _controller.setInitiallyCollapsedNodes([tech, business, personal]);
-    // Build the graph structure
+// Build the graph structure
     graph.addEdge(root, tech);
     graph.addEdge(root, business, paint: Paint()..color = Colors.blue);
     graph.addEdge(root, personal, paint: Paint()..color = Colors.green);
 
-// // Technology branch (left side - large subtree)
+// Technology branch (left side - large subtree)
     graph.addEdge(tech, ai);
     graph.addEdge(tech, web);
     graph.addEdge(tech, mobile);
@@ -282,7 +289,6 @@ class _TreeViewPageState extends State<TreeViewPage> with TickerProviderStateMix
       ..siblingSeparation = (100)
       ..levelSeparation = (150)
       ..subtreeSeparation = (150)
-      ..useCurvedConnections = true
       ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
   }
 

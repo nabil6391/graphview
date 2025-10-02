@@ -18,9 +18,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       ..style = PaintingStyle.fill;
 
     graph.edges.forEach((edge) {
-      final source = edge.source;
-      final destination = edge.destination;
-
       Paint? edgeTrianglePaint;
       if (edge.paint != null) {
         edgeTrianglePaint = Paint()
@@ -32,15 +29,16 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         ..style = PaintingStyle.stroke;
 
       if (hasBendEdges(edge)) {
-        _renderEdgeWithBendPoints(canvas, edge, source, destination, currentPaint, edgeTrianglePaint ?? trianglePaint);
+        _renderEdgeWithBendPoints(canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);
       } else {
-        _renderStraightEdge(canvas, edge, source, destination, currentPaint, edgeTrianglePaint ?? trianglePaint);
+        _renderStraightEdge(canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);
       }
     });
   }
 
-  void _renderEdgeWithBendPoints(Canvas canvas, Edge edge, Node source,
-      Node destination, Paint currentPaint, Paint trianglePaint) {
+  void _renderEdgeWithBendPoints(Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
+    final source = edge.source;
+    final destination = edge.destination;
     var bendPoints = edgeData[edge]!.bendPoints;
 
     var sourceCenter = _getNodeCenter(source);
@@ -88,7 +86,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       var clippedLine = <double>[];
       final size = bendPoints.length;
       if (nodeData[source]!.isReversed) {
-        clippedLine = clipLineEnd(bendPoints[2], bendPoints[3],  stopX, stopY, destination.x ,
+        clippedLine = clipLineEnd(bendPoints[2], bendPoints[3], stopX, stopY, destination.x,
             destination.y, destination.width, destination.height);
       } else {
         clippedLine = clipLineEnd(bendPoints[size - 4], bendPoints[size - 3],
@@ -103,8 +101,9 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     canvas.drawPath(path, currentPaint);
   }
 
-  void _renderStraightEdge(Canvas canvas, Edge edge, Node source,
-      Node destination, Paint currentPaint, Paint trianglePaint) {
+  void _renderStraightEdge(Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
+    final source = edge.source;
+    final destination = edge.destination;
     final sourceCenter = _getNodeCenter(source);
     var destCenter = _getNodeCenter(destination);
 
@@ -116,22 +115,9 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       destCenter = drawTriangle(canvas, trianglePaint, clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
     }
 
-    // Draw the line
-    switch (nodeData[destination]?.lineType) {
-      case LineType.DashedLine:
-        _drawDashedLine(canvas, sourceCenter, destCenter, currentPaint, 0.6);
-        break;
-      case LineType.DottedLine:
-        // dotted line uses the same method as dashed line, but with a lineLength of 0.0
-        _drawDashedLine(canvas, sourceCenter, destCenter, currentPaint, 0.0);
-        break;
-      case LineType.SineLine:
-        _drawSineLine(canvas, sourceCenter, destCenter, currentPaint);
-        break;
-      default:
-        canvas.drawLine(sourceCenter, destCenter, currentPaint);
-        break;
-    }
+    // Draw the line with appropriate line type using the base class method
+    final lineType = nodeData[destination]?.lineType;
+    drawStyledLine(canvas, sourceCenter, destCenter, currentPaint, lineType: lineType);
   }
 
   void _drawSharpBendPointsEdge(List<Offset> bendPoints) {
@@ -167,87 +153,6 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
         path.lineTo(arcStartPoint.dx, arcStartPoint.dy);
         path.quadraticBezierTo(nextNode.dx, nextNode.dy, arcEndPoint.dx, arcEndPoint.dy);
       }
-    }
-  }
-
-  void _drawDashedLine(Canvas canvas, Offset source, Offset destination,
-      Paint paint, double lineLength) {
-    var dx = destination.dx - source.dx;
-    var dy = destination.dy - source.dy;
-
-    // Calculate the Euclidean distance
-    var distance = sqrt(dx * dx + dy * dy);
-
-    var numLines = lineLength == 0.0 ? (distance / 5).ceil() : 14;
-
-    // Calculate the step size for each line
-    var stepX = dx / numLines;
-    var stepY = dy / numLines;
-
-    var circleRadius = 1.0;
-
-    var circleStrokeWidth = 1.0;
-    var circlePaint = Paint()
-      ..color = paint.color
-      ..strokeWidth = circleStrokeWidth
-      ..style = PaintingStyle.fill; // Change to fill style
-
-    // Draw the lines or dots between the two points
-    for (var i = 0; i < numLines; i++) {
-      var startX = source.dx + (i * stepX);
-      var startY = source.dy + (i * stepY);
-      if (lineLength == 0.0) {
-        // Draw a dot with a fixed radius and stroke width
-        canvas.drawCircle(Offset(startX, startY), circleRadius, circlePaint);
-      } else {
-        // Draw a dash
-        var endX = startX + (stepX * lineLength);
-        var endY = startY + (stepY * lineLength);
-        canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
-      }
-    }
-  }
-
-  void _drawSineLine(Canvas canvas, Offset source, Offset destination, Paint paint) {
-    paint..strokeWidth = 1.5;
-
-    final dx = destination.dx - source.dx;
-    final dy = destination.dy - source.dy;
-    final distance = sqrt(dx * dx + dy * dy);
-    final lineLength = 6;
-    var phaseOffset = 2;
-
-    // Verify dx and dy to avoid NaN to Offset()
-    if (dx != 0 || dy != 0) {
-      var distanceTraveled = 0.0;
-      var phase = 0.0;
-      final path = Path()..moveTo(source.dx, source.dy);
-
-      while (distanceTraveled < distance) {
-        final segmentLength = min(lineLength, distance - distanceTraveled);
-        final segmentFraction = segmentLength / distance;
-        final segmentDestination = Offset(
-          source.dx + dx * segmentFraction,
-          source.dy + dy * segmentFraction,
-        );
-
-        final y = sin(phase + phaseOffset) * segmentLength;
-
-        num x;
-        if ((dx > 0 && dy < 0) || (dx < 0 && dy > 0)) {
-          x = sin(phase + phaseOffset) * segmentLength;
-        } else {
-          // dx < 0 && dy < 0
-          x = -sin(phase + phaseOffset) * segmentLength;
-        }
-
-        path.lineTo(segmentDestination.dx + x, segmentDestination.dy + y);
-
-        distanceTraveled += segmentLength;
-        source = segmentDestination;
-        phase += pi * segmentLength / lineLength;
-      }
-      canvas.drawPath(path, paint);
     }
   }
 }

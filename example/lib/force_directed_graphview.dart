@@ -21,9 +21,9 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
                   boundaryMargin: EdgeInsets.all(8),
                   minScale: 0.001,
                   maxScale: 10000,
-                  child: GraphView(
+                  child: GraphViewCustomPainter(
                       graph: graph,
-                      algorithm: builder,
+                      algorithm: algorithm,
                       paint: Paint()
                         ..color = Colors.green
                         ..strokeWidth = 1
@@ -57,7 +57,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   }
 
   final Graph graph = Graph();
-  late Algorithm builder;
+  late FruchtermanReingoldAlgorithm algorithm;
 
   @override
   void initState() {
@@ -78,7 +78,8 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     graph.addEdge(f, c);
     graph.addEdge(g, c);
     graph.addEdge(h, g);
-
-    builder = FruchtermanReingoldAlgorithm(iterations: 1000);
+    var config = FruchtermanReingoldConfiguration()
+      ..iterations = 1000;
+    algorithm = FruchtermanReingoldAlgorithm(config);
   }
 }

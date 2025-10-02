@@ -52,8 +52,6 @@ void main() {
       var size = algorithm.run(graph, 10, 10);
       var timeTaken = stopwatch.elapsed.inMilliseconds;
 
-      print('Timetaken $timeTaken');
-
       expect(timeTaken < 1000, true);
 
       expect(graph.getNodeAtPosition(0).position, Offset(385, 10));
@@ -100,8 +98,24 @@ void main() {
       );
     });
 
-    test('Buchheim Performance for 100 nodes to be less than 2.5s', () {
+    test('Buchheim Performance for 1000 nodes to be less than 20ms', () {
+      Graph _createGraph(int n) {
+        final graph = Graph();
+        final nodes = List.generate(n, (i) => Node.Id(i + 1));
+        var currentChild = 1; // Start from node 1 (node 0 is root)
+        for (var i = 0; i < n && currentChild < n; i++) {
+          final children = (i < n ~/ 3) ? 3 : 2;
 
+          for (var j = 0; j < children && currentChild < n; j++) {
+            graph.addEdge(nodes[i], nodes[currentChild]);
+            currentChild++;
+          }
+        }
+        for (var i = 0; i < graph.nodeCount(); i++) {
+          graph.getNodeAtPosition(i).size = const Size(itemWidth, itemHeight);
+        }
+        return graph;
+      }
 
       final _configuration = BuchheimWalkerConfiguration()
         ..siblingSeparation = (100)
@@ -112,22 +126,18 @@ void main() {
       var algorithm = BuchheimWalkerAlgorithm(
           _configuration, TreeEdgeRenderer(_configuration));
 
+      var graph = _createGraph(1000);
       for (var i = 0; i < graph.nodeCount(); i++) {
         graph.getNodeAtPosition(i).size = Size(itemWidth, itemHeight);
       }
 
       var stopwatch = Stopwatch()..start();
-
-      for (var i = 1; i <= 100; i++) {
-        var size = algorithm.run(graph, 10, 10);
-      }
-
-
+      var size = algorithm.run(graph, 0, 0);
       var timeTaken = stopwatch.elapsed.inMilliseconds;
 
-      print('Timetaken $timeTaken ${graph.nodeCount()}');
+      print('Timetaken $timeTaken for ${graph.nodeCount()} nodes');
 
-      expect(timeTaken < 100, true);
+      expect(timeTaken < 20, true);
     });
   });
 }

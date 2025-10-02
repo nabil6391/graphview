@@ -13,6 +13,7 @@ class BuchheimWalkerConfiguration {
   static const DEFAULT_SUBTREE_SEPARATION = 100;
   static const DEFAULT_LEVEL_SEPARATION = 100;
   static const DEFAULT_ORIENTATION = 1;
+  bool useCurvedConnections = true;
 
   int getSiblingSeparation() {
     return siblingSeparation;
@@ -25,4 +26,10 @@ class BuchheimWalkerConfiguration {
   int getSubtreeSeparation() {
     return subtreeSeparation;
   }
+  BuchheimWalkerConfiguration(
+      {this.siblingSeparation = DEFAULT_SIBLING_SEPARATION,
+        this.levelSeparation = DEFAULT_LEVEL_SEPARATION,
+        this.subtreeSeparation = DEFAULT_SUBTREE_SEPARATION,
+        this.orientation = DEFAULT_ORIENTATION});
+
 }

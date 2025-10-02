@@ -1,7 +1,40 @@
+## 1.5.0
+
+- **MAJOR UPDATE**: Added 5 new layout algorithms
+    - BalloonLayoutAlgorithm: Radial tree layout with circular child arrangements around parents
+    - CircleLayoutAlgorithm: Arranges nodes in circular formations with edge crossing reduction
+    - RadialTreeLayoutAlgorithm: Converts tree structures to polar coordinate system
+    - TidierTreeLayoutAlgorithm: Improved tree layout with better spacing and positioning
+    - MindmapAlgorithm: Specialized layout for mindmap-style distributions
+- **NEW**: Node expand/collapse functionality with GraphViewController
+    - `collapseNode()`, `expandNode()`, `toggleNodeExpanded()` methods
+    - Hierarchical visibility control with animated transitions
+    - Initial collapsed state support via `setInitiallyCollapsedNodes()`
+- **NEW**: Advanced animation system
+    - Smooth expand/collapse animations with customizable duration
+    - Node scaling and opacity transitions during state changes
+    - `toggleAnimationDuration` parameter for fine-tuning animations
+- **NEW**: Enhanced GraphView.builder constructor
+    - `animated`: Enable/disable smooth animations (default: true)
+    - `autoZoomToFit`: Automatically zoom to fit all nodes on initialization
+    - `initialNode`: Jump to specific node on startup
+    - `panAnimationDuration`: Customizable camera movement timing
+    - `centerGraph`: Center the graph within viewport
+    - `controller`: GraphViewController for programmatic control
+- **NEW**: Navigation and camera control features
+    - `jumpToNode()` and `animateToNode()` for programmatic navigation
+    - `zoomToFit()` for automatic viewport adjustment
+    - `resetView()` for returning to origin
+    - `forceRecalculation()` for layout updates
+- **IMPROVED** TreeEdgeRenderer with curved/straight connection options
+- **IMPROVED**: Better performance with caching for graphs
+- **IMPROVED**: Sugiyama Algorithm with postStraighten and additional strategies
+
 ## 1.2.0
 
 - Resolved Overlaping for Sugiyama Algorithm (#56, #93, #87)
 - Added Enum for Coordinate Assignment in Sugiyama : DownRight, DownLeft, UpRight, UpLeft, Average(Default)
+
 ## 1.1.1
 
 - Fixed bug for SugiyamaAlgorithm where horizontal placement was overlapping

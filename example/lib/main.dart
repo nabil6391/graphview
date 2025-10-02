@@ -1,11 +1,16 @@
+import 'package:example/algorithm_selector_graphview.dart';
 import 'package:example/decision_tree_screen.dart';
+import 'package:example/large_tree_graphview.dart';
 import 'package:example/layer_graphview.dart';
+import 'package:example/mindmap_graphview.dart';
+import 'package:example/mutliple_forest_graphview.dart';
 import 'package:example/tree_graphview_json.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 
 import 'force_directed_graphview.dart';
 import 'graph_cluster_animated.dart';
+import 'layer_eiglesperger_graphview.dart';
 import 'layer_graphview_json.dart';
 import 'tree_graphview.dart';
 
@@ -71,48 +76,60 @@ class Home extends StatelessWidget {
               'BuchheimWalker Algorithm',
               Icons.account_tree,
               Colors.deepPurple,
-                  () => TreeViewPage(),
+              () => TreeViewPage(),
             ),
             _buildButton(
               'Tree from JSON',
               'Dynamic tree generation',
               Icons.data_object,
               Colors.indigo,
-                  () => TreeViewPageFromJson(),
+              () => TreeViewPageFromJson(),
+            ),
+            _buildButton(
+              'Large Tree View',
+              '1000 nodes',
+              Icons.data_object,
+              Colors.indigo,
+              () => LargeTreeViewPage(),
+            ),
+            _buildButton(
+              'Multiple Forest Tree View',
+              'Multiple Nodes',
+              Icons.data_object,
+              Colors.indigo,
+              () => MultipleForestTreeViewPage(),
             ),
           ]),
-
           _buildSection('Layered Algorithms', [
             _buildButton(
               'Layered View',
               'Sugiyama Algorithm',
               Icons.layers,
               Colors.teal,
-                  () => LayeredGraphViewPage(),
+              () => LayeredGraphViewPage(),
             ),
             _buildButton(
               'Layer from JSON',
               'JSON-based layered graphs',
               Icons.timeline,
               Colors.cyan,
-                  () => LayerGraphPageFromJson(),
+              () => LayerGraphPageFromJson(),
             ),
             _buildButton(
               'Decision Tree',
               'Decision-making visualization',
               Icons.device_hub,
               Colors.green,
-                  () => DecisionTreeScreen(),
+              () => DecisionTreeScreen(),
             ),
           ]),
-
           _buildSection('Cluster Algorithms', [
             _buildButton(
               'Graph Cluster',
               'FruchtermanReingold Algorithm',
               Icons.bubble_chart,
               Colors.orange,
-                  () => GraphClusterViewPage(),
+              () => GraphClusterViewPage(),
             ),
             _buildCustomGraphButton(
               'Square Grid',
@@ -129,8 +146,29 @@ class Home extends StatelessWidget {
               _createTriangleGraph,
             ),
           ]),
-
-
+          _buildSection('Specialized Views', [
+            _buildButton(
+              'Algorithm SelectorPage',
+              'Multiple Algorithms using the same graph',
+              Icons.code,
+              Colors.brown,
+              () => AlgorithmSelectedVIewPage(),
+            ),
+            _buildButton(
+              'Mind Map',
+              'Conceptual mapping',
+              Icons.psychology,
+              Colors.purple,
+              () => MindMapPage(),
+            ),
+            _buildButton(
+              'Layered View',
+              'Eiglesperger Algorithm (Broken)',
+              Icons.layers,
+              Colors.teal,
+                  () => LayeredEiglspergerGraphViewPage(),
+            ),
+          ]),
         ],
       ),
     );
@@ -155,21 +193,21 @@ class Home extends StatelessWidget {
             ),
           ),
           ...buttons.map((button) => Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: button,
-          )),
+                padding: EdgeInsets.only(bottom: 12),
+                child: button,
+              )),
         ],
       ),
     );
   }
 
   Widget _buildButton(
-      String title,
-      String subtitle,
-      IconData icon,
-      Color color,
-      Widget Function() pageBuilder,
-      ) {
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    Widget Function() pageBuilder,
+  ) {
     return Builder(
       builder: (context) => Container(
         height: 80,
@@ -256,12 +294,12 @@ class Home extends StatelessWidget {
   }
 
   Widget _buildCustomGraphButton(
-      String title,
-      String subtitle,
-      IconData icon,
-      Color color,
-      Graph Function() graphBuilder,
-      ) {
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    Graph Function() graphBuilder,
+  ) {
     return Builder(
       builder: (context) => Container(
         height: 80,
@@ -273,7 +311,9 @@ class Home extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             onTap: () {
               var graph = graphBuilder();
-              var builder = FruchtermanReingoldAlgorithm();
+
+              var builder = FruchtermanReingoldAlgorithm(
+                  FruchtermanReingoldConfiguration());
               Navigator.push(
                 context,
                 MaterialPageRoute(

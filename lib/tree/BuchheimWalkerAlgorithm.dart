@@ -21,12 +21,12 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   void _detectCycles(Graph graph) {
-    Set<Node> visiting = {};
+    var visiting = <Node>{};
 
     bool hasCycle(Node node) {
       if (visiting.contains(node)) return true;
       visiting.add(node);
-      bool cycleFound = successorsOf(node).any(hasCycle);
+      var cycleFound = successorsOf(node).any(hasCycle);
       visiting.remove(node);
       return cycleFound;
     }
@@ -38,19 +38,26 @@ class BuchheimWalkerAlgorithm extends Algorithm {
 
   @override
   Size run(Graph? graph, double shiftX, double shiftY) {
+    if (graph == null) return Size.zero;
     nodeData.clear();
+    if (graph.nodes.length == 1) {
+      final node = graph.nodes.first;
+      node.position = Offset(shiftX, shiftY);
+      return node.size * 2;
+    }
     initData(graph);
-    _detectCycles(graph!);
-    var firstNode = getFirstNode(graph!);
+    _detectCycles(graph);
+    var firstNode = getFirstNode(graph);
     firstWalk(graph, firstNode, 0, 0);
     secondWalk(graph, firstNode, 0.0);
     checkUnconnectedNotes(graph);
     positionNodes(graph);
     shiftCoordinates(graph, shiftX, shiftY);
-    return calculateGraphSize(graph);
+    return graph.calculateGraphSize();
   }
 
-  Node getFirstNode(Graph graph) => graph.nodes.firstWhere((element) => !hasPredecessor(element));
+  Node getFirstNode(Graph graph) =>
+      graph.nodes.firstWhere((element) => !hasPredecessor(element));
 
   void checkUnconnectedNotes(Graph graph) {
     graph.nodes.forEach((element) {
@@ -126,22 +133,6 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     });
   }
 
-  Size calculateGraphSize(Graph graph) {
-    var left = double.infinity;
-    var top = double.infinity;
-    var right = double.negativeInfinity;
-    var bottom = double.negativeInfinity;
-
-    graph.nodes.forEach((node) {
-      left = min(left, node.x);
-      top = min(top, node.y);
-      right = max(right, node.x + node.width);
-      bottom = max(bottom, node.y + node.height);
-    });
-
-    return Size(right - left, bottom - top);
-  }
-
   void executeShifts(Graph graph, Node node) {
     var shift = 0.0;
     var change = 0.0;
@@ -164,7 +155,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     if (hasLeftSibling(graph, node)) {
       var leftSibling = getLeftSibling(graph, node);
       Node? vop = node;
-      Node? vom = getLeftMostChild(graph, graph.predecessorsOf(node).first);
+      Node? vom = getLeftMostChild(graph, predecessorsOf(node).first);
       var sip = getModifier(node);
 
       var sop = getModifier(node);
@@ -507,9 +498,6 @@ class BuchheimWalkerAlgorithm extends Algorithm {
   }
 
   @override
-  void setFocusedNode(Node node) {}
-
-  @override
   void init(Graph? graph) {
     var firstNode = getFirstNode(graph!);
     firstWalk(graph, firstNode, 0, 0);
@@ -517,15 +505,6 @@ class BuchheimWalkerAlgorithm extends Algorithm {
     checkUnconnectedNotes(graph);
     positionNodes(graph);
     // shiftCoordinates(graph, shiftX, shiftY);
-  }
-
-  @override
-  void step(Graph? graph) {
-    var firstNode = getFirstNode(graph!);
-    firstWalk(graph, firstNode, 0, 0);
-    secondWalk(graph, firstNode, 0.0);
-    checkUnconnectedNotes(graph);
-    positionNodes(graph);
   }
 
   @override
