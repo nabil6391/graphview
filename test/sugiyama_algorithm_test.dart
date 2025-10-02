@@ -855,7 +855,7 @@ void main() {
       }
 
       var stopwatch = Stopwatch()..start();
-      var size = algorithm.run(graph, 10, 10);
+      algorithm.run(graph, 10, 10);
       var timeTaken = stopwatch.elapsed.inMilliseconds;
 
       print('Timetaken $timeTaken ${graph.nodeCount()}');
@@ -927,7 +927,7 @@ void main() {
       }
 
       var stopwatch = Stopwatch()..start();
-      var size = algorithm.run(graph, 10, 10);
+      algorithm.run(graph, 10, 10);
       var timeTaken = stopwatch.elapsed.inMilliseconds;
 
       print('Timetaken $timeTaken ${graph.nodeCount()}');

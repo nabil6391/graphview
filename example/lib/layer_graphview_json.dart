@@ -232,6 +232,7 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
   final Graph graph = Graph();
   @override
   void initState() {
+    super.initState();
     var edges = json['edges']!;
     edges.forEach((element) {
       var fromNodeId = element['from'];

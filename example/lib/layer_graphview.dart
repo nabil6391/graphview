@@ -108,15 +108,6 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage> {
     );
   }
 
-  Widget _buildDropdownControls() {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 12,
-      children: [
-        ],
-    );
-  }
-
   Widget _buildDropdown<T>(String label, T value, List<T> items, Function(T) onChanged) {
     return Container(
       width: 160,

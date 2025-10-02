@@ -132,6 +132,8 @@ class _TreeViewPageFromJsonState extends State<TreeViewPageFromJson> {
 
   @override
   void initState() {
+    super.initState();
+
     var edges = json['edges']!;
     edges.forEach((element) {
       var fromNodeId = element['from'];
