@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,9 +9,6 @@ class GraphClusterViewPage extends StatefulWidget {
 }
 
 class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
-  late Timer timer;
-  final stepMilis = 25;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,21 +16,26 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
         body: Column(
           children: [
             Expanded(
-              child: GraphView.builder(
-                  graph: graph,
-                  algorithm: builder,
-                  paint: Paint()
-                    ..color = Colors.green
-                    ..strokeWidth = 1
-                    ..style = PaintingStyle.fill,
-                  builder: (Node node) {
-                    // I can decide what widget should be shown here based on the id
-                    var a = node.key!.value as int?;
-                    if (a == 2) {
-                      return rectangWidget(a);
-                    }
-                    return rectangWidget(a);
-                  }),
+              child: InteractiveViewer(
+                  constrained: false,
+                  boundaryMargin: EdgeInsets.all(8),
+                  minScale: 0.001,
+                  maxScale: 10000,
+                  child: GraphViewCustomPainter(
+                      graph: graph,
+                      algorithm: algorithm,
+                      paint: Paint()
+                        ..color = Colors.green
+                        ..strokeWidth = 1
+                        ..style = PaintingStyle.fill,
+                      builder: (Node node) {
+                        // I can decide what widget should be shown here based on the id
+                        var a = node.key!.value as int?;
+                        if (a == 2) {
+                          return rectangWidget(a);
+                        }
+                        return rectangWidget(a);
+                      })),
             ),
           ],
         ));
@@ -44,37 +45,22 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
   Random r = Random();
 
   Widget rectangWidget(int? i) {
-    return GestureDetector(
-      onPanUpdate: (details) {
-        // Find the node and update its position
-        final node = graph.nodes.firstWhere((n) => (n.key?.value as int?) == i);
-        setState(() {
-          node.position = Offset(
-            node.position.dx + details.delta.dx,
-            node.position.dy + details.delta.dy,
-          );
-          startAnimation();
-        });
-      },
-      child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(color: Colors.blue, spreadRadius: 1),
-            ],
-          ),
-          child: Text('Node $i')),
-    );
+    return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(color: Colors.blue, spreadRadius: 1),
+          ],
+        ),
+        child: Text('Node $i'));
   }
 
   final Graph graph = Graph();
-  late FruchtermanReingoldAlgorithm builder;
+  late FruchtermanReingoldAlgorithm algorithm;
 
   @override
   void initState() {
-    super.initState();
-
     final a = Node.Id(1);
     final b = Node.Id(2);
     final c = Node.Id(3);
@@ -92,35 +78,8 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
     graph.addEdge(f, c);
     graph.addEdge(g, c);
     graph.addEdge(h, g);
-
     var config = FruchtermanReingoldConfiguration()
       ..iterations = 1000;
-    builder = FruchtermanReingoldAlgorithm(config);
-
-    // Initialize and start the animation timer
-    builder.init(graph);
-    startAnimation();
-  }
-
-  bool isAnimating = false;
-
-  void startAnimation() {
-    if (isAnimating) return; // already running
-    isAnimating = true;
-
-    timer = Timer.periodic(Duration(milliseconds: stepMilis), (t) {
-      final moved = builder.step(graph);
-      if (!moved) {
-        t.cancel();
-        isAnimating = false;
-      }
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
+    algorithm = FruchtermanReingoldAlgorithm(config);
   }
 }

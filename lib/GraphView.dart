@@ -1,5 +1,6 @@
 library graphview;
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
@@ -1192,4 +1193,114 @@ class RenderCustomLayoutBox extends RenderBox
 class NodeBoxData extends ContainerBoxParentData<RenderBox> {
   Offset? startOffset;
   Offset? targetOffset;
+}
+
+class GraphViewCustomPainter extends StatefulWidget {
+  final Graph graph;
+  final FruchtermanReingoldAlgorithm algorithm;
+  final Paint? paint;
+  final NodeWidgetBuilder builder;
+  final stepMilis = 25;
+
+  GraphViewCustomPainter(
+      {Key? key,
+        required this.graph,
+        required this.algorithm,
+        this.paint,
+        required this.builder}) {}
+
+  @override
+  _GraphViewCustomPainterState createState() => _GraphViewCustomPainterState();
+}
+
+class _GraphViewCustomPainterState extends State<GraphViewCustomPainter> {
+  late Timer timer;
+  late Graph graph;
+  late FruchtermanReingoldAlgorithm algorithm;
+
+  @override
+  void initState() {
+    graph = widget.graph;
+
+    algorithm = widget.algorithm;
+    algorithm.init(graph);
+    startTimer();
+
+    super.initState();
+  }
+
+  void startTimer() {
+    timer = Timer.periodic(Duration(milliseconds: widget.stepMilis), (timer) {
+      algorithm.step(graph);
+      update();
+    });
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    algorithm.setDimensions(
+        MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CustomPaint(
+          size: MediaQuery.of(context).size,
+          painter: EdgeRender(algorithm, graph, Offset(20, 20)),
+        ),
+        ...List<Widget>.generate(graph.nodeCount(), (index) {
+          return Positioned(
+            child: GestureDetector(
+              child:
+              graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
+              onPanUpdate: (details) {
+                graph.getNodeAtPosition(index).position += details.delta;
+                update();
+              },
+            ),
+            top: graph.getNodeAtPosition(index).position.dy,
+            left: graph.getNodeAtPosition(index).position.dx,
+          );
+        }),
+      ],
+    );
+  }
+
+  Future<void> update() async {
+    setState(() {});
+  }
+}
+
+class EdgeRender extends CustomPainter {
+  Algorithm algorithm;
+  Graph graph;
+  Offset offset;
+
+  EdgeRender(this.algorithm, this.graph, this.offset);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    var edgePaint = (Paint()
+      ..color = Colors.black
+      ..strokeWidth = 3)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
+
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+
+    algorithm.renderer!.render(canvas, graph, edgePaint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
+  }
 }

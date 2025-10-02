@@ -27,11 +27,12 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
       displacement[node] = Offset.zero;
       nodeRects[node] = Rect.fromLTWH(node.x, node.y, node.width, node.height);
 
-      if(configuration.shuffleNodes) {
+      if (configuration.shuffleNodes) {
         node.position = Offset(
             rand.nextDouble() * graphWidth, rand.nextDouble() * graphHeight);
         // Update cached rect after position change
-        nodeRects[node] = Rect.fromLTWH(node.x, node.y, node.width, node.height);
+        nodeRects[node] =
+            Rect.fromLTWH(node.x, node.y, node.width, node.height);
       }
     });
   }
@@ -43,8 +44,10 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
       final nodeDisplacement = displacement[node]!;
       var target = node.position + nodeDisplacement;
       var newPosition = Offset.lerp(node.position, target, lerpFactor)!;
-      double newDX = min(graphWidth - node.size.width * 0.5, max(node.size.width * 0.5 , newPosition.dx));
-      double newDY = min(graphHeight - node.size.height *0.5, max(node.size.height * 0.5, newPosition.dy));
+      double newDX = min(graphWidth - node.size.width * 0.5,
+          max(node.size.width * 0.5, newPosition.dx));
+      double newDY = min(graphHeight - node.size.height * 0.5,
+          max(node.size.height * 0.5, newPosition.dy));
 
       node.position = Offset(newDX, newDY);
       // Update cached rect after position change
@@ -85,20 +88,21 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
 
       // Standard FR attraction: proportional to distance² / k
       var attractionForce = (deltaDistance * deltaDistance) / k;
-      var attractionVector = delta / deltaDistance * attractionForce * attractionRate;
+      var attractionVector =
+          delta / deltaDistance * attractionForce * attractionRate;
 
       displacement[source] = displacement[source]! - attractionVector;
       displacement[destination] = displacement[destination]! + attractionVector;
     }
   }
 
-
   void calculateRepulsion(List<Node> nodes) {
     final repulsionRate = configuration.repulsionRate;
     final repulsionPercentage = configuration.repulsionPercentage;
     final epsilon = configuration.epsilon;
     final nodeCountDouble = nodes.length.toDouble();
-    final maxRepulsionDistance = min(graphWidth * repulsionPercentage, graphHeight * repulsionPercentage);
+    final maxRepulsionDistance = min(
+        graphWidth * repulsionPercentage, graphHeight * repulsionPercentage);
 
     for (var i = 0; i < nodeCountDouble; i++) {
       final currentNode = nodes[i];
@@ -109,10 +113,12 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
           // Calculate distance between node rectangles, not just centers
           var delta = _getNodeRectDistance(currentNode, otherNode);
           var deltaDistance = max(epsilon, delta.distance); //protect for 0
-          var repulsionForce = max(0, maxRepulsionDistance - deltaDistance) / maxRepulsionDistance; //value between 0-1
+          var repulsionForce = max(0, maxRepulsionDistance - deltaDistance) /
+              maxRepulsionDistance; //value between 0-1
           var repulsionVector = delta * repulsionForce * repulsionRate;
 
-          displacement[currentNode] = displacement[currentNode]! + repulsionVector;
+          displacement[currentNode] =
+              displacement[currentNode]! + repulsionVector;
           displacement[otherNode] = displacement[otherNode]! - repulsionVector;
         }
       }
@@ -129,8 +135,8 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
 
     if (rectA.overlaps(rectB)) {
       // Push overlapping nodes apart by at least half their combined size
-      final dx = (centerA.dx - centerB.dx).sign *
-          (rectA.width / 2 + rectB.width / 2);
+      final dx =
+          (centerA.dx - centerB.dx).sign * (rectA.width / 2 + rectB.width / 2);
       final dy = (centerA.dy - centerB.dy).sign *
           (rectA.height / 2 + rectB.height / 2);
       return Offset(dx, dy);
@@ -140,19 +146,18 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
     final dx = (centerA.dx < rectB.left)
         ? (rectB.left - rectA.right)
         : (centerA.dx > rectB.right)
-        ? (rectA.left - rectB.right)
-        : 0.0;
+            ? (rectA.left - rectB.right)
+            : 0.0;
 
     final dy = (centerA.dy < rectB.top)
         ? (rectB.top - rectA.bottom)
         : (centerA.dy > rectB.bottom)
-        ? (rectA.top - rectB.bottom)
-        : 0.0;
+            ? (rectA.top - rectB.bottom)
+            : 0.0;
 
     return Offset(dx == 0 ? centerA.dx - centerB.dx : dx,
         dy == 0 ? centerA.dy - centerB.dy : dy);
   }
-
 
   bool step(Graph graph) {
     var moved = false;
@@ -189,7 +194,9 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
 
     tick = DEFAULT_TICK_FACTOR * sqrt(graphWidth / 2 * graphHeight / 2);
 
-    init(graph);
+    if (graph.nodes.any((node) => node.position == Offset.zero)) {
+      init(graph);
+    }
 
     for (var i = 0; i < configuration.iterations; i++) {
       calculateRepulsion(nodes);
@@ -256,7 +263,9 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
 
     for (var i = 1; i < nodeClusters.length; i++) {
       var nextCluster = nodeClusters[i];
-      var xDiff = nextCluster.rect!.left - cluster.rect!.right - configuration.clusterPadding;
+      var xDiff = nextCluster.rect!.left -
+          cluster.rect!.right -
+          configuration.clusterPadding;
       var yDiff = nextCluster.rect!.top - cluster.rect!.top;
       nextCluster.offset(-xDiff, -yDiff);
       cluster = nextCluster;
@@ -279,7 +288,8 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
     nodeClusters.removeWhere((element) => element.size() == 1);
   }
 
-  void followEdges(Graph graph, NodeCluster cluster, Node node, List nodesVisited) {
+  void followEdges(
+      Graph graph, NodeCluster cluster, Node node, List nodesVisited) {
     graph.successorsOf(node).forEach((successor) {
       if (!nodesVisited.contains(successor)) {
         nodesVisited.add(successor);
@@ -352,7 +362,8 @@ class NodeCluster {
     nodes.add(node);
 
     if (nodes.length == 1) {
-      rect = Rect.fromLTRB(node.x, node.y, node.x + node.width, node.y + node.height);
+      rect = Rect.fromLTRB(
+          node.x, node.y, node.x + node.width, node.y + node.height);
     } else {
       rect = Rect.fromLTRB(
           min(rect!.left, node.x),
@@ -372,7 +383,10 @@ class NodeCluster {
 
   void concat(NodeCluster cluster) {
     cluster.nodes.forEach((node) {
-      node.position = (Offset(rect!.right + FruchtermanReingoldConfiguration.DEFAULT_CLUSTER_PADDING, rect!.top));
+      node.position = (Offset(
+          rect!.right +
+              FruchtermanReingoldConfiguration.DEFAULT_CLUSTER_PADDING,
+          rect!.top));
       add(node);
     });
   }
@@ -385,5 +399,7 @@ class NodeCluster {
     rect = rect!.translate(xDiff, yDiff);
   }
 
-  NodeCluster() : nodes = <Node>[], rect = Rect.zero;
+  NodeCluster()
+      : nodes = <Node>[],
+        rect = Rect.zero;
 }
