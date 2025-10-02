@@ -1202,12 +1202,13 @@ class GraphViewCustomPainter extends StatefulWidget {
   final NodeWidgetBuilder builder;
   final stepMilis = 25;
 
-  GraphViewCustomPainter(
-      {Key? key,
-        required this.graph,
-        required this.algorithm,
-        this.paint,
-        required this.builder}) {}
+  GraphViewCustomPainter({
+    Key? key,
+    required this.graph,
+    required this.algorithm,
+    this.paint,
+    required this.builder,
+  }) : super(key: key);
 
   @override
   _GraphViewCustomPainterState createState() => _GraphViewCustomPainterState();
@@ -1252,7 +1253,7 @@ class _GraphViewCustomPainterState extends State<GraphViewCustomPainter> {
       children: [
         CustomPaint(
           size: MediaQuery.of(context).size,
-          painter: EdgeRender(algorithm, graph, Offset(20, 20)),
+          painter: EdgeRender(algorithm, graph, Offset(20, 20), widget.paint),
         ),
         ...List<Widget>.generate(graph.nodeCount(), (index) {
           return Positioned(
@@ -1281,16 +1282,18 @@ class EdgeRender extends CustomPainter {
   Algorithm algorithm;
   Graph graph;
   Offset offset;
+  Paint? customPaint;
 
-  EdgeRender(this.algorithm, this.graph, this.offset);
+  EdgeRender(this.algorithm, this.graph, this.offset, this.customPaint);
 
   @override
   void paint(Canvas canvas, Size size) {
-    var edgePaint = (Paint()
-      ..color = Colors.black
-      ..strokeWidth = 3)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt;
+    var edgePaint = customPaint ??
+        (Paint()
+          ..color = Colors.black
+          ..strokeWidth = 3
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.butt);
 
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
