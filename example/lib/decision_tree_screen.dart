@@ -54,7 +54,7 @@ class _DecisionTreeScreenState extends State<DecisionTreeScreen> {
             return Container(
               width: 180,
               decoration: BoxDecoration(
-                color: Color((Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0),
+                color: Color((Random().nextDouble() * 0xFFFFFF).toInt()).withValues(alpha: 1.0),
                 border: Border.all(width: 2),
               ),
               padding: const EdgeInsets.all(16),

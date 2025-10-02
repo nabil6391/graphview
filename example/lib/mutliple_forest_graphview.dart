@@ -92,7 +92,7 @@ class _TreeViewPageState extends State<MultipleForestTreeViewPage> with TickerPr
                 SizedBox(width: 8,),
                 ElevatedButton(onPressed: (){
                   _controller.zoomToFit();
-                }, child: Text("Zoom to fit"))
+                }, child: Text('Zoom to fit'))
               ],
             ),
 

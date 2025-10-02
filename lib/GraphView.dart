@@ -9,7 +9,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 part 'Algorithm.dart';
 part 'Graph.dart';
@@ -174,8 +173,9 @@ class GraphViewController {
       if (visitedNodes.containsKey(node)) return;
       visitedNodes[node] = true;
 
-      if (_hiddenNodes.containsKey(node) && _collapsedNodes.containsKey(node))
+      if (_hiddenNodes.containsKey(node) && _collapsedNodes.containsKey(node)) {
         return;
+      }
 
       // Get all outgoing edges from this node
       for (final edge in graph.getOutEdges(node)) {
@@ -440,7 +440,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
           boundaryMargin: EdgeInsets.all(double.infinity),
           minScale: 0.01,
           maxScale: 10,
-          builder: (BuildContext context, Quad viewport) {
+          builder: (context, viewport) {
             return view;
           });
     }
@@ -1000,7 +1000,7 @@ class RenderCustomLayoutBox extends RenderBox
     opacityPaint
       ..color = Color.fromRGBO(255, 255, 255, opacity)
       ..colorFilter = ColorFilter.mode(
-          Colors.white.withOpacity(opacity), BlendMode.modulate);
+          Colors.white.withValues(alpha: opacity), BlendMode.modulate);
 
     context.canvas.saveLayer(
         Rect.fromLTWH(pos.dx + offset.dx - 20, pos.dy + offset.dy - 20,
@@ -1031,7 +1031,7 @@ class RenderCustomLayoutBox extends RenderBox
     opacityPaint
       ..color = Color.fromRGBO(255, 255, 255, opacity)
       ..colorFilter = ColorFilter.mode(
-          Colors.white.withOpacity(opacity), BlendMode.modulate);
+          Colors.white.withValues(alpha: opacity), BlendMode.modulate);
 
     context.canvas.saveLayer(
         Rect.fromLTWH(pos.dx + offset.dx - 20, pos.dy + offset.dy - 20,

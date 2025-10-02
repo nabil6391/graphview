@@ -17,8 +17,7 @@ class FruchtermanReingoldAlgorithm implements Algorithm {
   EdgeRenderer? renderer;
 
   FruchtermanReingoldAlgorithm(this.configuration, {this.renderer}) {
-    this.configuration = configuration;
-    this.renderer = renderer ?? ArrowEdgeRenderer(noArrow: true);
+    renderer = renderer ?? ArrowEdgeRenderer(noArrow: true);
   }
 
   @override
@@ -355,7 +354,7 @@ class NodeCluster {
   }
 
   void setRect(Rect newRect) {
-    this.rect = newRect;
+    rect = newRect;
   }
 
   void add(Node node) {

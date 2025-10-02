@@ -92,7 +92,7 @@ class _LargeTreeViewPageState extends State<LargeTreeViewPage> with TickerProvid
                 SizedBox(width: 8,),
                 ElevatedButton(onPressed: (){
                   _controller.zoomToFit();
-                }, child: Text("Zoom to fit"))
+                }, child: Text('Zoom to fit'))
               ],
             ),
 

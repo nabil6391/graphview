@@ -21,7 +21,7 @@ class ContainerX {
 
   bool contains(Segment segment) => segments.contains(segment);
 
-  bool get isEmpty => segments.length == 0;
+  bool get isEmpty => segments.isEmpty;
 
   static ContainerX createEmpty() => ContainerX();
 
@@ -160,7 +160,7 @@ class ContainerElement extends LayerElement {
 
 class EiglspergerAlgorithm extends Algorithm {
   Map<Node, EiglspergerNodeData> nodeData = {};
-  Map<Edge, EiglspergerEdgeData> _edgeData = {};
+  final Map<Edge, EiglspergerEdgeData> _edgeData = {};
   Set<Node> stack = {};
   Set<Node> visited = {};
   List<List<Node>> layers = [];
@@ -516,7 +516,7 @@ class EiglspergerAlgorithm extends Algorithm {
         var node = element.node;
         var data = nodeData[node];
 
-        bool shouldMerge = isForward ?
+        var shouldMerge = isForward ?
         (data?.isPVertex ?? false) :
         (data?.isQVertex ?? false);
 
@@ -526,7 +526,7 @@ class EiglspergerAlgorithm extends Algorithm {
           currentContainer.append(data!.segment!);
 
           if (!processedElements.any((e) => e is ContainerElement && e.container == currentContainer)) {
-            processedElements.add(ContainerElement(currentContainer!));
+            processedElements.add(ContainerElement(currentContainer));
           }
         } else {
           // Regular node
@@ -1436,7 +1436,7 @@ class EiglspergerAlgorithm extends Algorithm {
           final edge = graph.addEdge(predecessor, successor);
           final edgeData = EiglspergerEdgeData();
           edgeData.bendPoints = bendPoints;
-          this._edgeData[edge] = edgeData;
+          _edgeData[edge] = edgeData;
 
           graph.removeNode(current);
         }

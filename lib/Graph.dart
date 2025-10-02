@@ -120,7 +120,7 @@ class Graph {
       _predecessorCache[node] = [];
     }
 
-    for (Edge edge in _edges) {
+    for (var edge in _edges) {
       _successorCache[edge.source]!.add(edge.destination);
       _predecessorCache[edge.destination]!.add(edge.source);
     }
