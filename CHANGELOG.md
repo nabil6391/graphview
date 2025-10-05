@@ -1,3 +1,7 @@
+## 1.5.1
+- Fix Zoom To fit for hidden nodes
+- Add Fade in Support for Edges
+
 ## 1.5.0
 
 - **MAJOR UPDATE**: Added 5 new layout algorithms
@@ -18,10 +22,10 @@
     - `animated`: Enable/disable smooth animations (default: true)
     - `autoZoomToFit`: Automatically zoom to fit all nodes on initialization
     - `initialNode`: Jump to specific node on startup
-    - `panAnimationDuration`: Customizable camera movement timing
-    - `centerGraph`: Center the graph within viewport
+    - `panAnimationDuration`: Customizable navigation movement timing
+    - `centerGraph`: Center the graph within viewport having a fixed large size of 2000000
     - `controller`: GraphViewController for programmatic control
-- **NEW**: Navigation and camera control features
+- **NEW**: Navigation and pan control features
     - `jumpToNode()` and `animateToNode()` for programmatic navigation
     - `zoomToFit()` for automatic viewport adjustment
     - `resetView()` for returning to origin
