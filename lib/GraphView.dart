@@ -355,9 +355,9 @@ class GraphView extends StatefulWidget {
 
 class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   late TransformationController _transformationController;
-  late final AnimationController _cameraController;
+  late final AnimationController _panController;
   late final AnimationController _nodeController;
-  Animation<Matrix4>? _cameraAnimation;
+  Animation<Matrix4>? _panAnimation;
 
   @override
   void initState() {
@@ -366,7 +366,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     _transformationController = widget.controller?.transformationController ??
         TransformationController();
 
-    _cameraController = AnimationController(
+    _panController = AnimationController(
       vsync: this,
       duration:
           widget.panAnimationDuration ?? const Duration(milliseconds: 600),
@@ -394,7 +394,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   @override
   void dispose() {
     widget.controller?._detach();
-    _cameraController.dispose();
+    _panController.dispose();
     _nodeController.dispose();
     _transformationController.dispose();
     super.dispose();
@@ -489,22 +489,22 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   }
 
   void animateToMatrix(Matrix4 target) {
-    _cameraController.reset();
-    _cameraAnimation = Matrix4Tween(
+    _panController.reset();
+    _panAnimation = Matrix4Tween(
             begin: _transformationController.value, end: target)
         .animate(
-            CurvedAnimation(parent: _cameraController, curve: Curves.linear));
-    _cameraAnimation!.addListener(_onCameraTick);
-    _cameraController.forward();
+            CurvedAnimation(parent: _panController, curve: Curves.linear));
+    _panAnimation!.addListener(_onPanTick);
+    _panController.forward();
   }
 
-  void _onCameraTick() {
-    if (_cameraAnimation == null) return;
-    _transformationController.value = _cameraAnimation!.value;
-    if (!_cameraController.isAnimating) {
-      _cameraAnimation!.removeListener(_onCameraTick);
-      _cameraAnimation = null;
-      _cameraController.reset();
+  void _onPanTick() {
+    if (_panAnimation == null) return;
+    _transformationController.value = _panAnimation!.value;
+    if (!_panController.isAnimating) {
+      _panAnimation!.removeListener(_onPanTick);
+      _panAnimation = null;
+      _panController.reset();
     }
   }
 
