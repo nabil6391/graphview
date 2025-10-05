@@ -30,8 +30,41 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
           ..style = PaintingStyle.fill;
       }
 
-      var currentPaint = edge.paint ?? paint
+      var currentPaint = (edge.paint ?? paint)
         ..style = PaintingStyle.stroke;
+
+      if (edge.source == edge.destination) {
+        final loopResult = buildSelfLoopPath(
+          edge,
+          arrowLength: addTriangleToEdge ? ARROW_LENGTH : 0.0,
+        );
+
+        if (loopResult != null) {
+          final lineType = nodeData[edge.destination]?.lineType;
+          drawStyledPath(canvas, loopResult.path, currentPaint, lineType: lineType);
+
+          if (addTriangleToEdge) {
+            final triangleCentroid = drawTriangle(
+              canvas,
+              edgeTrianglePaint ?? trianglePaint,
+              loopResult.arrowBase.dx,
+              loopResult.arrowBase.dy,
+              loopResult.arrowTip.dx,
+              loopResult.arrowTip.dy,
+            );
+
+            drawStyledLine(
+              canvas,
+              loopResult.arrowBase,
+              triangleCentroid,
+              currentPaint,
+              lineType: lineType,
+            );
+          }
+
+          return;
+        }
+      }
 
       if (hasBendEdges(edge)) {
         _renderEdgeWithBendPoints(canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);

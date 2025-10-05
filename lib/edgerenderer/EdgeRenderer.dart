@@ -136,4 +136,65 @@ abstract class EdgeRenderer {
     canvas.drawPath(path, paint);
     paint.strokeWidth = originalStrokeWidth;
   }
+
+  /// Builds a loop path for self-referential edges and returns geometry
+  /// data that renderers can use to draw arrows or style the segment.
+  LoopRenderResult? buildSelfLoopPath(
+    Edge edge, {
+    double loopPadding = 16.0,
+    double arrowLength = 12.0,
+  }) {
+    if (edge.source != edge.destination) {
+      return null;
+    }
+
+    final node = edge.source;
+    final center = getNodeCenter(node);
+    final radius = max(node.width, node.height) * 0.5 + loopPadding;
+    final loopCenter = Offset(
+      center.dx + node.width * 0.5 + radius,
+      center.dy,
+    );
+
+    final path = Path()
+      ..moveTo(center.dx + node.width * 0.5, center.dy)
+      ..arcTo(
+        Rect.fromCircle(center: loopCenter, radius: radius),
+        pi,
+        1.45 * pi,
+        false,
+      );
+
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) {
+      return LoopRenderResult(path, center, center);
+    }
+
+    final metric = metrics.first;
+    final totalLength = metric.length;
+    final effectiveArrowLength = arrowLength <= 0
+        ? 0.0
+        : min(arrowLength, totalLength * 0.3);
+    final trimmedLength = max(0.0, totalLength - effectiveArrowLength);
+
+    final trimmedPath = Path()
+      ..addPath(metric.extractPath(0, trimmedLength), Offset.zero);
+
+    final arrowBaseTangent = metric.getTangentForOffset(trimmedLength);
+    final arrowTipTangent = metric.getTangentForOffset(totalLength);
+
+    return LoopRenderResult(
+      trimmedPath,
+      arrowBaseTangent?.position ?? center,
+      arrowTipTangent?.position ?? center,
+    );
+  }
+}
+
+class LoopRenderResult {
+  final Path path;
+  final Offset arrowBase;
+  final Offset arrowTip;
+
+  const LoopRenderResult(this.path, this.arrowBase, this.arrowTip);
 }

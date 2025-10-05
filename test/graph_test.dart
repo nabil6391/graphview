@@ -75,5 +75,22 @@ void main() {
         expect(timeTaken < 100, true);
       }
     });
+
+    test('ArrowEdgeRenderer builds self-loop path', () {
+      final renderer = ArrowEdgeRenderer();
+      final node = Node.Id('self')
+        ..size = const Size(40, 40)
+        ..position = const Offset(100, 100);
+
+      final edge = Edge(node, node);
+      final result = renderer.buildSelfLoopPath(edge);
+
+      expect(result, isNotNull);
+
+      final metrics = result!.path.computeMetrics().toList();
+      expect(metrics, isNotEmpty);
+      expect(metrics.first.length, greaterThan(0));
+      expect(result.arrowTip, isNot(equals(const Offset(0, 0))));
+    });
   });
 }
