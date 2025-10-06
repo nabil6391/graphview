@@ -1183,23 +1183,27 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void restoreCycle() {
     graph.nodes.forEach((n) {
-      if (nodeData[n]!.isReversed) {
-        nodeData[n]!.reversed.forEach((target) {
-          final existingEdge = graph.getEdgeBetween(target, n);
-          if (existingEdge == null) {
-            return;
-          }
-          final existingData = this.edgeData[existingEdge];
-          final bendPoints = existingData?.bendPoints ?? <double>[];
-          this.edgeData.remove(existingEdge);
-          graph.removeEdgeFromPredecessor(target, n);
-          final edge = graph.addEdge(n, target);
-
-          final restoredData = existingData ?? SugiyamaEdgeData();
-          restoredData.bendPoints = bendPoints;
-          this.edgeData[edge] = restoredData;
-        });
+      final nodeInfo = nodeData[n];
+      if (nodeInfo == null || !nodeInfo.isReversed) {
+        return;
       }
+
+      for (final target in nodeInfo.reversed.toList()) {
+        final existingEdge = graph.getEdgeBetween(target, n);
+        if (existingEdge == null) {
+          continue;
+        }
+        final existingData = this.edgeData.remove(existingEdge);
+        final bendPoints = existingData?.bendPoints ?? <double>[];
+        graph.removeEdgeFromPredecessor(target, n);
+        final edge = graph.addEdge(n, target);
+
+        final restoredData = existingData ?? SugiyamaEdgeData();
+        restoredData.bendPoints = bendPoints;
+        this.edgeData[edge] = restoredData;
+      }
+
+      nodeInfo.reversed.clear();
     });
   }
 
