@@ -90,11 +90,13 @@ class SugiyamaAlgorithm extends Algorithm {
     }
     visited.add(node);
     stack.add(node);
-    graph.getOutEdges(node).forEach((edge) {
+    graph.getOutEdges(node).toList().forEach((edge) {
       final target = edge.destination;
       if (stack.contains(target)) {
+        final storedData = edgeData.remove(edge);
         graph.removeEdge(edge);
-        graph.addEdge(target, node);
+        final reversedEdge = graph.addEdge(target, node);
+        edgeData[reversedEdge] = storedData ?? SugiyamaEdgeData();
         nodeData[node]!.reversed.add(target);
       } else {
         dfs(target);
@@ -1183,14 +1185,19 @@ class SugiyamaAlgorithm extends Algorithm {
     graph.nodes.forEach((n) {
       if (nodeData[n]!.isReversed) {
         nodeData[n]!.reversed.forEach((target) {
-          final bendPoints =
-              this.edgeData[graph.getEdgeBetween(target, n)!]!.bendPoints;
+          final existingEdge = graph.getEdgeBetween(target, n);
+          if (existingEdge == null) {
+            return;
+          }
+          final existingData = this.edgeData[existingEdge];
+          final bendPoints = existingData?.bendPoints ?? <double>[];
+          this.edgeData.remove(existingEdge);
           graph.removeEdgeFromPredecessor(target, n);
           final edge = graph.addEdge(n, target);
 
-          final edgeData = SugiyamaEdgeData();
-          edgeData.bendPoints = bendPoints;
-          this.edgeData[edge] = edgeData;
+          final restoredData = existingData ?? SugiyamaEdgeData();
+          restoredData.bendPoints = bendPoints;
+          this.edgeData[edge] = restoredData;
         });
       }
     });
@@ -1220,8 +1227,10 @@ class SugiyamaAlgorithm extends Algorithm {
     for (var edge in feedbackArcs) {
       var source = edge.source;
       var target = edge.destination;
+      final storedData = edgeData.remove(edge);
       graph.removeEdge(edge);
-      graph.addEdge(target, source);
+      final reversedEdge = graph.addEdge(target, source);
+      edgeData[reversedEdge] = storedData ?? SugiyamaEdgeData();
       nodeData[source]!.reversed.add(target);
     }
   }
