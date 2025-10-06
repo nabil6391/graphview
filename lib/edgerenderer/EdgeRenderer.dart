@@ -149,24 +149,20 @@ abstract class EdgeRenderer {
     }
 
     final node = edge.source;
-    final nodePosition = getNodePosition(node);
+    final nodeCenter = getNodeCenter(node);
 
-    final start = Offset(
-      nodePosition.dx + node.width * 0.5,
-      nodePosition.dy,
-    );
+    final anchorRadius = node.size.shortestSide * 0.5;
 
-    final end = Offset(
-      nodePosition.dx,
-      nodePosition.dy + node.height * 0.5,
-    );
+    final start = nodeCenter + Offset(0, -anchorRadius);
+
+    final end = nodeCenter + Offset(-anchorRadius, 0);
 
     final loopRadius = max(
-      loopPadding + node.size.shortestSide * 0.25,
-      node.size.shortestSide * 0.75,
+      loopPadding + anchorRadius,
+      anchorRadius * 1.5,
     );
 
-    final controlPoint1 = start + Offset(0, -loopRadius);
+    final controlPoint1 = start + Offset(-loopRadius, 0);
 
     final controlPoint2 = end + Offset(0, -loopRadius);
 
