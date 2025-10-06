@@ -103,5 +103,22 @@ void main() {
       expect(metrics.first.length, greaterThan(0));
       expect(result.arrowTip, isNot(equals(const Offset(0, 0))));
     });
+
+    test('SugiyamaAlgorithm handles single node self loop', () {
+      final graph = Graph();
+      final node = Node.Id('self')
+        ..size = const Size(40, 40);
+
+      graph.addEdge(node, node);
+
+      final config = SugiyamaConfiguration()
+        ..nodeSeparation = 20
+        ..levelSeparation = 20;
+
+      final algorithm = SugiyamaAlgorithm(config);
+
+      expect(() => algorithm.run(graph, 0, 0), returnsNormally);
+      expect(graph.nodes.length, 1);
+    });
   });
 }

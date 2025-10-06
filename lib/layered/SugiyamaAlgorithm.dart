@@ -774,6 +774,12 @@ class SugiyamaAlgorithm extends Algorithm {
         break;
     }
 
+    if (coordinates.isEmpty) {
+      for (final node in graph.nodes) {
+        coordinates[node] = 0.0;
+      }
+    }
+
     // Get the minimum coordinate value
     var minValue = coordinates.values.reduce(min);
 
@@ -793,6 +799,10 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void resolveOverlaps(Map<Node, double> coordinates) {
     for (var layer in layers) {
+      if (layer.isEmpty) {
+        continue;
+      }
+
       var layerNodes = List<Node>.from(layer);
       layerNodes.sort(
           (a, b) => nodeData[a]!.position.compareTo(nodeData[b]!.position));
