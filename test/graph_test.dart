@@ -76,6 +76,17 @@ void main() {
       }
     });
 
+    test('Graph does not duplicate nodes for self loops', () {
+      final graph = Graph();
+      final node = Node.Id('self');
+
+      graph.addEdge(node, node);
+
+      expect(graph.nodes.length, 1);
+      expect(graph.edges.length, 1);
+      expect(graph.nodes.single, node);
+    });
+
     test('ArrowEdgeRenderer builds self-loop path', () {
       final renderer = ArrowEdgeRenderer();
       final node = Node.Id('self')
