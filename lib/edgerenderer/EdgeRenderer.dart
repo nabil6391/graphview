@@ -149,25 +149,45 @@ abstract class EdgeRenderer {
     }
 
     final node = edge.source;
-    final center = getNodeCenter(node);
-    final radius = max(node.width, node.height) * 0.5 + loopPadding;
-    final loopCenter = Offset(
-      center.dx + node.width * 0.5 + radius,
-      center.dy,
+    final nodePosition = getNodePosition(node);
+
+    final start = Offset(
+      nodePosition.dx + node.width,
+      nodePosition.dy + node.height * 0.5,
+    );
+
+    final end = Offset(
+      nodePosition.dx + node.width * 0.5,
+      nodePosition.dy,
+    );
+
+    final horizontalOffset = max(loopPadding + node.width * 0.4, 24.0);
+    final verticalOffset = max(loopPadding + node.height * 0.8, 32.0);
+
+    final controlPoint1 = Offset(
+      start.dx + horizontalOffset,
+      start.dy - verticalOffset,
+    );
+
+    final controlPoint2 = Offset(
+      end.dx + horizontalOffset * 0.6,
+      end.dy - verticalOffset,
     );
 
     final path = Path()
-      ..moveTo(center.dx + node.width * 0.5, center.dy)
-      ..arcTo(
-        Rect.fromCircle(center: loopCenter, radius: radius),
-        pi,
-        1.45 * pi,
-        false,
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(
+        controlPoint1.dx,
+        controlPoint1.dy,
+        controlPoint2.dx,
+        controlPoint2.dy,
+        end.dx,
+        end.dy,
       );
 
     final metrics = path.computeMetrics().toList();
     if (metrics.isEmpty) {
-      return LoopRenderResult(path, center, center);
+      return LoopRenderResult(path, start, end);
     }
 
     final metric = metrics.first;
@@ -185,8 +205,8 @@ abstract class EdgeRenderer {
 
     return LoopRenderResult(
       trimmedPath,
-      arrowBaseTangent?.position ?? center,
-      arrowTipTangent?.position ?? center,
+      arrowBaseTangent?.position ?? end,
+      arrowTipTangent?.position ?? end,
     );
   }
 }
