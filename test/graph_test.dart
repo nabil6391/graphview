@@ -108,7 +108,7 @@ void main() {
       expect(tangentStart, isNotNull);
       expect(tangentStart!.vector.dy.abs(),
           lessThan(tangentStart.vector.dx.abs() * 0.1));
-      expect(tangentStart.vector.dx, lessThan(0));
+      expect(tangentStart.vector.dx, greaterThan(0));
 
       final tangentEnd = metric.getTangentForOffset(metric.length);
       expect(tangentEnd, isNotNull);
