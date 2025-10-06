@@ -100,8 +100,19 @@ void main() {
 
       final metrics = result!.path.computeMetrics().toList();
       expect(metrics, isNotEmpty);
-      expect(metrics.first.length, greaterThan(0));
+      final metric = metrics.first;
+      expect(metric.length, greaterThan(0));
       expect(result.arrowTip, isNot(equals(const Offset(0, 0))));
+
+      final tangentStart = metric.getTangentForOffset(0);
+      expect(tangentStart, isNotNull);
+      expect(tangentStart!.vector.dy.abs(),
+          lessThan(tangentStart.vector.dx.abs() * 0.1));
+
+      final tangentEnd = metric.getTangentForOffset(metric.length);
+      expect(tangentEnd, isNotNull);
+      expect(tangentEnd!.vector.dx.abs(),
+          lessThan(tangentEnd.vector.dy.abs() * 0.1));
     });
 
     test('SugiyamaAlgorithm handles single node self loop', () {
