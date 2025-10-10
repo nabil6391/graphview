@@ -187,16 +187,12 @@ abstract class EdgeRenderer {
     final effectiveArrowLength = arrowLength <= 0
         ? 0.0
         : min(arrowLength, totalLength * 0.3);
-    final trimmedLength = max(0.0, totalLength - effectiveArrowLength);
-
-    final trimmedPath = Path()
-      ..addPath(metric.extractPath(0, trimmedLength), Offset.zero);
-
-    final arrowBaseTangent = metric.getTangentForOffset(trimmedLength);
+    final arrowBaseOffset = max(0.0, totalLength - effectiveArrowLength);
+    final arrowBaseTangent = metric.getTangentForOffset(arrowBaseOffset);
     final arrowTipTangent = metric.getTangentForOffset(totalLength);
 
     return LoopRenderResult(
-      trimmedPath,
+      path,
       arrowBaseTangent?.position ?? end,
       arrowTipTangent?.position ?? end,
     );
