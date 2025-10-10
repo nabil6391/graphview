@@ -51,20 +51,31 @@ class Graph {
   void addEdgeS(Edge edge) {
     var sourceSet = false;
     var destinationSet = false;
-    _nodes.forEach((node) {
+    for (var node in _nodes) {
       if (!sourceSet && node == edge.source) {
         edge.source = node;
         sourceSet = true;
-      } else if (!destinationSet && node == edge.destination) {
+      }
+
+      if (!destinationSet && node == edge.destination) {
         edge.destination = node;
         destinationSet = true;
       }
-    });
+
+      if (sourceSet && destinationSet) {
+        break;
+      }
+    }
     if (!sourceSet) {
       _nodes.add(edge.source);
+      sourceSet = true;
+      if (!destinationSet && edge.destination == edge.source) {
+        destinationSet = true;
+      }
     }
     if (!destinationSet) {
       _nodes.add(edge.destination);
+      destinationSet = true;
     }
 
     if (!_edges.contains(edge)) {

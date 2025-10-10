@@ -75,5 +75,63 @@ void main() {
         expect(timeTaken < 100, true);
       }
     });
+
+    test('Graph does not duplicate nodes for self loops', () {
+      final graph = Graph();
+      final node = Node.Id('self');
+
+      graph.addEdge(node, node);
+
+      expect(graph.nodes.length, 1);
+      expect(graph.edges.length, 1);
+      expect(graph.nodes.single, node);
+    });
+
+    test('ArrowEdgeRenderer builds self-loop path', () {
+      final renderer = ArrowEdgeRenderer();
+      final node = Node.Id('self')
+        ..size = const Size(40, 40)
+        ..position = const Offset(100, 100);
+
+      final edge = Edge(node, node);
+      final result = renderer.buildSelfLoopPath(edge);
+
+      expect(result, isNotNull);
+
+      final metrics = result!.path.computeMetrics().toList();
+      expect(metrics, isNotEmpty);
+      final metric = metrics.first;
+      expect(metric.length, greaterThan(0));
+      expect(result.arrowTip, isNot(equals(const Offset(0, 0))));
+
+      final tangentStart = metric.getTangentForOffset(0);
+      expect(tangentStart, isNotNull);
+      expect(tangentStart!.vector.dy.abs(),
+          lessThan(tangentStart.vector.dx.abs() * 0.1));
+      expect(tangentStart.vector.dx, greaterThan(0));
+
+      final tangentEnd = metric.getTangentForOffset(metric.length);
+      expect(tangentEnd, isNotNull);
+      expect(tangentEnd!.vector.dx.abs(),
+          lessThan(tangentEnd.vector.dy.abs() * 0.1));
+      expect(tangentEnd.vector.dy, greaterThan(0));
+    });
+
+    test('SugiyamaAlgorithm handles single node self loop', () {
+      final graph = Graph();
+      final node = Node.Id('self')
+        ..size = const Size(40, 40);
+
+      graph.addEdge(node, node);
+
+      final config = SugiyamaConfiguration()
+        ..nodeSeparation = 20
+        ..levelSeparation = 20;
+
+      final algorithm = SugiyamaAlgorithm(config);
+
+      expect(() => algorithm.run(graph, 0, 0), returnsNormally);
+      expect(graph.nodes.length, 1);
+    });
   });
 }

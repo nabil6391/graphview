@@ -28,6 +28,44 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     var source = edge.source;
     var destination = edge.destination;
 
+    final currentPaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
+    final lineType = _getLineType(destination);
+
+    if (source == destination) {
+      final loopResult = buildSelfLoopPath(
+        edge,
+        arrowLength: noArrow ? 0.0 : ARROW_LENGTH,
+      );
+
+      if (loopResult != null) {
+        drawStyledPath(canvas, loopResult.path, currentPaint, lineType: lineType);
+
+        if (!noArrow) {
+          final trianglePaint = Paint()
+            ..color = edge.paint?.color ?? paint.color
+            ..style = PaintingStyle.fill;
+          final triangleCentroid = drawTriangle(
+            canvas,
+            trianglePaint,
+            loopResult.arrowBase.dx,
+            loopResult.arrowBase.dy,
+            loopResult.arrowTip.dx,
+            loopResult.arrowTip.dy,
+          );
+
+          drawStyledLine(
+            canvas,
+            loopResult.arrowBase,
+            triangleCentroid,
+            currentPaint,
+            lineType: lineType,
+          );
+        }
+
+        return;
+      }
+    }
+
     var sourceOffset = getNodePosition(source);
     var destinationOffset = getNodePosition(destination);
 
@@ -46,8 +84,6 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         destination.width,
         destination.height);
 
-    final currentPaint = edge.paint ?? paint;
-
     if (noArrow) {
       // Draw line without arrow, respecting line type
       drawStyledLine(
@@ -55,7 +91,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         Offset(clippedLine[0], clippedLine[1]),
         Offset(clippedLine[2], clippedLine[3]),
         currentPaint,
-        lineType: _getLineType(destination),
+        lineType: lineType,
       );
     } else {
       var trianglePaint = Paint()
@@ -84,7 +120,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         Offset(clippedLine[0], clippedLine[1]),
         triangleCentroid,
         currentPaint,
-        lineType: _getLineType(destination),
+        lineType: lineType,
       );
     }
   }
