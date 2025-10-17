@@ -19,6 +19,14 @@ class TreeEdgeRenderer extends EdgeRenderer {
     var node = edge.source;
     var child = edge.destination;
 
+    if (node == child) {
+      final loopPath = buildSelfLoopPath(edge, arrowLength: 0.0);
+      if (loopPath != null) {
+        drawStyledPath(canvas, loopPath.path, edgePaint, lineType: child.lineType);
+      }
+      return;
+    }
+
     final parentPos = getNodePosition(node);
     final childPos = getNodePosition(child);
 

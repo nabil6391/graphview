@@ -136,4 +136,73 @@ abstract class EdgeRenderer {
     canvas.drawPath(path, paint);
     paint.strokeWidth = originalStrokeWidth;
   }
+
+  /// Builds a loop path for self-referential edges and returns geometry
+  /// data that renderers can use to draw arrows or style the segment.
+  LoopRenderResult? buildSelfLoopPath(
+    Edge edge, {
+    double loopPadding = 16.0,
+    double arrowLength = 12.0,
+  }) {
+    if (edge.source != edge.destination) {
+      return null;
+    }
+
+    final node = edge.source;
+    final nodeCenter = getNodeCenter(node);
+
+    final anchorRadius = node.size.shortestSide * 0.5;
+
+    final start = nodeCenter + Offset(anchorRadius, 0);
+
+    final end = nodeCenter + Offset(0, -anchorRadius);
+
+    final loopRadius = max(
+      loopPadding + anchorRadius,
+      anchorRadius * 1.5,
+    );
+
+    final controlPoint1 = start + Offset(loopRadius, 0);
+
+    final controlPoint2 = end + Offset(0, -loopRadius);
+
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(
+        controlPoint1.dx,
+        controlPoint1.dy,
+        controlPoint2.dx,
+        controlPoint2.dy,
+        end.dx,
+        end.dy,
+      );
+
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) {
+      return LoopRenderResult(path, start, end);
+    }
+
+    final metric = metrics.first;
+    final totalLength = metric.length;
+    final effectiveArrowLength = arrowLength <= 0
+        ? 0.0
+        : min(arrowLength, totalLength * 0.3);
+    final arrowBaseOffset = max(0.0, totalLength - effectiveArrowLength);
+    final arrowBaseTangent = metric.getTangentForOffset(arrowBaseOffset);
+    final arrowTipTangent = metric.getTangentForOffset(totalLength);
+
+    return LoopRenderResult(
+      path,
+      arrowBaseTangent?.position ?? end,
+      arrowTipTangent?.position ?? end,
+    );
+  }
+}
+
+class LoopRenderResult {
+  final Path path;
+  final Offset arrowBase;
+  final Offset arrowTip;
+
+  const LoopRenderResult(this.path, this.arrowBase, this.arrowTip);
 }

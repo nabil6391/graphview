@@ -90,11 +90,13 @@ class SugiyamaAlgorithm extends Algorithm {
     }
     visited.add(node);
     stack.add(node);
-    graph.getOutEdges(node).forEach((edge) {
+    graph.getOutEdges(node).toList().forEach((edge) {
       final target = edge.destination;
       if (stack.contains(target)) {
+        final storedData = edgeData.remove(edge);
         graph.removeEdge(edge);
-        graph.addEdge(target, node);
+        final reversedEdge = graph.addEdge(target, node);
+        edgeData[reversedEdge] = storedData ?? SugiyamaEdgeData();
         nodeData[node]!.reversed.add(target);
       } else {
         dfs(target);
@@ -772,6 +774,12 @@ class SugiyamaAlgorithm extends Algorithm {
         break;
     }
 
+    if (coordinates.isEmpty) {
+      for (final node in graph.nodes) {
+        coordinates[node] = 0.0;
+      }
+    }
+
     // Get the minimum coordinate value
     var minValue = coordinates.values.reduce(min);
 
@@ -791,6 +799,10 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void resolveOverlaps(Map<Node, double> coordinates) {
     for (var layer in layers) {
+      if (layer.isEmpty) {
+        continue;
+      }
+
       var layerNodes = List<Node>.from(layer);
       layerNodes.sort(
           (a, b) => nodeData[a]!.position.compareTo(nodeData[b]!.position));
@@ -1181,18 +1193,27 @@ class SugiyamaAlgorithm extends Algorithm {
 
   void restoreCycle() {
     graph.nodes.forEach((n) {
-      if (nodeData[n]!.isReversed) {
-        nodeData[n]!.reversed.forEach((target) {
-          final bendPoints =
-              this.edgeData[graph.getEdgeBetween(target, n)!]!.bendPoints;
-          graph.removeEdgeFromPredecessor(target, n);
-          final edge = graph.addEdge(n, target);
-
-          final edgeData = SugiyamaEdgeData();
-          edgeData.bendPoints = bendPoints;
-          this.edgeData[edge] = edgeData;
-        });
+      final nodeInfo = nodeData[n];
+      if (nodeInfo == null || !nodeInfo.isReversed) {
+        return;
       }
+
+      for (final target in nodeInfo.reversed.toList()) {
+        final existingEdge = graph.getEdgeBetween(target, n);
+        if (existingEdge == null) {
+          continue;
+        }
+        final existingData = this.edgeData.remove(existingEdge);
+        final bendPoints = existingData?.bendPoints ?? <double>[];
+        graph.removeEdgeFromPredecessor(target, n);
+        final edge = graph.addEdge(n, target);
+
+        final restoredData = existingData ?? SugiyamaEdgeData();
+        restoredData.bendPoints = bendPoints;
+        this.edgeData[edge] = restoredData;
+      }
+
+      nodeInfo.reversed.clear();
     });
   }
 
@@ -1220,8 +1241,10 @@ class SugiyamaAlgorithm extends Algorithm {
     for (var edge in feedbackArcs) {
       var source = edge.source;
       var target = edge.destination;
+      final storedData = edgeData.remove(edge);
       graph.removeEdge(edge);
-      graph.addEdge(target, source);
+      final reversedEdge = graph.addEdge(target, source);
+      edgeData[reversedEdge] = storedData ?? SugiyamaEdgeData();
       nodeData[source]!.reversed.add(target);
     }
   }
