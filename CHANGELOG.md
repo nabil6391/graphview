@@ -1,6 +1,7 @@
 ## 1.5.1
 - Fix Zoom To fit for hidden nodes
 - Add Fade in Support for Edges
+- Add Loopback support 
 
 ## 1.5.0
 
