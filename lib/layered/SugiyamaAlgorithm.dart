@@ -70,6 +70,7 @@ class SugiyamaAlgorithm extends Algorithm {
     visited.clear();
     nodeData.clear();
     edgeData.clear();
+    type1Conflicts.clear();
     nodeCount = 1;
   }
 
