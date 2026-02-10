@@ -210,19 +210,6 @@ class GraphViewController {
       focusedNode = null;
     }
   }
-
-  void reset() {
-    collapsedNodes.clear();
-    expandingNodes.clear();
-    hiddenBy.clear();
-    collapsedNode = null;
-    focusedNode = null;
-
-    if (_state != null) {
-      _state!._transformationController.value = Matrix4.identity();
-      _state!.forceRecalculation();
-    }
-  }
 }
 
 class GraphChildDelegate {
