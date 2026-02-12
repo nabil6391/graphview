@@ -1,4 +1,12 @@
-part of graphview;
+import 'dart:math';
+
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
+import 'package:graphview/algorithm.dart';
+import 'package:graphview/edge_renderer/arrow_edge_renderer.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/force_directed/fruchterman_reingold_configuration.dart';
+import 'package:graphview/graph.dart';
 
 class FruchtermanReingoldAlgorithm implements Algorithm {
   static const double DEFAULT_TICK_FACTOR = 0.1;

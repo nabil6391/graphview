@@ -1,12 +1,14 @@
 import 'package:example/algorithm_selector_graphview.dart';
+import 'package:example/cluster_zoom_rendering.dart';
 import 'package:example/decision_tree_screen.dart';
 import 'package:example/large_tree_graphview.dart';
 import 'package:example/layer_graphview.dart';
 import 'package:example/mindmap_graphview.dart';
 import 'package:example/mutliple_forest_graphview.dart';
 import 'package:example/tree_graphview_json.dart';
+import 'package:example/zoom_based_rendering.dart';
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
+import 'package:graphview/graph_view.dart';
 
 import 'force_directed_graphview.dart';
 import 'graph_cluster_animated.dart';
@@ -107,6 +109,20 @@ class Home extends StatelessWidget {
               Icons.layers,
               Colors.teal,
               () => LayeredGraphViewPage(),
+            ),
+            _buildButton(
+              'Zoom Based Rendering',
+              'Sugiyama Algorithm',
+              Icons.layers,
+              Colors.pink,
+              () => ZoomBasedRendering(),
+            ),
+            _buildButton(
+              'Cluster Zoom Based Rendering',
+              'Sugiyama Algorithm',
+              Icons.layers,
+              Colors.indigo,
+              () => ClusterZoomRendering(),
             ),
             _buildButton(
               'Layer from JSON',

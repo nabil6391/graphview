@@ -1,4 +1,13 @@
-part of graphview;
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:graphview/algorithm.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/tree/buchheim_walker_configuration.dart';
+import 'package:graphview/tree/buchheim_walker_node_data.dart';
+import 'package:graphview/tree/tree_edge_renderer.dart';
 
 class BuchheimWalkerAlgorithm extends Algorithm {
   Map<Node, BuchheimWalkerNodeData> nodeData = {};
@@ -20,7 +29,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
         orientation == BuchheimWalkerConfiguration.ORIENTATION_RIGHT_LEFT;
   }
 
-  void _detectCycles(Graph graph) {
+  void detectCycles(Graph graph) {
     var visiting = <Node>{};
 
     bool hasCycle(Node node) {
@@ -46,7 +55,7 @@ class BuchheimWalkerAlgorithm extends Algorithm {
       return node.size * 2;
     }
     initData(graph);
-    _detectCycles(graph);
+    detectCycles(graph);
     var firstNode = getFirstNode(graph);
     firstWalk(graph, firstNode, 0, 0);
     secondWalk(graph, firstNode, 0.0);

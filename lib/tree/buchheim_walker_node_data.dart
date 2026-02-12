@@ -1,4 +1,4 @@
-part of graphview;
+import 'package:graphview/graph.dart';
 
 class BuchheimWalkerNodeData {
   Node? ancestor;

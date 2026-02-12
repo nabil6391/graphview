@@ -1,4 +1,9 @@
-part of graphview;
+import 'package:flutter/material.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/mindmap/mindmap_edge_renderer.dart';
+import 'package:graphview/tree/buchheim_walker_algorithm.dart';
+import 'package:graphview/tree/buchheim_walker_configuration.dart';
 
 enum MindmapSide { LEFT, RIGHT, ROOT }
 
@@ -22,7 +27,7 @@ class MindmapAlgorithm extends BuchheimWalkerAlgorithm {
   @override
   Size run(Graph? graph, double shiftX, double shiftY) {
     initData(graph);
-    _detectCycles(graph!);
+    detectCycles(graph!);
     final root = getFirstNode(graph);
     _applyBuchheimWalkerSpacing(graph, root);
     _createMindmapLayout(graph, root);

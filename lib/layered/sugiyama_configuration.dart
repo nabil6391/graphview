@@ -1,5 +1,3 @@
-part of graphview;
-
 class SugiyamaConfiguration {
   static const ORIENTATION_TOP_BOTTOM = 1;
   static const ORIENTATION_BOTTOM_TOP = 2;

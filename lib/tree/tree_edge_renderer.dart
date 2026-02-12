@@ -1,4 +1,7 @@
-part of graphview;
+import 'package:flutter/material.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/tree/buchheim_walker_configuration.dart';
 
 class TreeEdgeRenderer extends EdgeRenderer {
   BuchheimWalkerConfiguration configuration;

@@ -1,37 +1,13 @@
-library graphview;
-
 import 'dart:async';
-import 'dart:collection';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-
-part 'Algorithm.dart';
-part 'Graph.dart';
-part 'edgerenderer/ArrowEdgeRenderer.dart';
-part 'edgerenderer/EdgeRenderer.dart';
-part 'forcedirected/FruchtermanReingoldAlgorithm.dart';
-part 'forcedirected/FruchtermanReingoldConfiguration.dart';
-part 'layered/EiglspergerAlgorithm.dart';
-part 'layered/SugiyamaAlgorithm.dart';
-part 'layered/SugiyamaConfiguration.dart';
-part 'layered/SugiyamaEdgeData.dart';
-part 'layered/SugiyamaEdgeRenderer.dart';
-part 'layered/SugiyamaNodeData.dart';
-part 'mindmap/MindMapAlgorithm.dart';
-part 'mindmap/MindmapEdgeRenderer.dart';
-part 'tree/BaloonLayoutAlgorithm.dart';
-part 'tree/BuchheimWalkerAlgorithm.dart';
-part 'tree/BuchheimWalkerConfiguration.dart';
-part 'tree/BuchheimWalkerNodeData.dart';
-part 'tree/CircleLayoutAlgorithm.dart';
-part 'tree/RadialTreeLayoutAlgorithm.dart';
-part 'tree/TidierTreeLayoutAlgorithm.dart';
-part 'tree/TreeEdgeRenderer.dart';
+import 'package:graphview/algorithm.dart';
+import 'package:graphview/force_directed/fruchterman_reingold_algorithm.dart';
+import 'package:graphview/graph.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
 typedef EdgeWidgetBuilder = Widget Function(Edge edge);
@@ -305,11 +281,11 @@ class GraphView extends StatefulWidget {
   final bool _isBuilder;
   final bool _trackpadScrollCausesScale;
 
-  Duration? panAnimationDuration;
-  Duration? toggleAnimationDuration;
-  ValueKey? initialNode;
-  bool autoZoomToFit = false;
-  late GraphChildDelegate delegate;
+  final Duration? panAnimationDuration;
+  final Duration? toggleAnimationDuration;
+  final ValueKey? initialNode;
+  final bool autoZoomToFit;
+  late final GraphChildDelegate delegate;
   final bool centerGraph;
 
   GraphView({
@@ -322,6 +298,9 @@ class GraphView extends StatefulWidget {
     this.controller,
     this.toggleAnimationDuration,
     this.centerGraph = false,
+    this.initialNode,
+    this.panAnimationDuration,
+    this.autoZoomToFit = false,
   })  : _isBuilder = false,
         _trackpadScrollCausesScale = false,
         delegate = GraphChildDelegate(
@@ -340,11 +319,11 @@ class GraphView extends StatefulWidget {
     this.controller,
     this.animated = true,
     this.initialNode,
-    this.autoZoomToFit = false,
     this.panAnimationDuration,
     this.toggleAnimationDuration,
     this.centerGraph = false,
     bool trackpadScrollCausesScale = false,
+    this.autoZoomToFit = false,
   })  : _isBuilder = true,
         _trackpadScrollCausesScale = trackpadScrollCausesScale,
         delegate = GraphChildDelegate(
@@ -863,68 +842,65 @@ class RenderCustomLayoutBox extends RenderBox
   void paint(PaintingContext context, Offset offset) {
     if (_children.isEmpty) return;
 
-    if (enableAnimation) {
-      final t = _nodeAnimationController.value;
-      animatedPositions.clear();
+    final t = _nodeAnimationController.value;
+    animatedPositions.clear();
 
-      for (final entry in _children.entries) {
-        final node = entry.key;
-        final child = entry.value;
-        final nodeData = child.parentData as NodeBoxData;
-        final pos =
+    // 1. Calculate positions for ALL nodes involved in the master graph
+    // This ensures ghost edges have a 'start' and 'end' even if nodes are collapsing.
+    for (final node in _delegate.graph.nodes) {
+      if (_children.containsKey(node)) {
+        final nodeData = _children[node]!.parentData as NodeBoxData;
+        animatedPositions[node] =
             Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
-        animatedPositions[node] = pos;
-      }
-
-      context.canvas.save();
-      context.canvas.translate(offset.dx, offset.dy);
-      algorithm.renderer?.setAnimatedPositions(animatedPositions);
-
-      final collapsingEdges =
-          _delegate.controller?.getCollapsingEdges(graph).toSet() ?? {};
-      final expandingEdges =
-          _delegate.controller?.getExpandingEdges(graph).toSet() ?? {};
-
-      for (final edge in graph.edges) {
-        var edgePaintWithOpacity = Paint.from(edge.paint ?? edgePaint);
-
-        // Apply fade effect for collapsing edges (fade out)
-        if (collapsingEdges.contains(edge)) {
-          edgePaintWithOpacity.color =
-              edgePaint.color.withValues(alpha: 1.0 - t);
-        }
-        // Apply fade effect for expanding edges (fade in)
-        else if (expandingEdges.contains(edge)) {
-          edgePaintWithOpacity.color = edgePaint.color.withValues(alpha: t);
-        }
-
-        algorithm.renderer?.renderEdge(
-          context.canvas,
-          edge,
-          edgePaintWithOpacity,
-        );
-      }
-
-      context.canvas.restore();
-
-      _paintNodes(context, offset, t);
-    } else {
-      context.canvas.save();
-      context.canvas.translate(offset.dx, offset.dy);
-      graph.edges.forEach((edge) {
-        algorithm.renderer?.renderEdge(context.canvas, edge, edgePaint);
-      });
-      context.canvas.restore();
-
-      for (final entry in _children.entries) {
-        final node = entry.key;
-        final child = entry.value;
-
-        if (_delegate.isNodeVisible(node)) {
-          context.paintChild(child, offset + node.position);
+      } else {
+        // For hidden/collapsing nodes, anchor them to their visible ancestor
+        final ancestor = _delegate.findClosestVisibleAncestor(node);
+        if (ancestor != null && _children.containsKey(ancestor)) {
+          final nodeData = _children[ancestor]!.parentData as NodeBoxData;
+          animatedPositions[node] =
+              Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
+        } else {
+          animatedPositions[node] = node.position;
         }
       }
     }
+
+    context.canvas.save();
+    context.canvas.translate(offset.dx, offset.dy);
+    algorithm.renderer?.setAnimatedPositions(animatedPositions);
+
+    final collapsingEdges =
+        _delegate.controller?.getCollapsingEdges(_delegate.graph).toSet() ?? {};
+    final expandingEdges =
+        _delegate.controller?.getExpandingEdges(_delegate.graph).toSet() ?? {};
+
+    // 2. Iterate Master Edges instead of the layout graph edges
+    for (final edge in _delegate.graph.edges) {
+      final sourceVisible = _delegate.isNodeVisible(edge.source);
+      final destVisible = _delegate.isNodeVisible(edge.destination);
+
+      // Paint if nodes are visible, or if they are currently animating (collapsing/expanding)
+      if ((sourceVisible && destVisible) ||
+          _nodeAnimationController.isAnimating) {
+        var edgePaintWithOpacity = Paint.from(edge.paint ?? edgePaint);
+
+        if (enableAnimation) {
+          if (collapsingEdges.contains(edge)) {
+            edgePaintWithOpacity.color =
+                edgePaintWithOpacity.color.withValues(alpha: 1.0 - t);
+          } else if (expandingEdges.contains(edge)) {
+            edgePaintWithOpacity.color =
+                edgePaintWithOpacity.color.withValues(alpha: t);
+          }
+        }
+
+        algorithm.renderer
+            ?.renderEdge(context.canvas, edge, edgePaintWithOpacity);
+      }
+    }
+
+    context.canvas.restore();
+    _paintNodes(context, offset, t);
   }
 
   @override

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:graphview/GraphView.dart';
+import 'package:graphview/graph_view.dart';
 
 void main() {
   group('GraphView Controller Tests', () {
@@ -116,11 +116,9 @@ void main() {
   });
 
   group('Collapse Tests', () {
-    late Graph graph;
     late GraphViewController controller;
 
     setUp(() {
-      graph = Graph();
       controller = GraphViewController();
     });
 

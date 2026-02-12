@@ -1,4 +1,9 @@
-part of graphview;
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/layered/sugiyama_node_data.dart';
 
 const double ARROW_DEGREES = 0.5;
 const double ARROW_LENGTH = 10;
@@ -9,7 +14,8 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
   ArrowEdgeRenderer({this.noArrow = false});
 
-  Offset _getNodeCenter(Node node) {
+  @override
+  Offset getNodeCenter(Node node) {
     final nodePosition = getNodePosition(node);
     return Offset(
       nodePosition.dx + node.width * 0.5,

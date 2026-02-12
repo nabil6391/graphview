@@ -1,4 +1,7 @@
-part of graphview;
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:graphview/graph.dart';
 
 abstract class EdgeRenderer {
   Map<Node, Offset>? _animatedPositions;

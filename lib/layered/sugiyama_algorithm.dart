@@ -1,4 +1,14 @@
-part of graphview;
+import 'dart:collection';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:graphview/algorithm.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/layered/sugiyama_configuration.dart';
+import 'package:graphview/layered/sugiyama_edge_data.dart';
+import 'package:graphview/layered/sugiyama_edge_renderer.dart';
+import 'package:graphview/layered/sugiyama_node_data.dart';
 
 class SugiyamaAlgorithm extends Algorithm {
   Map<Node, SugiyamaNodeData> nodeData = {};

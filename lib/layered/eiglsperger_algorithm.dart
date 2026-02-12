@@ -1,4 +1,10 @@
-part of graphview;
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:graphview/algorithm.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/layered/sugiyama_configuration.dart';
 
 class ContainerX {
   List<Segment> segments = [];

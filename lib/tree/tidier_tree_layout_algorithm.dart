@@ -1,4 +1,11 @@
-part of graphview;
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:graphview/algorithm.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/tree/buchheim_walker_configuration.dart';
+import 'package:graphview/tree/tree_edge_renderer.dart';
 
 class TidierTreeNodeData {
   int mod = 0;

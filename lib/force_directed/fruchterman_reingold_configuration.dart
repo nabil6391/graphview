@@ -1,5 +1,3 @@
-part of graphview;
-
 class FruchtermanReingoldConfiguration {
   static const int DEFAULT_ITERATIONS = 100;
   static const double DEFAULT_REPULSION_RATE = 0.2;

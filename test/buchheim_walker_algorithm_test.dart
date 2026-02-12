@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:graphview/GraphView.dart';
+import 'package:graphview/graph_view.dart';
 
 const itemHeight = 100.0;
 const itemWidth = 100.0;

@@ -1,6 +1,14 @@
-part of graphview;
-
 // Polar coordinate representation
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:graphview/algorithm.dart';
+import 'package:graphview/edge_renderer/arrow_edge_renderer.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/tree/buchheim_walker_configuration.dart';
+import 'package:graphview/tree/radial_tree_layout_algorithm.dart';
+
 class PolarPoint {
   final double theta; // angle in radians
   final double radius;

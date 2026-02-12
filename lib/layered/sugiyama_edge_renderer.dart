@@ -1,4 +1,11 @@
-part of graphview;
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:graphview/edge_renderer/arrow_edge_renderer.dart';
+import 'package:graphview/graph.dart';
+import 'package:graphview/layered/sugiyama_configuration.dart';
+import 'package:graphview/layered/sugiyama_edge_data.dart';
+import 'package:graphview/layered/sugiyama_node_data.dart';
 
 class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Node, SugiyamaNodeData> nodeData;
@@ -114,7 +121,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     final destination = edge.destination;
     var bendPoints = edgeData[edge]!.bendPoints;
 
-    var sourceCenter = _getNodeCenter(source);
+    var sourceCenter = getNodeCenter(source);
 
     // Calculate the transition/offset from the original bend point to animated position
     final transitionDx = sourceCenter.dx - bendPoints[0];
@@ -197,8 +204,8 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
     final source = edge.source;
     final destination = edge.destination;
-    final sourceCenter = _getNodeCenter(source);
-    var destCenter = _getNodeCenter(destination);
+    final sourceCenter = getNodeCenter(source);
+    var destCenter = getNodeCenter(destination);
 
     if (addTriangleToEdge) {
       final clippedLine = clipLineEnd(

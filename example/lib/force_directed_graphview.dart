@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
+import 'package:graphview/graph_view.dart';
 
 class GraphClusterViewPage extends StatefulWidget {
   @override
@@ -61,6 +61,7 @@ class _GraphClusterViewPageState extends State<GraphClusterViewPage> {
 
   @override
   void initState() {
+    super.initState();
     final a = Node.Id(1);
     final b = Node.Id(2);
     final c = Node.Id(3);

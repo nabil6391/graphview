@@ -1,4 +1,5 @@
-part of graphview;
+import 'package:graphview/tree/buchheim_walker_configuration.dart';
+import 'package:graphview/tree/tree_edge_renderer.dart';
 
 class MindmapEdgeRenderer extends TreeEdgeRenderer {
   MindmapEdgeRenderer(BuchheimWalkerConfiguration configuration)

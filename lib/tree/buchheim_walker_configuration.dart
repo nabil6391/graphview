@@ -1,5 +1,3 @@
-part of graphview;
-
 class BuchheimWalkerConfiguration {
   int siblingSeparation = DEFAULT_SIBLING_SEPARATION;
   int levelSeparation = DEFAULT_LEVEL_SEPARATION;

@@ -1,4 +1,8 @@
-part of graphview;
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 
 class Graph {
   final List<Node> _nodes = [];
@@ -48,7 +52,12 @@ class Graph {
     Paint? paint,
     bool animate = false,
   }) {
-    final edge = Edge(source, destination, paint: paint, animate: animate);
+    final edge = Edge(
+      source,
+      destination,
+      paint: paint,
+      animate: animate,
+    );
     addEdgeS(edge);
     return edge;
   }
@@ -297,7 +306,7 @@ class Edge {
   });
 
   @override
-  bool operator ==(Object? other) =>
+  bool operator ==(Object other) =>
       identical(this, other) || other is Edge && hashCode == other.hashCode;
 
   @override

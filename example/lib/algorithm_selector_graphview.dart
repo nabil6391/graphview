@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
+import 'package:graphview/graph_view.dart';
 
 // Enum for algorithm types
 enum LayoutAlgorithmType {

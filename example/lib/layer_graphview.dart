@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
+import 'package:graphview/graph_view.dart';
 
 class LayeredGraphViewPage extends StatefulWidget {
   @override
@@ -357,42 +357,41 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage>
     final node22 = Node.Id(22);
     final node23 = Node.Id(23);
 
-    graph.addEdge(node1, node13,
-        paint: Paint()..color = Colors.red, animate: true);
-    graph.addEdge(node1, node21, animate: true);
-    graph.addEdge(node1, node4, animate: true);
-    graph.addEdge(node1, node3, animate: true);
-    graph.addEdge(node2, node3, animate: true);
-    graph.addEdge(node2, node20, animate: true);
-    graph.addEdge(node3, node4, animate: true);
-    graph.addEdge(node3, node5, animate: true);
-    graph.addEdge(node3, node23, animate: true);
-    graph.addEdge(node4, node6, animate: true);
-    graph.addEdge(node5, node7, animate: true);
-    graph.addEdge(node6, node8, animate: true);
-    graph.addEdge(node6, node16, animate: true);
-    graph.addEdge(node6, node23, animate: true);
-    graph.addEdge(node7, node9, animate: true);
-    graph.addEdge(node8, node10, animate: true);
-    graph.addEdge(node8, node11, animate: true);
-    graph.addEdge(node9, node12, animate: true);
-    graph.addEdge(node10, node13, animate: true);
-    graph.addEdge(node10, node14, animate: true);
-    graph.addEdge(node10, node15, animate: true);
-    graph.addEdge(node11, node15, animate: true);
-    graph.addEdge(node11, node16, animate: true);
-    graph.addEdge(node12, node20, animate: true);
-    graph.addEdge(node13, node17, animate: true);
-    graph.addEdge(node14, node17, animate: true);
-    graph.addEdge(node14, node18, animate: true);
-    graph.addEdge(node16, node18, animate: true);
-    graph.addEdge(node16, node19, animate: true);
-    graph.addEdge(node16, node20, animate: true);
-    graph.addEdge(node18, node21, animate: true);
-    graph.addEdge(node19, node22, animate: true);
-    graph.addEdge(node21, node23, animate: true);
-    graph.addEdge(node22, node23, animate: true);
-    graph.addEdge(node1, node22, animate: true);
-    graph.addEdge(node7, node8, animate: true);
+    graph.addEdge(node1, node13, paint: Paint()..color = Colors.red);
+    graph.addEdge(node1, node21);
+    graph.addEdge(node1, node4);
+    graph.addEdge(node1, node3);
+    graph.addEdge(node2, node3);
+    graph.addEdge(node2, node20);
+    graph.addEdge(node3, node4);
+    graph.addEdge(node3, node5);
+    graph.addEdge(node3, node23);
+    graph.addEdge(node4, node6);
+    graph.addEdge(node5, node7);
+    graph.addEdge(node6, node8);
+    graph.addEdge(node6, node16);
+    graph.addEdge(node6, node23);
+    graph.addEdge(node7, node9);
+    graph.addEdge(node8, node10);
+    graph.addEdge(node8, node11);
+    graph.addEdge(node9, node12);
+    graph.addEdge(node10, node13);
+    graph.addEdge(node10, node14);
+    graph.addEdge(node10, node15);
+    graph.addEdge(node11, node15);
+    graph.addEdge(node11, node16);
+    graph.addEdge(node12, node20);
+    graph.addEdge(node13, node17);
+    graph.addEdge(node14, node17);
+    graph.addEdge(node14, node18);
+    graph.addEdge(node16, node18);
+    graph.addEdge(node16, node19);
+    graph.addEdge(node16, node20);
+    graph.addEdge(node18, node21);
+    graph.addEdge(node19, node22);
+    graph.addEdge(node21, node23);
+    graph.addEdge(node22, node23);
+    graph.addEdge(node1, node22);
+    graph.addEdge(node7, node8);
   }
 }
