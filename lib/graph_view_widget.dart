@@ -223,7 +223,9 @@ class GraphChildDelegate {
   Graph getVisibleGraphOnly() {
     final visibleGraph = Graph();
     for (final edge in graph.edges) {
-      if (isNodeVisible(edge.source) && isNodeVisible(edge.destination)) {
+      if (isNodeVisible(edge.source) &&
+          isNodeVisible(edge.destination) &&
+          !edge.ghost) {
         visibleGraph.addEdgeS(edge);
       }
     }

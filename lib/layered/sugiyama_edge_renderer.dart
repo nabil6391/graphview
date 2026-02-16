@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:graphview/edge_renderer/arrow_edge_renderer.dart';
@@ -22,7 +23,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   bool hasBendEdges(Edge edge) =>
       edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty;
 
-  bool _shouldAnimate(Edge edge) => edge.animate;
+  bool _shouldAnimate(Edge edge) => edge.animation != null;
 
   @override
   void render(Canvas canvas, Graph graph, Paint paint) {
@@ -89,7 +90,92 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     }
   }
 
+  void _drawAnimatedIcon(
+      Canvas canvas, Path path, Paint paint, TextPainter iconPainter) {
+    _drawAnimation(
+      canvas,
+      paint,
+      path,
+      (canvas, paint, tangent) {
+        canvas.save();
+        canvas.translate(tangent.position.dx, tangent.position.dy);
+        canvas.rotate(-tangent.angle + pi);
+        iconPainter.paint(
+          canvas,
+          Offset(-iconPainter.width / 2, -iconPainter.height / 2),
+        );
+        canvas.restore();
+      },
+    );
+  }
+
   void _drawAnimatedCircle(Canvas canvas, Path path, Paint paint) {
+    _drawAnimation(
+      canvas,
+      paint,
+      path,
+      (canvas, paint, tangent) {
+        canvas.drawCircle(
+          tangent.position,
+          4.0,
+          paint..style = PaintingStyle.fill,
+        );
+      },
+    );
+  }
+
+  void _drawAnimatedSquare(Canvas canvas, Path path, Paint paint) {
+    _drawAnimation(
+      canvas,
+      paint,
+      path,
+      (canvas, paint, tangent) {
+        canvas.drawRRect(
+          RRect.fromRectXY(
+            Rect.fromCenter(
+              center: tangent.position,
+              width: 12,
+              height: 12,
+            ),
+            1,
+            1,
+          ),
+          paint..style = PaintingStyle.fill,
+        );
+      },
+    );
+  }
+
+  void _drawAnimatedTriangle(Canvas canvas, Path path, Paint paint) {
+    _drawAnimation(
+      canvas,
+      paint,
+      path,
+      (canvas, paint, tangent) {
+        const sideLength = 12.0;
+        final height = (sqrt(3) / 2) * sideLength;
+
+        canvas.save();
+        canvas.translate(tangent.position.dx, tangent.position.dy);
+        canvas.rotate(-tangent.angle + pi / 2);
+
+        final trianglePath = Path();
+        trianglePath.moveTo(0, -height / 2);
+        trianglePath.lineTo(sideLength / 2, height / 2);
+        trianglePath.lineTo(-sideLength / 2, height / 2);
+        trianglePath.close();
+
+        canvas.drawPath(
+          trianglePath,
+          Paint.from(paint)..style = PaintingStyle.fill,
+        );
+        canvas.restore();
+      },
+    );
+  }
+
+  void _drawAnimation(Canvas canvas, Paint paint, Path path,
+      void Function(Canvas canvas, Paint paint, Tangent tangent) animate) {
     final metrics = path.computeMetrics().toList();
     if (metrics.isEmpty) return;
 
@@ -103,11 +189,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       if (targetDistance <= metric.length) {
         final tangent = metric.getTangentForOffset(targetDistance);
         if (tangent != null) {
-          canvas.drawCircle(
-            tangent.position,
-            4.0,
-            paint..style = PaintingStyle.fill,
-          );
+          animate(canvas, paint, tangent);
         }
         return;
       }
@@ -196,7 +278,21 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
     canvas.drawPath(path, currentPaint);
 
     if (_shouldAnimate(edge)) {
-      _drawAnimatedCircle(canvas, path, currentPaint);
+      if (edge.animation!.shape != null) {
+        switch (edge.animation!.shape!) {
+          case EdgeAnimationShape.circle:
+            _drawAnimatedCircle(canvas, path, currentPaint);
+            break;
+          case EdgeAnimationShape.square:
+            _drawAnimatedSquare(canvas, path, currentPaint);
+            break;
+          case EdgeAnimationShape.triangle:
+            _drawAnimatedTriangle(canvas, path, currentPaint);
+            break;
+        }
+      } else if (edge.animation!.icon != null) {
+        _drawAnimatedIcon(canvas, path, currentPaint, edge.animation!.icon!);
+      }
     }
   }
 
@@ -229,10 +325,28 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       ..moveTo(sourceCenter.dx, sourceCenter.dy)
       ..lineTo(destCenter.dx, destCenter.dy);
 
-    drawStyledPath(canvas, path, currentPaint, lineType: lineType);
+    if (edge.ghost) {
+      drawDashedLine(canvas, sourceCenter, destCenter, currentPaint, 0);
+    } else {
+      drawStyledPath(canvas, path, currentPaint, lineType: lineType);
+    }
 
     if (_shouldAnimate(edge)) {
-      _drawAnimatedCircle(canvas, path, currentPaint);
+      if (edge.animation!.shape != null) {
+        switch (edge.animation!.shape!) {
+          case EdgeAnimationShape.circle:
+            _drawAnimatedCircle(canvas, path, currentPaint);
+            break;
+          case EdgeAnimationShape.square:
+            _drawAnimatedSquare(canvas, path, currentPaint);
+            break;
+          case EdgeAnimationShape.triangle:
+            _drawAnimatedTriangle(canvas, path, currentPaint);
+            break;
+        }
+      } else if (edge.animation!.icon != null) {
+        _drawAnimatedIcon(canvas, path, currentPaint, edge.animation!.icon!);
+      }
     }
   }
 

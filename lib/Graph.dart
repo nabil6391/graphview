@@ -50,13 +50,15 @@ class Graph {
     Node source,
     Node destination, {
     Paint? paint,
-    bool animate = false,
+    EdgeAnimation? animation,
+    bool ghost = false,
   }) {
     final edge = Edge(
       source,
       destination,
       paint: paint,
-      animate: animate,
+      animation: animation,
+      ghost: ghost,
     );
     addEdgeS(edge);
     return edge;
@@ -295,14 +297,16 @@ class Edge {
 
   Key? key;
   Paint? paint;
-  bool animate;
+  EdgeAnimation? animation;
+  bool ghost;
 
   Edge(
     this.source,
     this.destination, {
     this.key,
     this.paint,
-    this.animate = false,
+    this.animation,
+    this.ghost = false,
   });
 
   @override
@@ -311,6 +315,19 @@ class Edge {
 
   @override
   int get hashCode => key?.hashCode ?? Object.hash(source, destination);
+}
+
+class EdgeAnimation {
+  final EdgeAnimationShape? shape;
+  final TextPainter? icon;
+
+  EdgeAnimation({this.shape, this.icon});
+}
+
+enum EdgeAnimationShape {
+  circle,
+  square,
+  triangle;
 }
 
 abstract class GraphObserver {
