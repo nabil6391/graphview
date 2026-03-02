@@ -41,6 +41,8 @@ class GraphViewController {
 
   void zoomToFit() => _state?.zoomToFit();
 
+  void adjustZoom(double factor) => _state?.adjustZoom(factor);
+
   void forceRecalculation() => _state?.forceRecalculation();
 
   // Visibility management methods
@@ -476,6 +478,43 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       ..translate(centerOffset.dx, centerOffset.dy)
       ..scale(scale);
     animateToMatrix(target);
+  }
+
+  void adjustZoom(double factor) {
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final vpSize = renderBox.size;
+    final graph = widget.delegate.getVisibleGraphOnly();
+    final bounds = graph.calculateGraphBounds();
+
+    // 1. Get current scale and calculate target scale
+    final currentScale = _transformationController.value.getMaxScaleOnAxis();
+
+    // Define your range explicitly to match minScale/maxScale of InteractiveViewer
+    const minLimit = 0.01;
+    const maxLimit = 10.0;
+
+    final targetScale = (currentScale + (maxLimit - minLimit) * factor)
+        .clamp(minLimit, maxLimit);
+
+    // 2. Calculate the "Center of the Graph" in its own local coordinates
+    final graphCenterX = bounds.left + (bounds.width / 2);
+    final graphCenterY = bounds.top + (bounds.height / 2);
+
+    // 3. Calculate the translation needed to put that Graph Center
+    // into the Viewport Center at the new scale.
+    // Formula: ViewportCenter - (GraphCenter * Scale)
+    final tx = (vpSize.width / 2) - (graphCenterX * targetScale);
+    final ty = (vpSize.height / 2) - (graphCenterY * targetScale);
+
+    // 4. Create a clean absolute matrix
+    final targetMatrix = Matrix4.identity()
+      ..translate(tx, ty)
+      ..scale(targetScale);
+
+    // 5. Animate to the result
+    animateToMatrix(targetMatrix);
   }
 
   void animateToMatrix(Matrix4 target) {
