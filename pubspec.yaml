@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
   collection: ^1.15.0
+  squadron: ^7.4.0
+  build_runner:
+  squadron_builder: ^9.0.0
 
 dev_dependencies:
   flutter_test:

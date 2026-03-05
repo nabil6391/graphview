@@ -14,11 +14,10 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   BendPointShape bendPointShape;
   bool addTriangleToEdge;
   var path = Path();
-  final Animation<double>? animation;
 
   SugiyamaEdgeRenderer(
       this.nodeData, this.edgeData, this.bendPointShape, this.addTriangleToEdge,
-      {this.animation});
+      {super.animation});
 
   bool hasBendEdges(Edge edge) =>
       edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty;

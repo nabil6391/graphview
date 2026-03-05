@@ -24,8 +24,16 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
   int nextNodeId = 1;
 
   // Algorithm selection
-  LayoutAlgorithmType _selectedAlgorithm = LayoutAlgorithmType.tidierTree;
+  LayoutAlgorithmType _selectedAlgorithm = LayoutAlgorithmType.radialTree;
   Algorithm? _currentAlgorithm;
+  late final AnimationController _edgeController;
+  late final Animation<double> edgeAnimation;
+
+  @override
+  void dispose() {
+    _edgeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,18 +162,21 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
             ),
 
             Expanded(
-                child: GraphView.builder(
-              controller: _controller,
-              graph: graph,
-              algorithm:
-                  _currentAlgorithm ?? TidierTreeLayoutAlgorithm(builder, null),
-              builder: (Node node) => Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.lightBlue[100],
-                  borderRadius: BorderRadius.circular(8),
+                child: AnimatedBuilder(
+              animation: edgeAnimation,
+              builder: (_, __) => GraphView.builder(
+                controller: _controller,
+                graph: graph,
+                algorithm: _currentAlgorithm ??
+                    TidierTreeLayoutAlgorithm(builder, null),
+                builder: (Node node) => Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.lightBlue[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(node.key?.value.toString() ?? ''),
                 ),
-                child: Text(node.key?.value.toString() ?? ''),
               ),
             )),
           ],
@@ -199,7 +210,8 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
         _currentAlgorithm = BalloonLayoutAlgorithm(builder, null);
         break;
       case LayoutAlgorithmType.radialTree:
-        _currentAlgorithm = RadialTreeLayoutAlgorithm(builder, null);
+        _currentAlgorithm = RadialTreeLayoutAlgorithm(
+            builder, ArrowEdgeRenderer(animation: edgeAnimation));
         break;
       case LayoutAlgorithmType.circle:
         final circleConfig = CircleLayoutConfiguration(
@@ -255,6 +267,32 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
   void initState() {
     super.initState();
 
+    _edgeController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    edgeAnimation = CurvedAnimation(
+      parent: _edgeController,
+      curve: Curves.linear, // important for constant speed
+    );
+
+    _edgeController.repeat();
+
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(Icons.lock.codePoint),
+      style: TextStyle(
+        fontSize: 16.0,
+        fontFamily: Icons.lock.fontFamily,
+        color: Colors.blueAccent,
+        package: Icons.lock.fontPackage,
+      ),
+    );
+
+    textPainter.layout();
+
     var json = {
       'edges': [
         // A0 -> B0, B1, B2
@@ -308,7 +346,27 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
         {'from': 18, 'to': 31}, // D1 -> G5
         {'from': 18, 'to': 32}, // D1 -> G6
         {'from': 18, 'to': 33}, // D1 -> G7
-      ]
+      ],
+      'ghostEdges': [
+        {'from': 1, 'to': 4}, // A0 -> B0
+        {'from': 1, 'to': 7}, // A0 -> B1
+        {'from': 1, 'to': 6}, // A0 -> B2
+        {'from': 17, 'to': 4}, // A0 -> B0
+        {'from': 17, 'to': 30}, // A0 -> B1
+        {'from': 17, 'to': 6},
+
+        // B0 -> C0, C1, C2, C3
+        {'from': 2, 'to': 3}, // B0 -> C0
+        {'from': 2, 'to': 32}, // B0 -> C1
+        {'from': 2, 'to': 26}, // B0 -> C2
+        {'from': 2, 'to': 33}, // B0 -> C3
+      ],
+      'animatedEdges': [
+        {'from': 19, 'to': 50}, // A0 -> B0
+        {'from': 50, 'to': 51}, // A0 -> B1
+        {'from': 51, 'to': 52},
+        {'from': 52, 'to': 53},
+      ],
     };
 
     // Usage code (as in your example)
@@ -317,6 +375,37 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
       var fromNodeId = element['from'];
       var toNodeId = element['to'];
       graph.addEdge(Node.Id(fromNodeId), Node.Id(toNodeId));
+    });
+
+    var ghostEdges = json['ghostEdges']!;
+    ghostEdges.forEach((element) {
+      var fromNodeId = element['from'];
+      var toNodeId = element['to'];
+      graph.addEdge(Node.Id(fromNodeId), Node.Id(toNodeId),
+          ghost: true, paint: Paint()..color = Colors.lightGreen);
+    });
+
+    var animatedEdges = json['animatedEdges']!;
+    animatedEdges.forEach((element) {
+      var fromNodeId = element['from'];
+      var toNodeId = element['to'];
+      EdgeAnimation? animation;
+
+      switch (fromNodeId) {
+        case 19:
+          animation = EdgeAnimation(shape: EdgeAnimationShape.triangle);
+          break;
+        case 50:
+          animation = EdgeAnimation(shape: EdgeAnimationShape.square);
+          break;
+        case 51:
+          animation = EdgeAnimation(shape: EdgeAnimationShape.circle);
+          break;
+        case 52:
+          animation = EdgeAnimation(icon: textPainter);
+      }
+      graph.addEdge(Node.Id(fromNodeId), Node.Id(toNodeId),
+          animation: animation, paint: Paint()..color = Colors.purpleAccent);
     });
 
     builder

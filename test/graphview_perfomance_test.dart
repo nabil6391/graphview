@@ -5,9 +5,60 @@ import 'package:graphview/graph_view.dart';
 
 void main() {
   group('GraphView Performance Tests', () {
+    testWidgets(
+      'hitTest performance sugiyama',
+      (tester) async {
+        final graph = _createLargeGraph(3000);
+
+        final _configuration = SugiyamaConfiguration()
+          ..levelSeparation = (150)
+          ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
+
+        var algorithm = SugiyamaAlgorithm(_configuration);
+
+        await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+            body: GraphView.builder(
+              graph: graph,
+              algorithm: algorithm,
+              builder: (Node node) => Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(child: Text(node.key.toString())),
+              ),
+            ),
+          ),
+        ));
+
+        await tester.pumpAndSettle();
+
+        final renderBox = tester
+            .renderObject<RenderCustomLayoutBox>(find.byType(GraphViewWidget));
+
+        final stopwatch = Stopwatch()..start();
+
+        // Test multiple hit tests at different positions
+        for (var i = 0; i < 10; i++) {
+          final result = BoxHitTestResult();
+          renderBox.hitTest(result, position: Offset(i * 10.0, i * 10.0));
+        }
+
+        stopwatch.stop();
+        final hitTestTime = stopwatch.elapsedMilliseconds;
+
+        print('HitTest time for 1000 nodes (10 tests): ${hitTestTime}ms');
+        expect(hitTestTime, lessThan(20),
+            reason: 'HitTest should complete in under 10ms');
+      },
+    );
+
     testWidgets('hitTest performance with 1000+ nodes less than 20s',
         (WidgetTester tester) async {
-      final graph = _createLargeGraph(1000);
+      final graph = _createLargeGraph(3000);
 
       final _configuration = BuchheimWalkerConfiguration()
         ..siblingSeparation = (100)
@@ -142,6 +193,8 @@ Graph _createLargeGraph(int n) {
       currentChild++;
     }
   }
+
+  print('edges length ${graph.edges.length}');
 
   return graph;
 }

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/graph_view.dart';
 
@@ -332,7 +333,16 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage>
   }
 
   void _initializeGraph() {
-    // Define edges more concisely
+    final nodes = <Node>[];
+    for (var i = 0; i < 369; i++) {
+      nodes.add(Node.Id(i));
+    }
+
+    for (var i = 0; i < 1034; i++) {
+      graph.addEdge(nodes[clampDouble(i.toDouble(), 0, 150).toInt()],
+          nodes[clampDouble(150 + i.toDouble(), 0, 367).toInt()]);
+    }
+    /*  // Define edges more concisely
     final node1 = Node.Id(1);
     final node2 = Node.Id(2);
     final node3 = Node.Id(3);
@@ -438,6 +448,6 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage>
     graph.addEdge(node21, node23);
     graph.addEdge(node22, node23);
     graph.addEdge(node1, node22);
-    graph.addEdge(node7, node8);
+    graph.addEdge(node7, node8); */
   }
 }

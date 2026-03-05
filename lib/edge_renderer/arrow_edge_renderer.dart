@@ -11,8 +11,11 @@ const double ARROW_LENGTH = 10;
 class ArrowEdgeRenderer extends EdgeRenderer {
   var trianglePath = Path();
   final bool noArrow;
+  final Animation<double>? animation;
 
-  ArrowEdgeRenderer({this.noArrow = false});
+  ArrowEdgeRenderer({this.noArrow = false, this.animation});
+
+  bool _shouldAnimate(Edge edge) => edge.animation != null;
 
   @override
   Offset getNodeCenter(Node node) {
@@ -36,6 +39,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
     final currentPaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
     final lineType = _getLineType(destination);
+    var edgePath = Path();
 
     if (source == destination) {
       final loopResult = buildSelfLoopPath(
@@ -46,6 +50,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       if (loopResult != null) {
         drawStyledPath(canvas, loopResult.path, currentPaint,
             lineType: lineType);
+        edgePath = loopResult.path;
 
         if (!noArrow) {
           final trianglePaint = Paint()
@@ -91,6 +96,9 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         destination.width,
         destination.height);
 
+    edgePath.moveTo(clippedLine[0], clippedLine[1]);
+    edgePath.lineTo(clippedLine[2], clippedLine[3]);
+
     if (noArrow) {
       // Draw line without arrow, respecting line type
       drawStyledLine(
@@ -129,6 +137,186 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         currentPaint,
         lineType: lineType,
       );
+    }
+
+    if (_shouldAnimate(edge)) {
+      switch (edge.animation!.shape) {
+        case EdgeAnimationShape.circle:
+          _drawAnimatedCircle(canvas, edgePath, currentPaint, animation!.value);
+          break;
+        case EdgeAnimationShape.square:
+          _drawAnimatedSquare(canvas, edgePath, currentPaint, animation!.value);
+          break;
+        case EdgeAnimationShape.triangle:
+          _drawAnimatedTriangle(
+              canvas, edgePath, currentPaint, animation!.value);
+          break;
+        case null:
+          break;
+      }
+      if (edge.animation!.icon != null) {
+        _drawAnimatedIcon(
+            canvas, edgePath, edge.animation!.icon!, animation!.value);
+      }
+    }
+  }
+
+  void _drawAnimatedCircle(
+      Canvas canvas, Path path, Paint edgePaint, double progress) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+
+    double totalLength = 0;
+    for (var m in metrics) {
+      totalLength += m.length;
+    }
+
+    var targetDistance = totalLength * progress;
+    double currentDistance = 0;
+
+    for (var metric in metrics) {
+      if (currentDistance + metric.length >= targetDistance) {
+        final localDistance = targetDistance - currentDistance;
+        final tangent = metric.getTangentForOffset(localDistance);
+
+        if (tangent != null) {
+          canvas.drawCircle(
+            tangent.position,
+            4.0,
+            edgePaint..style = PaintingStyle.fill,
+          );
+        }
+        break;
+      }
+      currentDistance += metric.length;
+    }
+  }
+
+  void _drawAnimatedIcon(
+    Canvas canvas,
+    Path path,
+    TextPainter iconPainter,
+    double progress,
+  ) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+
+    double totalLength = 0;
+    for (var m in metrics) {
+      totalLength += m.length;
+    }
+
+    var targetDistance = totalLength * progress;
+    double currentDistance = 0;
+
+    for (var metric in metrics) {
+      if (currentDistance + metric.length >= targetDistance) {
+        final localDistance = targetDistance - currentDistance;
+        final tangent = metric.getTangentForOffset(localDistance);
+
+        if (tangent != null) {
+          canvas.save();
+          canvas.translate(tangent.position.dx, tangent.position.dy);
+          iconPainter.paint(
+            canvas,
+            Offset(-iconPainter.width / 2, -iconPainter.height / 2),
+          );
+          canvas.restore();
+        }
+        break;
+      }
+      currentDistance += metric.length;
+    }
+  }
+
+  void _drawAnimatedTriangle(
+      Canvas canvas, Path path, Paint edgePaint, double progress) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+
+    double totalLength = 0;
+    for (var m in metrics) {
+      totalLength += m.length;
+    }
+
+    var targetDistance = totalLength * progress;
+    double currentDistance = 0;
+
+    for (var metric in metrics) {
+      if (currentDistance + metric.length >= targetDistance) {
+        final localDistance = targetDistance - currentDistance;
+        final tangent = metric.getTangentForOffset(localDistance);
+
+        if (tangent != null) {
+          const sideLength = 10.0;
+          final height = (sqrt(3) / 2) * sideLength;
+
+          canvas.save();
+          canvas.translate(tangent.position.dx, tangent.position.dy);
+          canvas.rotate(-tangent.angle + pi / 2);
+
+          final trianglePath = Path();
+          trianglePath.moveTo(0, -height / 2);
+          trianglePath.lineTo(sideLength / 2, height / 2);
+          trianglePath.lineTo(-sideLength / 2, height / 2);
+          trianglePath.close();
+
+          canvas.drawPath(
+            trianglePath,
+            Paint.from(edgePaint)..style = PaintingStyle.fill,
+          );
+          canvas.restore();
+        }
+        break;
+      }
+      currentDistance += metric.length;
+    }
+  }
+
+  void _drawAnimatedSquare(
+      Canvas canvas, Path path, Paint edgePaint, double progress) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+
+    // 1. Calculate the total distance covered by the animation
+    double totalLength = 0;
+    for (var m in metrics) {
+      totalLength += m.length;
+    }
+
+    var targetDistance = totalLength * progress;
+    double currentDistance = 0;
+
+    for (var metric in metrics) {
+      if (currentDistance + metric.length >= targetDistance) {
+        // 2. Extract the position and tangent (angle) at the current progress
+        final localDistance = targetDistance - currentDistance;
+        final tangent = metric.getTangentForOffset(localDistance);
+
+        if (tangent != null) {
+          final center = tangent.position;
+          final angle =
+              -tangent.angle; // Adjusting for Canvas coordinate system
+
+          canvas.save();
+          // 3. Move and rotate the canvas to the square's position
+          canvas.translate(center.dx, center.dy);
+          canvas.rotate(angle);
+
+          final squarePaint = Paint()
+            ..color = edgePaint.color
+            ..style = PaintingStyle.fill;
+
+          const side = 8.0; // Size of your square
+          canvas.drawRect(
+            Rect.fromCenter(center: Offset.zero, width: side, height: side),
+            squarePaint,
+          );
+          canvas.restore();
+        }
+        break;
+      }
+      currentDistance += metric.length;
     }
   }
 

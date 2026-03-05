@@ -24,8 +24,9 @@ class RadialTreeLayoutAlgorithm extends Algorithm {
   final Map<Node, Size> baseBounds = {};
   final Map<Node, PolarPoint> polarLocations = {};
 
-  RadialTreeLayoutAlgorithm(this.config, EdgeRenderer? renderer) {
-    this.renderer = renderer ?? ArrowEdgeRenderer();
+  RadialTreeLayoutAlgorithm(this.config, EdgeRenderer? renderer,
+      {Animation<double>? animation}) {
+    this.renderer = renderer ?? ArrowEdgeRenderer(animation: animation);
   }
 
   @override
