@@ -52,6 +52,9 @@ class Graph {
     Paint? paint,
     EdgeAnimation? animation,
     bool ghost = false,
+    bool interactive = true,
+    Color? interactiveFillColor,
+    Color? interactiveBorderColor,
   }) {
     final edge = Edge(
       source,
@@ -59,6 +62,9 @@ class Graph {
       paint: paint,
       animation: animation,
       ghost: ghost,
+      interactive: interactive,
+      interactiveBorderColor: interactiveBorderColor,
+      interactiveFillColor: interactiveFillColor,
     );
     addEdgeS(edge);
     return edge;
