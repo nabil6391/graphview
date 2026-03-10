@@ -12,6 +12,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
   var trianglePath = Path();
   final bool noArrow;
   final Animation<double>? animation;
+  final Map<Edge, Path> renderedPaths = {};
 
   ArrowEdgeRenderer({this.noArrow = false, this.animation});
 
@@ -99,6 +100,8 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     edgePath.moveTo(clippedLine[0], clippedLine[1]);
     edgePath.lineTo(clippedLine[2], clippedLine[3]);
 
+    renderedPaths[edge] = edgePath;
+
     if (noArrow) {
       // Draw line without arrow, respecting line type
       drawStyledLine(
@@ -157,6 +160,33 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       if (edge.animation!.icon != null) {
         _drawAnimatedIcon(
             canvas, edgePath, edge.animation!.icon!, animation!.value);
+      }
+    }
+
+    if (edge.interactive) {
+      final metrics = edgePath.computeMetrics().toList();
+      if (metrics.isNotEmpty) {
+        final metric = metrics.first;
+
+        // Get the exact center coordinate of the path
+        final tangent = metric.getTangentForOffset(metric.length / 2.0);
+
+        if (tangent != null) {
+          final center = tangent.position;
+
+          // 2. Draw a filled circle (the "button" background)
+          final dotPaint = Paint()
+            ..color = edge.interactiveFillColor ?? currentPaint.color
+            ..style = PaintingStyle.fill;
+          canvas.drawCircle(center, 3.0, dotPaint);
+
+          // 3. Draw a border around it to make it pop off the line
+          final borderPaint = Paint()
+            ..color = edge.interactiveBorderColor ?? Colors.white
+            ..strokeWidth = 2.0
+            ..style = PaintingStyle.stroke;
+          canvas.drawCircle(center, 3.0, borderPaint);
+        }
       }
     }
   }

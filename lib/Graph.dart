@@ -299,6 +299,9 @@ class Edge {
   Paint? paint;
   EdgeAnimation? animation;
   bool ghost;
+  bool interactive;
+  Color? interactiveFillColor;
+  Color? interactiveBorderColor;
 
   Edge(
     this.source,
@@ -307,6 +310,9 @@ class Edge {
     this.paint,
     this.animation,
     this.ghost = false,
+    this.interactive = true,
+    this.interactiveFillColor,
+    this.interactiveBorderColor,
   });
 
   @override

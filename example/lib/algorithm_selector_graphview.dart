@@ -162,15 +162,24 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
             ),
 
             Expanded(
-                child: AnimatedBuilder(
-              animation: edgeAnimation,
-              builder: (_, __) => GraphView.builder(
-                controller: _controller,
-                graph: graph,
-                algorithm: _currentAlgorithm ??
-                    TidierTreeLayoutAlgorithm(builder, null),
-                builder: (Node node) => Container(
+                child: GraphView.builder(
+              //key: _graphKey,
+              controller: _controller,
+              graph: graph,
+              algorithm:
+                  _currentAlgorithm ?? TidierTreeLayoutAlgorithm(builder, null),
+              trackpadScrollCausesScale: true,
+              edgeAnimation: edgeAnimation,
+              builder: (Node node) => InkWell(
+                onTap: () {
+                  print('Clicked on Node ${node.key?.value}');
+                  _controller.toggleNodeExpanded(graph, node);
+                },
+                child: Container(
                   padding: EdgeInsets.all(8),
+                  height: 48,
+                  width: 48,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: Colors.lightBlue[100],
                     borderRadius: BorderRadius.circular(8),
@@ -267,6 +276,10 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
   void initState() {
     super.initState();
 
+    _controller.onEdgeTap = (edge) {
+      print('Edge from ${edge.source.key} to ${edge.destination.key} clicked!');
+    };
+
     _edgeController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -278,6 +291,15 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
     );
 
     _edgeController.repeat();
+
+    /* _edgeController.addListener(() {
+      // Find the low-level rendering object for the GraphView
+      final renderObject = _graphKey.currentContext?.findRenderObject();
+      if (renderObject != null) {
+        // Force the canvas to redraw the edges immediately
+        renderObject.markNeedsPaint();
+      }
+    }); */
 
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
 

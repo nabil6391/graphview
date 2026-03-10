@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:graphview/algorithm.dart';
+import 'package:graphview/edge_renderer/arrow_edge_renderer.dart';
 import 'package:graphview/force_directed/fruchterman_reingold_algorithm.dart';
 import 'package:graphview/graph.dart';
 
@@ -70,7 +71,14 @@ class GraphViewController {
 
   void _markDescendantsHiddenBy(
       Graph graph, Node collapsedNode, Node currentNode) {
-    for (final child in graph.successorsOf(currentNode)) {
+    // 1. Get only outgoing edges that are NOT ghost edges
+    final validEdges =
+        graph.getOutEdges(currentNode).where((edge) => !edge.ghost);
+
+    // 2. Traverse the destinations of those valid edges
+    for (final edge in validEdges) {
+      final child = edge.destination;
+
       // Only mark as hidden if:
       // 1. Not already hidden, OR
       // 2. Was hidden by a node that's no longer collapsed
@@ -87,7 +95,13 @@ class GraphViewController {
   }
 
   void _markExpandingDescendants(Graph graph, Node node) {
-    for (final child in graph.successorsOf(node)) {
+    // 1. Get only outgoing edges that are NOT ghost edges
+    final validEdges = graph.getOutEdges(node).where((edge) => !edge.ghost);
+
+    // 2. Traverse the destinations of those valid edges
+    for (final edge in validEdges) {
+      final child = edge.destination;
+
       expandingNodes[child] = true;
       if (!collapsedNodes.containsKey(child)) {
         _markExpandingDescendants(graph, child);
@@ -187,6 +201,68 @@ class GraphViewController {
       _state?.jumpToOffset(nodeCenter, true);
       focusedNode = null;
     }
+  }
+
+  void Function(Edge edge)? onEdgeTap;
+
+  Edge? getEdgeAtOffset(Offset localOffset) {
+    if (_state == null) return null;
+
+    final renderBox = _state!._graphWidgetKey.currentContext?.findRenderObject()
+        as RenderCustomLayoutBox?;
+    if (renderBox == null) return null;
+
+    // The invisible hit-box thickness of the edge.
+    const touchThreshold = 5.0;
+
+    // Iterate over all visible edges
+    for (final edge in _state!.widget.graph.edges) {
+      if (!_state!.widget.delegate.isNodeVisible(edge.source) ||
+          !_state!.widget.delegate.isNodeVisible(edge.destination)) {
+        continue;
+      }
+
+      // 1. Get exact positions (handling ongoing collapse/expand animations)
+      final posA =
+          renderBox.animatedPositions[edge.source] ?? edge.source.position;
+      final posB = renderBox.animatedPositions[edge.destination] ??
+          edge.destination.position;
+
+      // 2. Calculate the center points of the nodes where the edge connects
+      final centerA = Offset(posA.dx + edge.source.size.width / 2,
+          posA.dy + edge.source.size.height / 2);
+      final centerB = Offset(posB.dx + edge.destination.size.width / 2,
+          posB.dy + edge.destination.size.height / 2);
+
+      // 3. Mathematical distance check
+      final distance = _distanceToSegment(localOffset, centerA, centerB);
+
+      if (distance <= touchThreshold) {
+        return edge; // Perfect hit!
+      }
+    }
+    return null;
+  }
+
+  // Pure math helper that calculates the shortest distance from a point to a line segment
+  double _distanceToSegment(Offset p, Offset a, Offset b) {
+    final l2 = (a.dx - b.dx) * (a.dx - b.dx) + (a.dy - b.dy) * (a.dy - b.dy);
+    // If the nodes are exactly overlapping, just return distance to the point
+    if (l2 == 0) return (p - a).distance;
+
+    // t is the scalar projection of point P onto the segment AB
+    var t =
+        ((p.dx - a.dx) * (b.dx - a.dx) + (p.dy - a.dy) * (b.dy - a.dy)) / l2;
+
+    // Clamp t to ensure the closest point lies strictly ON the segment between A and B
+    t = t.clamp(0.0, 1.0);
+
+    // Calculate the actual coordinates of that closest point
+    final projection =
+        Offset(a.dx + t * (b.dx - a.dx), a.dy + t * (b.dy - a.dy));
+
+    // Return the distance from the tap to that point
+    return (p - projection).distance;
   }
 }
 
@@ -291,6 +367,7 @@ class GraphView extends StatefulWidget {
   final bool autoZoomToFit;
   late final GraphChildDelegate delegate;
   final bool centerGraph;
+  final Listenable? edgeAnimation;
 
   GraphView({
     Key? key,
@@ -305,6 +382,7 @@ class GraphView extends StatefulWidget {
     this.initialNode,
     this.panAnimationDuration,
     this.autoZoomToFit = false,
+    this.edgeAnimation,
   })  : _isBuilder = false,
         _trackpadScrollCausesScale = false,
         delegate = GraphChildDelegate(
@@ -328,6 +406,7 @@ class GraphView extends StatefulWidget {
     this.centerGraph = false,
     bool trackpadScrollCausesScale = false,
     this.autoZoomToFit = false,
+    this.edgeAnimation,
   })  : _isBuilder = true,
         _trackpadScrollCausesScale = trackpadScrollCausesScale,
         delegate = GraphChildDelegate(
@@ -349,6 +428,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   late final AnimationController _panController;
   late final AnimationController _nodeController;
   Animation<Matrix4>? _panAnimation;
+  final GlobalKey _graphWidgetKey = GlobalKey();
 
   @override
   void initState() {
@@ -393,11 +473,23 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final view = GraphViewWidget(
-      paint: widget.paint,
-      nodeAnimationController: _nodeController,
-      enableAnimation: widget.animated,
-      delegate: widget.delegate,
+    final view = GestureDetector(
+      behavior: HitTestBehavior.deferToChild,
+      onTapUp: (details) {
+        // Find the edge at the tap location
+        final edge = widget.controller?.getEdgeAtOffset(details.localPosition);
+        if (edge != null) {
+          widget.controller?.onEdgeTap?.call(edge);
+        }
+      },
+      child: GraphViewWidget(
+        key: _graphWidgetKey,
+        paint: widget.paint,
+        nodeAnimationController: _nodeController,
+        enableAnimation: widget.animated,
+        delegate: widget.delegate,
+        edgeAnimation: widget.edgeAnimation,
+      ),
     );
 
     if (widget._isBuilder) {
@@ -559,6 +651,7 @@ class GraphViewWidget extends RenderObjectWidget {
   final Paint? paint;
   final AnimationController nodeAnimationController;
   final bool enableAnimation;
+  final Listenable? edgeAnimation;
 
   const GraphViewWidget({
     Key? key,
@@ -566,6 +659,7 @@ class GraphViewWidget extends RenderObjectWidget {
     this.paint,
     required this.nodeAnimationController,
     required this.enableAnimation,
+    this.edgeAnimation,
   }) : super(key: key);
 
   @override
@@ -579,6 +673,7 @@ class GraphViewWidget extends RenderObjectWidget {
       enableAnimation,
       nodeAnimationController: nodeAnimationController,
       childManager: context as GraphChildManager,
+      edgeAnimation: edgeAnimation,
     );
   }
 
@@ -589,7 +684,8 @@ class GraphViewWidget extends RenderObjectWidget {
       ..delegate = delegate
       ..edgePaint = paint
       ..nodeAnimationController = nodeAnimationController
-      ..enableAnimation = enableAnimation;
+      ..enableAnimation = enableAnimation
+      ..edgeAnimation = edgeAnimation;
   }
 }
 
@@ -771,17 +867,21 @@ class RenderCustomLayoutBox extends RenderBox
   final _children = <Node, RenderBox>{};
   final _activeChildrenForLayoutPass = <Node, RenderBox>{};
 
+  Listenable? _edgeAnimation;
+
   RenderCustomLayoutBox(
     GraphChildDelegate delegate,
     Paint? paint,
     bool enableAnimation, {
     required AnimationController nodeAnimationController,
     this.childManager,
+    Listenable? edgeAnimation,
   }) {
     _nodeAnimationController = nodeAnimationController;
     _delegate = delegate;
     edgePaint = paint;
     this.enableAnimation = enableAnimation;
+    _edgeAnimation = edgeAnimation;
   }
 
   RenderBox? buildOrObtainChildFor(Node node) {
@@ -812,6 +912,18 @@ class RenderCustomLayoutBox extends RenderBox
 
   Algorithm get algorithm => _delegate.algorithm;
 
+  set edgeAnimation(Listenable? value) {
+    if (_edgeAnimation == value) return;
+    if (attached) {
+      _edgeAnimation?.removeListener(markNeedsPaint);
+    }
+    _edgeAnimation = value;
+    if (attached) {
+      _edgeAnimation?.addListener(markNeedsPaint);
+    }
+    markNeedsPaint();
+  }
+
   set delegate(GraphChildDelegate value) {
     // if (value != _delegate) {
     _needsFullRecalculation = true;
@@ -831,6 +943,7 @@ class RenderCustomLayoutBox extends RenderBox
   void attach(PipelineOwner owner) {
     super.attach(owner);
     _nodeAnimationController.addListener(_onAnimationTick);
+    _edgeAnimation?.addListener(markNeedsPaint);
     for (final child in _children.values) {
       child.attach(owner);
     }
@@ -839,6 +952,7 @@ class RenderCustomLayoutBox extends RenderBox
   @override
   void detach() {
     _nodeAnimationController.removeListener(_onAnimationTick);
+    _edgeAnimation?.removeListener(markNeedsPaint);
     super.detach();
     for (final child in _children.values) {
       child.detach();
@@ -909,6 +1023,11 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
     algorithm.renderer?.setAnimatedPositions(animatedPositions);
+
+    final renderer = algorithm.renderer;
+    if (renderer is ArrowEdgeRenderer) {
+      renderer.renderedPaths.clear();
+    }
 
     final collapsingEdges =
         _delegate.controller?.getCollapsingEdges(_delegate.graph).toSet() ?? {};
@@ -1146,6 +1265,24 @@ class RenderCustomLayoutBox extends RenderBox
   }
 
   @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    // 1. Check if we hit a Node first (Standard Flutter behavior)
+    if (hitTestChildren(result, position: position)) {
+      return true;
+    }
+
+    // 2. If no Node was hit, check if we hit an Edge via the Controller
+    final edge = _delegate.controller?.getEdgeAtOffset(position);
+    if (edge != null) {
+      // Add a hit test entry so the GestureDetector recognizes this area
+      result.add(BoxHitTestEntry(this, position));
+      return true;
+    }
+
+    return super.hitTest(result, position: position);
+  }
+
+  @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     if (enableAnimation && !_nodeAnimationController.isCompleted) return false;
 
@@ -1166,6 +1303,7 @@ class RenderCustomLayoutBox extends RenderBox
         if (isHit) return true;
       }
     }
+
     return false;
   }
 
