@@ -266,9 +266,7 @@ class GraphViewController {
   }
 
   void markGraphNeedsPaint() {
-    _state?._graphWidgetKey.currentContext
-        ?.findRenderObject()
-        ?.markNeedsPaint();
+    _state?.forceRecalculation();
   }
 }
 
