@@ -264,12 +264,6 @@ class GraphViewController {
     // Return the distance from the tap to that point
     return (p - projection).distance;
   }
-
-  void markGraphNeedsPaint() {
-    _state?._graphWidgetKey.currentContext
-        ?.findRenderObject()
-        ?.markNeedsPaint();
-  }
 }
 
 class GraphChildDelegate {
