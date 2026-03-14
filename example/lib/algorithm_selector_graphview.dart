@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,65 @@ enum LayoutAlgorithmType {
   balloon,
   radialTree,
   circle,
+}
+
+class NodeWidget extends StatefulWidget {
+  final Node node;
+  final ValueNotifier<int> notifier;
+  final GraphViewController controller;
+  final Graph graph;
+
+  const NodeWidget({
+    Key? key,
+    required this.node,
+    required this.notifier,
+    required this.controller,
+    required this.graph,
+  }) : super(key: key);
+
+  @override
+  _NodeWidgetState createState() => _NodeWidgetState();
+}
+
+class _NodeWidgetState extends State<NodeWidget> {
+  bool isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: widget.notifier,
+      builder: (context, value, child) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => isHovered = true),
+          onExit: (_) => setState(() => isHovered = false),
+          child: InkWell(
+            onTap: () {
+              print('Clicked on Node ${widget.node.key?.value}');
+              widget.controller.toggleNodeExpanded(widget.graph, widget.node);
+            },
+            child: Container(
+              padding: EdgeInsets.all(8),
+              height: 64,
+              width: 64,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.lightBlue[100],
+                borderRadius: BorderRadius.circular(8),
+                border: isHovered ? Border.all(color: Colors.red, width: 2) : null,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(widget.node.key?.value.toString() ?? ''),
+                  Text('v:$value', style: TextStyle(fontSize: 10)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class AlgorithmSelectedVIewPage extends StatefulWidget {
@@ -28,9 +88,15 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
   Algorithm? _currentAlgorithm;
   late final AnimationController _edgeController;
   late final Animation<double> edgeAnimation;
+  Timer? _updateTimer;
+  final Map<Node, ValueNotifier<int>> nodeNotifiers = {};
 
   @override
   void dispose() {
+    _updateTimer?.cancel();
+    for (var notifier in nodeNotifiers.values) {
+      notifier.dispose();
+    }
     _edgeController.dispose();
     super.dispose();
   }
@@ -170,23 +236,15 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
                   _currentAlgorithm ?? TidierTreeLayoutAlgorithm(builder, null),
               trackpadScrollCausesScale: true,
               edgeAnimation: edgeAnimation,
-              builder: (Node node) => InkWell(
-                onTap: () {
-                  print('Clicked on Node ${node.key?.value}');
-                  _controller.toggleNodeExpanded(graph, node);
-                },
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  height: 48,
-                  width: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.lightBlue[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(node.key?.value.toString() ?? ''),
-                ),
-              ),
+              builder: (Node node) {
+                var notifier = nodeNotifiers.putIfAbsent(node, () => ValueNotifier<int>(0));
+                return NodeWidget(
+                  node: node,
+                  notifier: notifier,
+                  controller: _controller,
+                  graph: graph,
+                );
+              },
             )),
           ],
         ));
@@ -275,6 +333,18 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
   @override
   void initState() {
     super.initState();
+
+    _updateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (graph.nodes.isNotEmpty) {
+        var targetNode = graph.nodes.firstWhere(
+          (n) => n.key?.value == 50,
+          orElse: () => graph.nodes.first,
+        );
+        if (targetNode.key?.value == 50 && nodeNotifiers.containsKey(targetNode)) {
+          nodeNotifiers[targetNode]!.value++;
+        }
+      }
+    });
 
     _controller.onEdgeTap = (edge) {
       print('Edge from ${edge.source.key} to ${edge.destination.key} clicked!');

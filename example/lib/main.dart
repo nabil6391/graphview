@@ -7,6 +7,7 @@ import 'package:example/mindmap_graphview.dart';
 import 'package:example/mutliple_forest_graphview.dart';
 import 'package:example/tree_graphview_json.dart';
 import 'package:example/zoom_based_rendering.dart';
+import 'package:example/elk_graphview.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/graph_view.dart';
 
@@ -137,6 +138,13 @@ class Home extends StatelessWidget {
               Icons.device_hub,
               Colors.green,
               () => DecisionTreeScreen(),
+            ),
+            _buildButton(
+              'ELK JS Layout',
+              'External javascript algorithm (Web)',
+              Icons.javascript,
+              Colors.yellow[800]!,
+              () => ElkGraphViewPage(),
             ),
           ]),
           _buildSection('Cluster Algorithms', [
