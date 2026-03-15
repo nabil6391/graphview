@@ -1,13 +1,13 @@
-@JS()
-library elkjs;
-
-import 'package:js/js.dart';
+import 'dart:js_interop';
 
 @JS('ELK')
-class ELK {
+extension type ELK._(JSObject _) implements JSObject {
   external ELK();
-  external dynamic layout(dynamic graph);
+
+  /// Returns a JSPromise that resolves to the positioned graph.
+  external JSPromise layout(JSObject graph);
 }
 
+/// Helper to parse JSON strings into native JS Objects
 @JS('JSON.parse')
-external dynamic jsonParse(String text);
+external JSObject jsonParse(String json);

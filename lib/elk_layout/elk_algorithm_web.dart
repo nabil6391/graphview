@@ -1,11 +1,12 @@
 import 'dart:convert';
 
-import 'package:js/js_util.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/graph.dart';
 import 'package:graphview/algorithm.dart';
 import 'package:graphview/edge_renderer/edge_renderer.dart';
 import 'elk_js_interop.dart';
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 /// An [Algorithm] that uses ELK JS for layout computation (web only).
 ///
@@ -23,15 +24,18 @@ class ELKAlgorithm implements Algorithm {
 
   ELKAlgorithm({
     this.layoutOptions = const {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'DOWN',
-      'elk.spacing.nodeNode': '40',
+      'elk.algorithm': 'radial',
+      'elk.radial.definition': 'LEVEL_BASED',
+      'elk.radial.root': '0',
+      'elk.separateConnectedComponents': 'true',
+      'elk.radial.radius': '350',
+      'elk.spacing.nodeNode': '100',
+      'elk.spacing.componentComponent': '200',
+      'elk.radial.compactor': 'NONE'
     },
     this.renderer,
   });
 
-  /// Asynchronously computes the ELK layout and writes x/y positions directly
-  /// onto each [Node] in [graph]. Call this BEFORE building the [GraphView].
   Future<Size> computeLayout(Graph graph) async {
     // 1. Build a plain Dart map describing the graph for ELK.
     final graphDescription = <String, dynamic>{
@@ -53,28 +57,42 @@ class ELKAlgorithm implements Algorithm {
             <String, dynamic>{
               'id': 'e$i',
               'sources': <String>[graph.edges[i].source.key!.value.toString()],
-              'targets': <String>[graph.edges[i].destination.key!.value.toString()],
+              'targets': <String>[
+                graph.edges[i].destination.key!.value.toString()
+              ],
             },
       ],
     };
 
-    // 2. jsonEncode → JSON.parse roundtrip to guarantee native JS objects.
+    print(jsonEncode(graphDescription));
+
+    // 2. Convert to native JS Object
     final jsGraph = jsonParse(jsonEncode(graphDescription));
 
-    // 3. Call ELK.
+    // 3. Call ELK and await the Promise
     final elk = ELK();
-    final jsResult = await promiseToFuture(elk.layout(jsGraph));
+    // promiseToFuture is replaced by the .toDart extension
+    final jsResult = await elk.layout(jsGraph).toDart;
 
-    // 4. Read results and set node positions.
+    if (jsResult == null) return Size.zero;
+    final resultObj = jsResult as JSObject;
+
+    // 4. Read results using js_interop_unsafe
     double maxX = 0, maxY = 0;
-    final dynamic children = getProperty(jsResult, 'children');
+
+    // getProperty now returns a JSAny?
+    final children = resultObj.getProperty('children'.toJS) as JSArray?;
+
+    print('elk js children length: ${children?.length}');
+
     if (children != null) {
-      final int len = getProperty(children, 'length') ?? 0;
-      for (int i = 0; i < len; i++) {
-        final dynamic elkNode = getProperty(children, i);
-        final String id = getProperty(elkNode, 'id').toString();
-        final double x = (getProperty(elkNode, 'x') as num?)?.toDouble() ?? 0;
-        final double y = (getProperty(elkNode, 'y') as num?)?.toDouble() ?? 0;
+      for (var i = 0; i < children.length; i++) {
+        final elkNode = children.getProperty(i.toJS) as JSObject;
+
+        final id = (elkNode.getProperty('id'.toJS) as JSString).toDart;
+        final x = (elkNode.getProperty('x'.toJS) as JSNumber).toDartDouble;
+        final y = (elkNode.getProperty('y'.toJS) as JSNumber).toDartDouble;
+        print('id $id is at ($x, $y)');
 
         final node = graph.nodes.firstWhere(
           (n) => n.key?.value.toString() == id,

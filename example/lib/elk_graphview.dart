@@ -1,8 +1,5 @@
-
 import 'package:flutter/material.dart';
-import 'package:graphview/graph.dart';
 import 'package:graphview/graph_view.dart';
-import 'package:graphview/edge_renderer/arrow_edge_renderer.dart';
 import 'package:graphview/elk_layout/elk_algorithm.dart';
 
 class ElkGraphViewPage extends StatefulWidget {
@@ -93,41 +90,69 @@ class _ElkGraphViewPageState extends State<ElkGraphViewPage>
 
     // --- Animated edges (shapes traveling along the edge) ---
     graph.addEdge(
-      Node.Id('L10'), Node.Id('L11'),
+      Node.Id('L10'),
+      Node.Id('L11'),
       animation: EdgeAnimation(shape: EdgeAnimationShape.circle),
-      paint: Paint()..color = Colors.purpleAccent..strokeWidth = 2..style = PaintingStyle.stroke,
+      paint: Paint()
+        ..color = Colors.purpleAccent
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
     );
     graph.addEdge(
-      Node.Id('L9'), Node.Id('L8'),
+      Node.Id('L9'),
+      Node.Id('L8'),
       animation: EdgeAnimation(shape: EdgeAnimationShape.triangle),
-      paint: Paint()..color = Colors.deepOrange..strokeWidth = 2..style = PaintingStyle.stroke,
-    );
-     graph.addEdge(
-      Node.Id('L7'), Node.Id('L8'),
-      animation: EdgeAnimation(shape: EdgeAnimationShape.triangle),
-      paint: Paint()..color = Colors.deepOrange..strokeWidth = 2..style = PaintingStyle.stroke,
+      paint: Paint()
+        ..color = Colors.deepOrange
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
     );
     graph.addEdge(
-      Node.Id('L0'), Node.Id('L1'),
+      Node.Id('L7'),
+      Node.Id('L8'),
+      animation: EdgeAnimation(shape: EdgeAnimationShape.triangle),
+      paint: Paint()
+        ..color = Colors.deepOrange
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
+    );
+    graph.addEdge(
+      Node.Id('L0'),
+      Node.Id('L1'),
       animation: EdgeAnimation(shape: EdgeAnimationShape.square),
-      paint: Paint()..color = Colors.teal..strokeWidth = 2..style = PaintingStyle.stroke,
+      paint: Paint()
+        ..color = Colors.teal
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
     );
 
     // --- Ghost edges (rendered but not part of tree structure) ---
     graph.addEdge(
-      Node.Id('L1'), Node.Id('L10'),
+      Node.Id('L1'),
+      Node.Id('L10'),
       ghost: true,
-      paint: Paint()..color = Colors.lightGreen..strokeWidth = 1..style = PaintingStyle.stroke,
+      paint: Paint()
+        ..color = Colors.lightGreen
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke,
     );
     graph.addEdge(
-      Node.Id('L3'), Node.Id('L15'),
+      Node.Id('L3'),
+      Node.Id('L15'),
       ghost: true,
-      paint: Paint()..color = Colors.lightGreen..strokeWidth = 1..style = PaintingStyle.stroke,
+      paint: Paint()
+        ..color = Colors.lightGreen
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke,
     );
     graph.addEdge(
-      Node.Id('L7'), Node.Id('L18'),
+      Node.Id('L7'),
+      Node.Id('L18'),
       ghost: true,
-      paint: Paint()..color = Colors.lightGreen..strokeWidth = 1..style = PaintingStyle.stroke,
+      paint: Paint()
+        ..color = Colors.lightGreen
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke,
     );
   }
 
@@ -141,7 +166,9 @@ class _ElkGraphViewPageState extends State<ElkGraphViewPage>
 
   Widget _buildBody() {
     if (_error != null) {
-      return Center(child: Text('Error: $_error', style: const TextStyle(color: Colors.red)));
+      return Center(
+          child: Text('Error: $_error',
+              style: const TextStyle(color: Colors.red)));
     }
 
     if (!_layoutReady) {
@@ -197,7 +224,9 @@ class _ElkGraphViewPageState extends State<ElkGraphViewPage>
                 if (graph.hasSuccessor(node)) ...[
                   const SizedBox(width: 6),
                   Icon(
-                    isCollapsed ? Icons.add_circle_outline : Icons.remove_circle_outline,
+                    isCollapsed
+                        ? Icons.add_circle_outline
+                        : Icons.remove_circle_outline,
                     size: 16,
                     color: Colors.blue,
                   ),

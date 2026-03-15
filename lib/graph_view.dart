@@ -23,3 +23,4 @@ export 'tree/tidier_tree_layout_algorithm.dart';
 export 'tree/tree_edge_renderer.dart';
 export 'algorithm.dart';
 export 'graph.dart';
+export 'elk_layout/elk_layout.dart';
