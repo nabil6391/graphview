@@ -53,6 +53,7 @@ class Graph {
     EdgeAnimation? animation,
     bool ghost = false,
     bool interactive = true,
+    bool isStructural = false,
     Color? interactiveFillColor,
     Color? interactiveBorderColor,
   }) {
@@ -62,6 +63,7 @@ class Graph {
       paint: paint,
       animation: animation,
       ghost: ghost,
+      isStructural: isStructural,
       interactive: interactive,
       interactiveBorderColor: interactiveBorderColor,
       interactiveFillColor: interactiveFillColor,
@@ -306,6 +308,7 @@ class Edge {
   EdgeAnimation? animation;
   bool ghost;
   bool interactive;
+  bool isStructural;
   Color? interactiveFillColor;
   Color? interactiveBorderColor;
 
@@ -317,6 +320,7 @@ class Edge {
     this.animation,
     this.ghost = false,
     this.interactive = true,
+    this.isStructural = false,
     this.interactiveFillColor,
     this.interactiveBorderColor,
   });

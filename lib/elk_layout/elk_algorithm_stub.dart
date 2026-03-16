@@ -17,7 +17,12 @@ class ELKAlgorithm implements Algorithm {
   });
 
   /// No-op on non-web platforms. Returns [Size.zero].
-  Future<Size> computeLayout(Graph graph) async {
+  Future<Size> computeLayout(
+    Graph graph, {
+    Set<String> collapsedNodeIds = const {},
+    Set<String> hiddenNodeIds = const {},
+    Set<String> hubNodeIds = const {},
+  }) async {
     debugPrint('ELKAlgorithm.computeLayout: not supported on this platform.');
     return Size.zero;
   }
