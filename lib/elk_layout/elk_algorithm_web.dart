@@ -45,9 +45,9 @@ class ELKAlgorithm implements Algorithm {
     Set<String> hubNodeIds = const {},
   }) async {
     // 1. Build hierarchy map from structural edges, ignoring hidden nodes
-    final Map<String, List<Node>> childrenMap = {};
-    final Set<String> containedNodeIds = {};
-    final Set<Edge> containmentEdges = {};
+    final childrenMap = <String, List<Node>>{};
+    final containedNodeIds = <String>{};
+    final containmentEdges = <Edge>{};
 
     final visibleNodes = graph.nodes
         .where((n) => !hiddenNodeIds.contains(n.key!.value.toString()))
@@ -60,7 +60,8 @@ class ELKAlgorithm implements Algorithm {
 
         // SourceId is the Parent (Hub). TargetId is the Child.
         if (hubNodeIds.contains(sourceId)) {
-          if (!hiddenNodeIds.contains(sourceId) && !hiddenNodeIds.contains(targetId)) {
+          if (!hiddenNodeIds.contains(sourceId) &&
+              !hiddenNodeIds.contains(targetId)) {
             // Enforce strict tree containment: a node can only be nested in one parent
             if (!containedNodeIds.contains(targetId)) {
               childrenMap.putIfAbsent(sourceId, () => []).add(edge.destination);
@@ -73,13 +74,15 @@ class ELKAlgorithm implements Algorithm {
     }
 
     // Identify root nodes (nodes with no containment parent among visible nodes)
-    final List<Node> roots = visibleNodes
+    final roots = visibleNodes
         .where((n) => !containedNodeIds.contains(n.key!.value.toString()))
         .toList();
 
     // Helper to get the correct ELK ID for an edge target
-    String getElkNodeId(String nodeId) => 
-      (childrenMap[nodeId]?.isNotEmpty ?? false) ? 'container_$nodeId' : nodeId;
+    String getElkNodeId(String nodeId) =>
+        (childrenMap[nodeId]?.isNotEmpty ?? false)
+            ? 'container_$nodeId'
+            : nodeId;
 
     // 2. Build recursive ELK JSON
     Map<String, dynamic> buildElkNode(Node node) {
@@ -108,12 +111,15 @@ class ELKAlgorithm implements Algorithm {
             ...children.map((c) => buildElkNode(c)),
           ],
           'edges': <Map<String, dynamic>>[
-            for (final edge in containmentEdges.where((e) => e.source.key!.value.toString() == id))
+            for (final edge in containmentEdges
+                .where((e) => e.source.key!.value.toString() == id))
               <String, dynamic>{
                 'id': 'e_${edge.hashCode}',
                 'sources': <String>[id],
                 // Point to the container if the child is a hub to prevent hierarchical cross-edges
-                'targets': <String>[getElkNodeId(edge.destination.key!.value.toString())],
+                'targets': <String>[
+                  getElkNodeId(edge.destination.key!.value.toString())
+                ],
               }
           ]
         };
@@ -140,12 +146,18 @@ class ELKAlgorithm implements Algorithm {
           if (!graph.edges[i].ghost &&
               graph.edges[i].isStructural &&
               !containmentEdges.contains(graph.edges[i]) &&
-              !hiddenNodeIds.contains(graph.edges[i].source.key!.value.toString()) &&
-              !hiddenNodeIds.contains(graph.edges[i].destination.key!.value.toString()))
+              !hiddenNodeIds
+                  .contains(graph.edges[i].source.key!.value.toString()) &&
+              !hiddenNodeIds
+                  .contains(graph.edges[i].destination.key!.value.toString()))
             <String, dynamic>{
               'id': 'e$i',
-              'sources': <String>[getElkNodeId(graph.edges[i].source.key!.value.toString())],
-              'targets': <String>[getElkNodeId(graph.edges[i].destination.key!.value.toString())],
+              'sources': <String>[
+                getElkNodeId(graph.edges[i].source.key!.value.toString())
+              ],
+              'targets': <String>[
+                getElkNodeId(graph.edges[i].destination.key!.value.toString())
+              ],
             }
       ],
     };
@@ -179,8 +191,10 @@ class ELKAlgorithm implements Algorithm {
         node.y = absoluteY;
         _basePositions[node] = Offset(absoluteX, absoluteY);
 
-        maxX = maxX > (absoluteX + node.width) ? maxX : (absoluteX + node.width);
-        maxY = maxY > (absoluteY + node.height) ? maxY : (absoluteY + node.height);
+        maxX =
+            maxX > (absoluteX + node.width) ? maxX : (absoluteX + node.width);
+        maxY =
+            maxY > (absoluteY + node.height) ? maxY : (absoluteY + node.height);
       }
 
       final children = elkNode.getProperty('children'.toJS) as JSArray?;
@@ -224,7 +238,7 @@ class ELKAlgorithm implements Algorithm {
       node.x = base.dx + shiftX;
       node.y = base.dy + shiftY;
     }
-    
+
     return _graphSize;
   }
 
