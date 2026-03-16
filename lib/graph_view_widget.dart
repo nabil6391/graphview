@@ -51,6 +51,12 @@ class GraphViewController {
 
   bool isNodeHidden(Node node) => hiddenBy.containsKey(node);
 
+  Set<String> getCollapsedNodeIds() =>
+      collapsedNodes.keys.map((n) => n.key!.value.toString()).toSet();
+
+  Set<String> getHiddenNodeIds() =>
+      hiddenBy.keys.map((n) => n.key!.value.toString()).toSet();
+
   bool isNodeVisible(Graph graph, Node node) {
     return !hiddenBy.containsKey(node);
   }
@@ -541,7 +547,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       ..translate(translation.dx, translation.dy)
       ..scale(currentScale);
 
-    if (animated) {
+    if (widget.animated) {
       animateToMatrix(target);
     } else {
       _transformationController.value = target;
@@ -556,12 +562,19 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     if (renderBox == null) return;
 
     final vp = renderBox.size;
+    if (vp.width <= 0 || vp.height <= 0) return;
+
     final bounds = graph.calculateGraphBounds();
+    if (bounds.width <= 0 || bounds.height <= 0) return;
 
     const paddingFactor = 0.95;
     final scaleX = (vp.width / bounds.width) * paddingFactor;
     final scaleY = (vp.height / bounds.height) * paddingFactor;
-    final scale = min(scaleX, scaleY);
+    
+    // Clamp the scale to prevent the matrix from collapsing (0) or exploding (infinity)
+    var scale = min(scaleX, scaleY);
+    if (scale.isNaN || scale.isInfinite) scale = 1.0;
+    scale = scale.clamp(0.01, 10.0);
 
     final scaledWidth = bounds.width * scale;
     final scaledHeight = bounds.height * scale;
@@ -573,7 +586,12 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final target = Matrix4.identity()
       ..translate(centerOffset.dx, centerOffset.dy)
       ..scale(scale);
-    animateToMatrix(target);
+    
+    if (widget.animated) {
+      animateToMatrix(target);
+    } else {
+      _transformationController.value = target;
+    }
   }
 
   void adjustZoom(double factor) {
@@ -1074,11 +1092,13 @@ class RenderCustomLayoutBox extends RenderBox
 
     final looseConstraints = BoxConstraints.loose(constraints.biggest);
 
+    bool didRecalculate = false;
     if (_needsFullRecalculation || !_isInitialized) {
       _layoutNodesLazily(looseConstraints);
       _cachedSize = _delegate.runAlgorithm();
       _isInitialized = true;
       _needsFullRecalculation = false;
+      didRecalculate = true;
     }
 
     size = _cachedSize ?? Size.zero;
@@ -1088,9 +1108,13 @@ class RenderCustomLayoutBox extends RenderBox
     });
 
     if (enableAnimation) {
-      _updateAnimationStates();
+      if (didRecalculate) {
+        _updateAnimationStates();
+      }
     } else {
-      _updateNodePositions();
+      if (didRecalculate) {
+        _updateNodePositions();
+      }
     }
   }
 
@@ -1118,6 +1142,9 @@ class RenderCustomLayoutBox extends RenderBox
           nodeData.startOffset = nodeData.targetOffset;
         }
       }
+
+      // ALWAYS UPDATE THE PHYSICAL COLLISION BOX TO MATCH THE RENDERED POSITION
+      nodeData.offset = pos;
 
       if (_nodeAnimationController.isCompleted) {
         nodeData.offset = node.position;
@@ -1197,7 +1224,7 @@ class RenderCustomLayoutBox extends RenderBox
       if (_delegate.isNodeVisible(node)) {
         nodeData.offset = node.position;
       } else {
-        final parent = delegate.findClosestVisibleAncestor(node);
+        final parent = _delegate.findClosestVisibleAncestor(node);
         nodeData.offset = parent?.position ?? node.position;
       }
     }
@@ -1288,8 +1315,6 @@ class RenderCustomLayoutBox extends RenderBox
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    if (enableAnimation && !_nodeAnimationController.isCompleted) return false;
-
     for (final entry in _children.entries) {
       final node = entry.key;
 
@@ -1297,8 +1322,9 @@ class RenderCustomLayoutBox extends RenderBox
         final child = entry.value;
 
         final childParentData = child.parentData as BoxParentData;
+        final targetOffset = childParentData.offset;
         final isHit = result.addWithPaintOffset(
-          offset: childParentData.offset,
+          offset: targetOffset,
           position: position,
           hitTest: (BoxHitTestResult result, Offset transformed) {
             return child.hitTest(result, position: transformed);
