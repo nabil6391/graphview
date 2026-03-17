@@ -78,8 +78,7 @@ class GraphViewController {
   void _markDescendantsHiddenBy(
       Graph graph, Node collapsedNode, Node currentNode) {
     // 1. Get only outgoing edges that are NOT ghost edges
-    final validEdges =
-        graph.getOutEdges(currentNode).where((edge) => !edge.ghost);
+    final validEdges = graph.getOutEdges(currentNode);
 
     // 2. Traverse the destinations of those valid edges
     for (final edge in validEdges) {
@@ -102,7 +101,7 @@ class GraphViewController {
 
   void _markExpandingDescendants(Graph graph, Node node) {
     // 1. Get only outgoing edges that are NOT ghost edges
-    final validEdges = graph.getOutEdges(node).where((edge) => !edge.ghost);
+    final validEdges = graph.getOutEdges(node);
 
     // 2. Traverse the destinations of those valid edges
     for (final edge in validEdges) {
@@ -311,9 +310,7 @@ class GraphChildDelegate {
   Graph getVisibleGraphOnly() {
     final visibleGraph = Graph();
     for (final edge in graph.edges) {
-      if (isNodeVisible(edge.source) &&
-          isNodeVisible(edge.destination) &&
-          !edge.ghost) {
+      if (isNodeVisible(edge.source) && isNodeVisible(edge.destination)) {
         visibleGraph.addEdgeS(edge);
       }
     }
@@ -570,7 +567,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     const paddingFactor = 0.95;
     final scaleX = (vp.width / bounds.width) * paddingFactor;
     final scaleY = (vp.height / bounds.height) * paddingFactor;
-    
+
     // Clamp the scale to prevent the matrix from collapsing (0) or exploding (infinity)
     var scale = min(scaleX, scaleY);
     if (scale.isNaN || scale.isInfinite) scale = 1.0;
@@ -586,7 +583,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final target = Matrix4.identity()
       ..translate(centerOffset.dx, centerOffset.dy)
       ..scale(scale);
-    
+
     if (widget.animated) {
       animateToMatrix(target);
     } else {
