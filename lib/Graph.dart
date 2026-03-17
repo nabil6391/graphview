@@ -51,11 +51,10 @@ class Graph {
     Node destination, {
     Paint? paint,
     EdgeAnimation? animation,
-    bool ghost = false,
     bool interactive = true,
-    bool isStructural = false,
     Color? interactiveFillColor,
     Color? interactiveBorderColor,
+    LineType? lineType,
   }) {
     final edge = Edge(
       source,
@@ -65,6 +64,7 @@ class Graph {
       interactive: interactive,
       interactiveBorderColor: interactiveBorderColor,
       interactiveFillColor: interactiveFillColor,
+      lineType: lineType,
     );
     addEdgeS(edge);
     return edge;

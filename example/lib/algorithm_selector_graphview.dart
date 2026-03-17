@@ -55,7 +55,8 @@ class _NodeWidgetState extends State<NodeWidget> {
               decoration: BoxDecoration(
                 color: Colors.lightBlue[100],
                 borderRadius: BorderRadius.circular(8),
-                border: isHovered ? Border.all(color: Colors.red, width: 2) : null,
+                border:
+                    isHovered ? Border.all(color: Colors.red, width: 2) : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -237,7 +238,8 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
               trackpadScrollCausesScale: true,
               edgeAnimation: edgeAnimation,
               builder: (Node node) {
-                var notifier = nodeNotifiers.putIfAbsent(node, () => ValueNotifier<int>(0));
+                var notifier = nodeNotifiers.putIfAbsent(
+                    node, () => ValueNotifier<int>(0));
                 return NodeWidget(
                   node: node,
                   notifier: notifier,
@@ -340,7 +342,8 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
           (n) => n.key?.value == 50,
           orElse: () => graph.nodes.first,
         );
-        if (targetNode.key?.value == 50 && nodeNotifiers.containsKey(targetNode)) {
+        if (targetNode.key?.value == 50 &&
+            nodeNotifiers.containsKey(targetNode)) {
           nodeNotifiers[targetNode]!.value++;
         }
       }
@@ -474,7 +477,7 @@ class _TreeViewPageState extends State<AlgorithmSelectedVIewPage>
       var fromNodeId = element['from'];
       var toNodeId = element['to'];
       graph.addEdge(Node.Id(fromNodeId), Node.Id(toNodeId),
-          ghost: true, paint: Paint()..color = Colors.lightGreen);
+          paint: Paint()..color = Colors.lightGreen);
     });
 
     var animatedEdges = json['animatedEdges']!;

@@ -130,7 +130,6 @@ class _ElkGraphViewPageState extends State<ElkGraphViewPage>
     graph.addEdge(
       Node.Id('L1'),
       Node.Id('L10'),
-      ghost: true,
       paint: Paint()
         ..color = Colors.lightGreen
         ..strokeWidth = 1
@@ -139,7 +138,6 @@ class _ElkGraphViewPageState extends State<ElkGraphViewPage>
     graph.addEdge(
       Node.Id('L3'),
       Node.Id('L15'),
-      ghost: true,
       paint: Paint()
         ..color = Colors.lightGreen
         ..strokeWidth = 1
@@ -148,7 +146,6 @@ class _ElkGraphViewPageState extends State<ElkGraphViewPage>
     graph.addEdge(
       Node.Id('L7'),
       Node.Id('L18'),
-      ghost: true,
       paint: Paint()
         ..color = Colors.lightGreen
         ..strokeWidth = 1

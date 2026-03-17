@@ -78,12 +78,30 @@ class _ClusterZoomRenderingState extends State<ClusterZoomRendering> {
     fullGraph.addEdge(nodes[21], nodes[23]);
     fullGraph.addEdge(nodes[1], nodes[21]);
     fullGraph.addEdge(nodes[1], nodes[22]);
-    fullGraph.addEdge(nodes[1], nodes[5], ghost: true);
-    fullGraph.addEdge(nodes[1], nodes[3], ghost: true);
-    fullGraph.addEdge(nodes[3], nodes[5], ghost: true);
-    fullGraph.addEdge(nodes[6], nodes[3], ghost: true);
-    fullGraph.addEdge(nodes[10], nodes[5], ghost: true);
-    fullGraph.addEdge(nodes[21], nodes[23], ghost: true);
+    fullGraph.addEdge(
+      nodes[1],
+      nodes[5],
+    );
+    fullGraph.addEdge(
+      nodes[1],
+      nodes[3],
+    );
+    fullGraph.addEdge(
+      nodes[3],
+      nodes[5],
+    );
+    fullGraph.addEdge(
+      nodes[6],
+      nodes[3],
+    );
+    fullGraph.addEdge(
+      nodes[10],
+      nodes[5],
+    );
+    fullGraph.addEdge(
+      nodes[21],
+      nodes[23],
+    );
 
     // Build clusterGraph with the cluster's children as requested
     clusters.forEach((parentId, childIds) {

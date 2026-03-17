@@ -384,35 +384,49 @@ class _LayeredGraphViewPageState extends State<LayeredGraphViewPage>
     graph.addEdge(node1, node13,
         paint: Paint()..color = Colors.red,
         animation: EdgeAnimation(icon: textPainter));
-    graph.addEdge(node3, node4,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
-        ghost: true);
-    graph.addEdge(node3, node6,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
-        ghost: true);
-    graph.addEdge(node3, node8,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
-        ghost: true);
-    graph.addEdge(node3, node10,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
-        ghost: true);
-    graph.addEdge(node3, node15,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
-        ghost: true);
-    graph.addEdge(node3, node9,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
-        ghost: true);
-    graph.addEdge(node3, node2,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
-        ghost: true);
+    graph.addEdge(
+      node3,
+      node4,
+      paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
+    );
+    graph.addEdge(
+      node3,
+      node6,
+      paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
+    );
+    graph.addEdge(
+      node3,
+      node8,
+      paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
+    );
+    graph.addEdge(
+      node3,
+      node10,
+      paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
+    );
+    graph.addEdge(
+      node3,
+      node15,
+      paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
+    );
+    graph.addEdge(
+      node3,
+      node9,
+      paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
+    );
+    graph.addEdge(
+      node3,
+      node2,
+      paint: Paint()..color = Colors.grey.withValues(alpha: 0.5),
+    );
 
     // TODO(DEV): Adding a ghost edge to a direct child node changes layout
     /* graph.addEdge(node3, node5,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5), ghost: true);
+        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5), );
     graph.addEdge(node3, node6,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5), ghost: true);
+        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5), );
     graph.addEdge(node3, node7,
-        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5), ghost: true); */
+        paint: Paint()..color = Colors.grey.withValues(alpha: 0.5), ); */
     graph.addEdge(node1, node21,
         animation: EdgeAnimation(shape: EdgeAnimationShape.square));
     graph.addEdge(node1, node4,
