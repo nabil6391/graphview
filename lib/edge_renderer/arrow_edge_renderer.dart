@@ -39,8 +39,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     var destination = edge.destination;
 
     final currentPaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
-    final lineType =
-        edge.ghost ? LineType.DottedLine : _getLineType(destination);
+    final lineType = edge.lineType ?? _getLineType(destination);
     var edgePath = Path();
 
     if (source == destination) {

@@ -54,20 +54,18 @@ class ELKAlgorithm implements Algorithm {
         .toList();
 
     for (final edge in graph.edges) {
-      if (edge.isStructural && !edge.ghost) {
-        final sourceId = edge.source.key!.value.toString();
-        final targetId = edge.destination.key!.value.toString();
+      final sourceId = edge.source.key!.value.toString();
+      final targetId = edge.destination.key!.value.toString();
 
-        // SourceId is the Parent (Hub). TargetId is the Child.
-        if (hubNodeIds.contains(sourceId)) {
-          if (!hiddenNodeIds.contains(sourceId) &&
-              !hiddenNodeIds.contains(targetId)) {
-            // Enforce strict tree containment: a node can only be nested in one parent
-            if (!containedNodeIds.contains(targetId)) {
-              childrenMap.putIfAbsent(sourceId, () => []).add(edge.destination);
-              containedNodeIds.add(targetId);
-              containmentEdges.add(edge);
-            }
+      // SourceId is the Parent (Hub). TargetId is the Child.
+      if (hubNodeIds.contains(sourceId)) {
+        if (!hiddenNodeIds.contains(sourceId) &&
+            !hiddenNodeIds.contains(targetId)) {
+          // Enforce strict tree containment: a node can only be nested in one parent
+          if (!containedNodeIds.contains(targetId)) {
+            childrenMap.putIfAbsent(sourceId, () => []).add(edge.destination);
+            containedNodeIds.add(targetId);
+            containmentEdges.add(edge);
           }
         }
       }
@@ -143,9 +141,7 @@ class ELKAlgorithm implements Algorithm {
       // Non-structural cross-dependencies remain invisible to ELK and are drawn by Flutter post-render.
       'edges': <Map<String, dynamic>>[
         for (int i = 0; i < graph.edges.length; i++)
-          if (!graph.edges[i].ghost &&
-              graph.edges[i].isStructural &&
-              !containmentEdges.contains(graph.edges[i]) &&
+          if (!containmentEdges.contains(graph.edges[i]) &&
               !hiddenNodeIds
                   .contains(graph.edges[i].source.key!.value.toString()) &&
               !hiddenNodeIds

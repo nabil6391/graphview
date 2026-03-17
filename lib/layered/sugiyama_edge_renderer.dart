@@ -324,11 +324,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
       ..moveTo(sourceCenter.dx, sourceCenter.dy)
       ..lineTo(destCenter.dx, destCenter.dy);
 
-    if (edge.ghost) {
-      drawDashedLine(canvas, sourceCenter, destCenter, currentPaint, 0);
-    } else {
-      drawStyledPath(canvas, path, currentPaint, lineType: lineType);
-    }
+    drawStyledPath(canvas, path, currentPaint, lineType: lineType);
 
     if (_shouldAnimate(edge)) {
       if (edge.animation!.shape != null) {

@@ -62,8 +62,6 @@ class Graph {
       destination,
       paint: paint,
       animation: animation,
-      ghost: ghost,
-      isStructural: isStructural,
       interactive: interactive,
       interactiveBorderColor: interactiveBorderColor,
       interactiveFillColor: interactiveFillColor,
@@ -306,11 +304,10 @@ class Edge {
   Key? key;
   Paint? paint;
   EdgeAnimation? animation;
-  bool ghost;
   bool interactive;
-  bool isStructural;
   Color? interactiveFillColor;
   Color? interactiveBorderColor;
+  LineType? lineType;
 
   Edge(
     this.source,
@@ -318,11 +315,10 @@ class Edge {
     this.key,
     this.paint,
     this.animation,
-    this.ghost = false,
     this.interactive = true,
-    this.isStructural = false,
     this.interactiveFillColor,
     this.interactiveBorderColor,
+    this.lineType,
   });
 
   @override
