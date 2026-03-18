@@ -17,22 +17,41 @@ class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
 
-  Completer<void> _layoutCompleter = Completer<void>()..complete();
-  Future<void> get offsetWait => _layoutCompleter.future;
+  /// Notifier tracking if the controller is attached to a GraphView widget
+  final ValueNotifier<bool> isAttached = ValueNotifier(false);
+  /// Notifier tracking if the graph layout has been computed and applied
+  final ValueNotifier<bool> isLayoutFinished = ValueNotifier(false);
 
-  Completer<void> _attachCompleter = Completer<void>();
-  Future<void> get attachedWait => _attachCompleter.future;
+  /// Standard awaitable future for attachment
+  Future<void> get attachedWait async {
+    if (isAttached.value) return;
+    await _waitFor(isAttached);
+  }
+
+  /// Standard awaitable future for layout completion
+  Future<void> get offsetWait async {
+    if (isLayoutFinished.value) return;
+    await _waitFor(isLayoutFinished);
+  }
+
+  Future<void> _waitFor(ValueNotifier<bool> notifier) {
+    final completer = Completer<void>();
+    void listener() {
+      if (notifier.value) {
+        notifier.removeListener(listener);
+        if (!completer.isCompleted) completer.complete();
+      }
+    }
+    notifier.addListener(listener);
+    return completer.future;
+  }
 
   void notifyLayoutStarted() {
-    if (_layoutCompleter.isCompleted) {
-      _layoutCompleter = Completer<void>();
-    }
+    isLayoutFinished.value = false;
   }
 
   void notifyLayoutFinished() {
-    if (!_layoutCompleter.isCompleted) {
-      _layoutCompleter.complete();
-    }
+    isLayoutFinished.value = true;
   }
 
   final Map<Node, bool> collapsedNodes = {};
@@ -48,16 +67,12 @@ class GraphViewController {
 
   void _attach(_GraphViewState? state) {
     _state = state;
-    if (state != null && !_attachCompleter.isCompleted) {
-      _attachCompleter.complete();
-    }
+    isAttached.value = state != null;
   }
 
   void _detach() {
     _state = null;
-    if (_attachCompleter.isCompleted) {
-      _attachCompleter = Completer<void>();
-    }
+    isAttached.value = false;
   }
 
   void reset() {
@@ -67,9 +82,6 @@ class GraphViewController {
     collapsedNode = null;
     focusedNode = null;
     notifyLayoutStarted();
-    if (_attachCompleter.isCompleted) {
-      _attachCompleter = Completer<void>();
-    }
   }
 
   void animateToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, true);
@@ -445,6 +457,34 @@ class GraphView extends StatefulWidget {
   late final GraphChildDelegate delegate;
   final bool centerGraph;
   final Listenable? edgeAnimation;
+
+  static Widget build({
+    required Graph graph,
+    required Algorithm algorithm,
+    Paint? paint,
+    required NodeWidgetBuilder builder,
+    GraphViewController? controller,
+    bool centerGraph = false,
+    bool trackpadScrollCausesScale = true,
+    Duration panAnimationDuration = const Duration(milliseconds: 300),
+    bool autoZoomToFit = true,
+    Listenable? edgeAnimation,
+    bool animated = true,
+  }) {
+    return GraphView.builder(
+      graph: graph,
+      algorithm: algorithm,
+      paint: paint,
+      builder: builder,
+      controller: controller,
+      centerGraph: centerGraph,
+      trackpadScrollCausesScale: trackpadScrollCausesScale,
+      panAnimationDuration: panAnimationDuration,
+      autoZoomToFit: autoZoomToFit,
+      edgeAnimation: edgeAnimation,
+      animated: animated,
+    );
+  }
 
   GraphView({
     Key? key,
@@ -1223,6 +1263,7 @@ class RenderCustomLayoutBox extends RenderBox
         _updateNodePositions();
       }
     }
+    _delegate.controller?.notifyLayoutFinished();
   }
 
   void _paintNodes(PaintingContext context, Offset offset, double t) {
