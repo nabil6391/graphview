@@ -104,9 +104,21 @@ class GraphViewController {
   void forceRecalculation() => _state?.forceRecalculation();
 
   // Visibility management methods
-  bool isNodeCollapsed(Node node) => collapsedNodes.containsKey(node);
+  bool isNodeCollapsed(dynamic nodeOrId) {
+    if (nodeOrId is Node) {
+      return collapsedNodes.containsKey(nodeOrId);
+    }
+    final nodeId = nodeOrId.toString();
+    return collapsedNodes.keys.any((n) => n.key?.value.toString() == nodeId);
+  }
 
-  bool isNodeHidden(Node node) => hiddenBy.containsKey(node);
+  bool isNodeHidden(dynamic nodeOrId) {
+    if (nodeOrId is Node) {
+      return hiddenBy.containsKey(nodeOrId);
+    }
+    final nodeId = nodeOrId.toString();
+    return hiddenBy.keys.any((n) => n.key?.value.toString() == nodeId);
+  }
 
   Set<String> getCollapsedNodeIds() =>
       collapsedNodes.keys.map((n) => n.key!.value.toString()).toSet();
@@ -454,7 +466,7 @@ class GraphView extends StatefulWidget {
             graph: graph,
             algorithm: algorithm,
             builder: builder,
-            controller: null),
+            controller: controller),
         super(key: key);
 
   GraphView.builder({
@@ -1140,9 +1152,6 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
     algorithm.renderer?.setAnimatedPositions(animatedPositions);
-    if (_edgeAnimation is Animation<double>) {
-      algorithm.renderer?.edgeAnimation = _edgeAnimation as Animation<double>;
-    }
 
     final renderer = algorithm.renderer;
     if (renderer is ArrowEdgeRenderer) {

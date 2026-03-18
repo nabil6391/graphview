@@ -13,7 +13,7 @@ export 'layered/sugiyama_edge_renderer.dart';
 export 'layered/sugiyama_node_data.dart';
 export 'mindmap/mind_map_algorithm.dart';
 export 'mindmap/mindmap_edge_renderer.dart';
-export 'tree/baloon_layout_algorithm.dart';
+export 'tree/baloon_layout_algorithm.dart' hide PolarPoint;
 export 'tree/buchheim_walker_algorithm.dart';
 export 'tree/buchheim_walker_configuration.dart';
 export 'tree/buchheim_walker_node_data.dart';

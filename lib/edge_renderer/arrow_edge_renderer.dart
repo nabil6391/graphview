@@ -14,25 +14,10 @@ class ArrowEdgeRenderer extends EdgeRenderer {
   var trianglePath = Path();
   final bool noArrow;
   final Map<Edge, Path> renderedPaths = {};
-  
-  /// Cache for path metrics to avoid expensive re-computation every frame.
-  final Map<Edge, List<PathMetric>> _metricsCache = {};
-  /// Cache for the last known geometry to detect when to invalidate metrics.
-  final Map<Edge, String> _geometryHash = {};
 
-  ArrowEdgeRenderer({this.noArrow = false, super.animation});
-
-  bool _shouldAnimate(Edge edge) => edge.animation != null && (edgeAnimation != null || animation != null);
+  ArrowEdgeRenderer({this.noArrow = false});
 
   @override
-  Offset getNodeCenter(Node node) {
-    final nodePosition = getNodePosition(node);
-    return Offset(
-      nodePosition.dx + node.width * 0.5,
-      nodePosition.dy + node.height * 0.5,
-    );
-  }
-
   void render(Canvas canvas, Graph graph, Paint paint) {
     graph.edges.forEach((edge) {
       renderEdge(canvas, edge, paint);
@@ -59,7 +44,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
       if (loopResult != null) {
         drawStyledPath(canvas, loopResult.path, currentPaint,
-            lineType: lineType);
+            lineType: lineType ?? LineType.Default);
         edgePath = loopResult.path;
 
         if (!noArrow) {
@@ -80,11 +65,10 @@ class ArrowEdgeRenderer extends EdgeRenderer {
             loopResult.arrowBase,
             triangleCentroid,
             currentPaint,
-            lineType: lineType,
+            lineType: lineType ?? LineType.Default,
           );
         }
         
-        _updateMetricsCache(edge, edgePath, sourceOffset, destinationOffset);
         return;
       }
     }
@@ -118,15 +102,14 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     }
 
     renderedPaths[edge] = edgePath;
-    _updateMetricsCache(edge, edgePath, sourceOffset, destinationOffset);
 
     if (noArrow) {
       // Draw path without arrow, respecting line type
-      drawStyledPath(canvas, edgePath, currentPaint, lineType: lineType);
+      drawStyledPath(canvas, edgePath, currentPaint, lineType: lineType ?? LineType.Default);
     } else {
-      // For ELK paths, the last segment contains the arrow target
-      final metrics = _metricsCache[edge];
-      final firstMetric = metrics?.firstOrNull;
+      // For ELK paths, we need to find the orientation of the arrow
+      final metrics = edgePath.computeMetrics().toList();
+      final firstMetric = metrics.firstOrNull;
       
       final lastPoint = edge.sections?.last ?? 
           firstMetric?.getTangentForOffset(firstMetric.length)?.position ??
@@ -134,7 +117,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       
       final secondLastPoint = (edge.sections != null && edge.sections!.length > 1) 
           ? edge.sections![edge.sections!.length - 2]
-          : firstMetric?.getTangentForOffset(0)?.position ??
+          : firstMetric?.getTangentForOffset(firstMetric != null ? max(0, firstMetric.length - 1.0) : 0)?.position ??
             sourceOffset;
 
       var trianglePaint = Paint()
@@ -150,33 +133,12 @@ class ArrowEdgeRenderer extends EdgeRenderer {
           lastPoint.dy);
 
       // Draw the path up to the triangle centroid
-      drawStyledPath(canvas, edgePath, currentPaint, lineType: lineType);
-    }
-
-    if (_shouldAnimate(edge)) {
-      final animationValue = (edgeAnimation ?? animation)!.value;
-      switch (edge.animation!.shape) {
-        case EdgeAnimationShape.circle:
-          _drawAnimatedCircle(edge, canvas, animationValue, currentPaint);
-          break;
-        case EdgeAnimationShape.square:
-          _drawAnimatedSquare(edge, canvas, animationValue, currentPaint);
-          break;
-        case EdgeAnimationShape.triangle:
-          _drawAnimatedTriangle(edge, canvas, animationValue, currentPaint);
-          break;
-        case null:
-          break;
-      }
-      if (edge.animation!.icon != null) {
-        _drawAnimatedIcon(
-            edge, canvas, edge.animation!.icon!, animationValue);
-      }
+      drawStyledPath(canvas, edgePath, currentPaint, lineType: lineType ?? LineType.Default);
     }
 
     if (edge.interactive) {
-      final metrics = _metricsCache[edge];
-      if (metrics != null && metrics.isNotEmpty) {
+      final metrics = edgePath.computeMetrics().toList();
+      if (metrics.isNotEmpty) {
         final metric = metrics.first;
 
         // Get the exact center coordinate of the path
@@ -202,191 +164,8 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     }
   }
 
-  void _updateMetricsCache(Edge edge, Path path, Offset sourcePos, Offset destPos) {
-      // Robust hash including interpolated positions to ensure we re-calculate during layout/shift/anim
-      final hash = 'S:${sourcePos.dx.toStringAsFixed(1)},${sourcePos.dy.toStringAsFixed(1)} '
-                   'D:${destPos.dx.toStringAsFixed(1)},${destPos.dy.toStringAsFixed(1)} '
-                   'SEC:${edge.sections?.length} '
-                   'F:${edge.sections?.firstOrNull?.dx.toStringAsFixed(1)}';
-      
-      if (_geometryHash[edge] != hash) {
-          _metricsCache[edge] = path.computeMetrics().toList();
-          _geometryHash[edge] = hash;
-      }
-  }
-
-  void _drawAnimatedCircle(
-      Edge edge, Canvas canvas, double progress, Paint edgePaint) {
-    final metrics = _metricsCache[edge];
-    if (metrics == null || metrics.isEmpty) return;
-
-    double totalLength = 0;
-    for (var m in metrics) {
-      totalLength += m.length;
-    }
-
-    if (totalLength <= 0) return;
-
-    // Fixed speed: move dots at a constant rate regardless of edge length.
-    // dotSpacing: how far apart the dots are.
-    // cycleLength: how far a dot travels in one full animation cycle (must be multiple of dotSpacing to avoid jumps).
-    const dotSpacing = 25.0;
-    const cycleLength = 100.0; 
-    
-    // Calculate the offset of the first dot based on global progress
-    final firstDotOffset = (progress * cycleLength) % dotSpacing;
-
-    final dotPaint = Paint()..color = edgePaint.color..style = PaintingStyle.fill;
-
-    for (var currentDist = firstDotOffset; currentDist < totalLength; currentDist += dotSpacing) {
-        // Find which metric contains this offset
-        var accumulator = 0.0;
-        for (final metric in metrics) {
-            if (currentDist <= accumulator + metric.length) {
-                final localOffset = currentDist - accumulator;
-                final tangent = metric.getTangentForOffset(localOffset);
-                if (tangent != null) {
-                    canvas.drawCircle(tangent.position, 1.5, dotPaint);
-                }
-                break;
-            }
-            accumulator += metric.length;
-        }
-    }
-  }
-
-  void _drawAnimatedIcon(
-    Edge edge,
-    Canvas canvas,
-    TextPainter iconPainter,
-    double progress,
-  ) {
-    final metrics = _metricsCache[edge];
-    if (metrics == null || metrics.isEmpty) return;
-
-    double totalLength = 0;
-    for (var m in metrics) {
-      totalLength += m.length;
-    }
-
-    var targetDistance = totalLength * progress;
-    double currentDistance = 0;
-
-    for (var metric in metrics) {
-      if (currentDistance + metric.length >= targetDistance) {
-        final localDistance = targetDistance - currentDistance;
-        final tangent = metric.getTangentForOffset(localDistance);
-
-        if (tangent != null) {
-          canvas.save();
-          canvas.translate(tangent.position.dx, tangent.position.dy);
-          iconPainter.paint(
-            canvas,
-            Offset(-iconPainter.width / 2, -iconPainter.height / 2),
-          );
-          canvas.restore();
-        }
-        break;
-      }
-      currentDistance += metric.length;
-    }
-  }
-
-  void _drawAnimatedTriangle(
-      Edge edge, Canvas canvas, double progress, Paint edgePaint) {
-    final metrics = _metricsCache[edge];
-    if (metrics == null || metrics.isEmpty) return;
-
-    double totalLength = 0;
-    for (var m in metrics) {
-      totalLength += m.length;
-    }
-
-    var targetDistance = totalLength * progress;
-    double currentDistance = 0;
-
-    for (var metric in metrics) {
-      if (currentDistance + metric.length >= targetDistance) {
-        final localDistance = targetDistance - currentDistance;
-        final tangent = metric.getTangentForOffset(localDistance);
-
-        if (tangent != null) {
-          const sideLength = 10.0;
-          final height = (sqrt(3) / 2) * sideLength;
-
-          canvas.save();
-          canvas.translate(tangent.position.dx, tangent.position.dy);
-          canvas.rotate(-tangent.angle + pi / 2);
-
-          final trianglePath = Path();
-          trianglePath.moveTo(0, -height / 2);
-          trianglePath.lineTo(sideLength / 2, height / 2);
-          trianglePath.lineTo(-sideLength / 2, height / 2);
-          trianglePath.close();
-
-          canvas.drawPath(
-            trianglePath,
-            Paint()..color = edgePaint.color..style = PaintingStyle.fill,
-          );
-          canvas.restore();
-        }
-        break;
-      }
-      currentDistance += metric.length;
-    }
-  }
-
-  void _drawAnimatedSquare(
-      Edge edge, Canvas canvas, double progress, Paint edgePaint) {
-    final metrics = _metricsCache[edge];
-    if (metrics == null || metrics.isEmpty) return;
-
-    // 1. Calculate the total distance covered by the animation
-    double totalLength = 0;
-    for (var m in metrics) {
-      totalLength += m.length;
-    }
-
-    var targetDistance = totalLength * progress;
-    double currentDistance = 0;
-
-    for (var metric in metrics) {
-      if (currentDistance + metric.length >= targetDistance) {
-        // 2. Extract the position and tangent (angle) at the current progress
-        final localDistance = targetDistance - currentDistance;
-        final tangent = metric.getTangentForOffset(localDistance);
-
-        if (tangent != null) {
-          final center = tangent.position;
-          final angle =
-              -tangent.angle; // Adjusting for Canvas coordinate system
-
-          canvas.save();
-          // 3. Move and rotate the canvas to the square's position
-          canvas.translate(center.dx, center.dy);
-          canvas.rotate(angle);
-
-          final squarePaint = Paint()
-            ..color = edgePaint.color
-            ..style = PaintingStyle.fill;
-
-          const side = 8.0; // Size of your square
-          canvas.drawRect(
-            Rect.fromCenter(center: Offset.zero, width: side, height: side),
-            squarePaint,
-          );
-          canvas.restore();
-        }
-        break;
-      }
-      currentDistance += metric.length;
-    }
-  }
-
   /// Helper to get line type from node data if available
   LineType? _getLineType(Node node) {
-    // This assumes you have a way to access node data
-    // You may need to adjust this based on your actual implementation
     if (node is SugiyamaNodeData) {
       return node.lineType;
     }
@@ -516,7 +295,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         } else if (destination.y > startY) {
           // Top edge intersection
           resultLine[2] = stopX - halfSlopeHeight;
-          resultLine[3] = stopY - halfHeight;
+          resultLine[3] = stopY + halfHeight;
         }
       }
     }

@@ -1,14 +1,11 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:graphview/graph.dart';
 
 abstract class EdgeRenderer {
   Map<Node, Offset>? _animatedPositions;
-  Animation<double>? edgeAnimation;
-  Animation<double>? animation;
-
-  EdgeRenderer({this.animation});
 
   void setAnimatedPositions(Map<Node, Offset> positions) =>
       _animatedPositions = positions;
@@ -18,6 +15,8 @@ abstract class EdgeRenderer {
 
   void renderEdge(Canvas canvas, Edge edge, Paint paint);
 
+  void render(Canvas canvas, Graph graph, Paint paint);
+
   Offset getNodeCenter(Node node) {
     final nodePosition = getNodePosition(node);
     return Offset(
@@ -26,36 +25,9 @@ abstract class EdgeRenderer {
     );
   }
 
-  /// Draws a line between two points respecting the node's line type
-  void drawStyledLine(Canvas canvas, Offset start, Offset end, Paint paint,
-      {LineType? lineType}) {
-    switch (lineType) {
-      case LineType.DashedLine:
-        drawDashedLine(canvas, start, end, paint, 0.6);
-        break;
-      case LineType.DottedLine:
-        drawDashedLine(canvas, start, end, paint, 0.0);
-        break;
-      case LineType.SineLine:
-        drawSineLine(canvas, start, end, paint);
-        break;
-      default:
-        canvas.drawLine(start, end, paint);
-        break;
-    }
-  }
-
-  /// Draws a styled path respecting the node's line type
-  void drawStyledPath(Canvas canvas, Path path, Paint paint,
-      {LineType? lineType}) {
-    if (lineType == null || lineType == LineType.Default) {
-      canvas.drawPath(path, paint);
-      return;
-    }
-
-    final dashWidth = lineType == LineType.DottedLine ? 2.0 : 6.0;
-    final dashSpace = lineType == LineType.DottedLine ? 4.0 : 4.0;
-
+  /// Draws a dashed path along a complex path
+  void drawDashedPath(Canvas canvas, Path path, Paint paint,
+      {double dashWidth = 10, double dashSpace = 10}) {
     final dashedPath = Path();
     for (final metric in path.computeMetrics()) {
       var distance = 0.0;
@@ -108,119 +80,127 @@ abstract class EdgeRenderer {
   /// Draws a sine wave line between two points
   void drawSineLine(
       Canvas canvas, Offset source, Offset destination, Paint paint) {
-    final originalStrokeWidth = paint.strokeWidth;
-    paint.strokeWidth = 1.5;
-
     final dx = destination.dx - source.dx;
     final dy = destination.dy - source.dy;
     final distance = sqrt(dx * dx + dy * dy);
 
-    if (distance == 0 || (dx == 0 && dy == 0)) {
-      paint.strokeWidth = originalStrokeWidth;
-      return;
+    if (distance == 0) return;
+
+    final sinePath = Path();
+    sinePath.moveTo(source.dx, source.dy);
+
+    const stepSize = 2.0;
+    const waveLength = 20.0;
+    const amplitude = 4.0;
+
+    for (var i = 0.0; i < distance; i += stepSize) {
+      final x = source.dx + (dx * i / distance);
+      final y = source.dy + (dy * i / distance);
+
+      // Add sine offset perpendicular to the line direction
+      final angle = atan2(dy, dx);
+      final offsetX = amplitude * sin(2 * pi * i / waveLength) * sin(angle);
+      final offsetY = -amplitude * sin(2 * pi * i / waveLength) * cos(angle);
+
+      sinePath.lineTo(x + offsetX, y + offsetY);
     }
 
-    const lineLength = 6.0;
-    const phaseOffset = 2.0;
-    var distanceTraveled = 0.0;
-    var phase = 0.0;
-
-    final path = Path()..moveTo(source.dx, source.dy);
-
-    while (distanceTraveled < distance) {
-      final segmentLength = min(lineLength, distance - distanceTraveled);
-      final segmentFraction = (distanceTraveled + segmentLength) / distance;
-      final segmentDestination = Offset(
-        source.dx + dx * segmentFraction,
-        source.dy + dy * segmentFraction,
-      );
-
-      final waveAmplitude = sin(phase + phaseOffset) * segmentLength;
-
-      double perpX, perpY;
-      if ((dx > 0 && dy < 0) || (dx < 0 && dy > 0)) {
-        perpX = waveAmplitude;
-        perpY = waveAmplitude;
-      } else {
-        perpX = -waveAmplitude;
-        perpY = waveAmplitude;
-      }
-
-      path.lineTo(segmentDestination.dx + perpX, segmentDestination.dy + perpY);
-
-      distanceTraveled += segmentLength;
-      phase += pi * segmentLength / lineLength;
-    }
-
-    canvas.drawPath(path, paint);
-    paint.strokeWidth = originalStrokeWidth;
+    canvas.drawPath(sinePath, paint);
   }
 
-  /// Builds a loop path for self-referential edges and returns geometry
-  /// data that renderers can use to draw arrows or style the segment.
-  LoopRenderResult? buildSelfLoopPath(
-    Edge edge, {
-    double loopPadding = 16.0,
-    double arrowLength = 12.0,
-  }) {
-    if (edge.source != edge.destination) {
-      return null;
+  void drawStyledPath(Canvas canvas, Path path, Paint paint,
+      {LineType lineType = LineType.Default}) {
+    switch (lineType) {
+      case LineType.DashedLine:
+        drawDashedPath(canvas, path, paint);
+        break;
+      case LineType.DottedLine:
+        drawDashedPath(canvas, path, paint, dashWidth: 2, dashSpace: 4);
+        break;
+      case LineType.Default:
+      default:
+        canvas.drawPath(path, paint);
+        break;
     }
+  }
 
+  void drawStyledLine(
+      Canvas canvas, Offset source, Offset destination, Paint paint,
+      {LineType lineType = LineType.Default}) {
+    switch (lineType) {
+      case LineType.DashedLine:
+        drawDashedLine(canvas, source, destination, paint, 1.0);
+        break;
+      case LineType.DottedLine:
+        drawDashedLine(canvas, source, destination, paint, 0.0);
+        break;
+      case LineType.Default:
+      default:
+        canvas.drawLine(source, destination, paint);
+        break;
+    }
+  }
+
+  EdgeSelfLoopResult? buildSelfLoopPath(Edge edge, {double arrowLength = 0}) {
     final node = edge.source;
-    final nodeCenter = getNodeCenter(node);
-
-    final anchorRadius = node.size.shortestSide * 0.5;
-
-    final start = nodeCenter + Offset(anchorRadius, 0);
-
-    final end = nodeCenter + Offset(0, -anchorRadius);
-
-    final loopRadius = max(
-      loopPadding + anchorRadius,
-      anchorRadius * 1.5,
+    final position = getNodePosition(node);
+    final center = Offset(
+      position.dx + node.width * 0.5,
+      position.dy + node.height * 0.5,
     );
 
-    final controlPoint1 = start + Offset(loopRadius, 0);
+    final loopPath = Path();
+    final loopRadius = node.width * 0.4;
 
-    final controlPoint2 = end + Offset(0, -loopRadius);
+    // Start from the top-middle of the node
+    final start = Offset(center.dx, position.dy);
 
-    final path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..cubicTo(
-        controlPoint1.dx,
-        controlPoint1.dy,
-        controlPoint2.dx,
-        controlPoint2.dy,
-        end.dx,
-        end.dy,
-      );
+    // Points for a "teardrop" loop above the node
+    final cp1 = Offset(center.dx - loopRadius * 2, position.dy - loopRadius * 2);
+    final cp2 = Offset(center.dx + loopRadius * 2, position.dy - loopRadius * 2);
 
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isEmpty) {
-      return LoopRenderResult(path, start, end);
+    loopPath.moveTo(start.dx, start.dy);
+    loopPath.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, start.dx, start.dy);
+
+    // If no arrow needed, return the path with dummy offsets
+    if (arrowLength == 0) {
+        return EdgeSelfLoopResult(
+            path: loopPath,
+            arrowBase: start,
+            arrowTip: start,
+        );
     }
+
+    // To place an arrow at the end, we need a slightly shortened path
+    final metrics = loopPath.computeMetrics().toList();
+    if (metrics.isEmpty) return null;
 
     final metric = metrics.first;
     final totalLength = metric.length;
-    final effectiveArrowLength =
-        arrowLength <= 0 ? 0.0 : min(arrowLength, totalLength * 0.3);
-    final arrowBaseOffset = max(0.0, totalLength - effectiveArrowLength);
-    final arrowBaseTangent = metric.getTangentForOffset(arrowBaseOffset);
-    final arrowTipTangent = metric.getTangentForOffset(totalLength);
 
-    return LoopRenderResult(
-      path,
-      arrowBaseTangent?.position ?? end,
-      arrowTipTangent?.position ?? end,
+    // Find the tip position (almost at the end of the loop)
+    final tipPos = metric.getTangentForOffset(totalLength - 1.0);
+    // Find the base of the arrow (a few pixels back)
+    final basePos = metric.getTangentForOffset(totalLength - arrowLength - 1.0);
+
+    if (tipPos == null || basePos == null) return null;
+
+    return EdgeSelfLoopResult(
+      path: metric.extractPath(0, totalLength - arrowLength),
+      arrowBase: basePos.position,
+      arrowTip: tipPos.position,
     );
   }
 }
 
-class LoopRenderResult {
+class EdgeSelfLoopResult {
   final Path path;
   final Offset arrowBase;
   final Offset arrowTip;
 
-  const LoopRenderResult(this.path, this.arrowBase, this.arrowTip);
+  EdgeSelfLoopResult({
+    required this.path,
+    required this.arrowBase,
+    required this.arrowTip,
+  });
 }
