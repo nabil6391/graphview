@@ -17,6 +17,43 @@ class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
 
+  /// Notifier tracking if the controller is attached to a GraphView widget
+  final ValueNotifier<bool> isAttached = ValueNotifier(false);
+  /// Notifier tracking if the graph layout has been computed and applied
+  final ValueNotifier<bool> isLayoutFinished = ValueNotifier(false);
+
+  /// Standard awaitable future for attachment
+  Future<void> get attachedWait async {
+    if (isAttached.value) return;
+    await _waitFor(isAttached);
+  }
+
+  /// Standard awaitable future for layout completion
+  Future<void> get offsetWait async {
+    if (isLayoutFinished.value) return;
+    await _waitFor(isLayoutFinished);
+  }
+
+  Future<void> _waitFor(ValueNotifier<bool> notifier) {
+    final completer = Completer<void>();
+    void listener() {
+      if (notifier.value) {
+        notifier.removeListener(listener);
+        if (!completer.isCompleted) completer.complete();
+      }
+    }
+    notifier.addListener(listener);
+    return completer.future;
+  }
+
+  void notifyLayoutStarted() {
+    isLayoutFinished.value = false;
+  }
+
+  void notifyLayoutFinished() {
+    isLayoutFinished.value = true;
+  }
+
   final Map<Node, bool> collapsedNodes = {};
   final Map<Node, bool> expandingNodes = {};
   final Map<Node, Node> hiddenBy = {};
@@ -28,11 +65,43 @@ class GraphViewController {
     this.transformationController,
   });
 
-  void _attach(_GraphViewState? state) => _state = state;
+  void _attach(_GraphViewState? state) {
+    _state = state;
+    isAttached.value = state != null;
+  }
 
-  void _detach() => _state = null;
+  void _detach() {
+    _state = null;
+    isAttached.value = false;
+  }
+
+  void reset() {
+    collapsedNodes.clear();
+    expandingNodes.clear();
+    hiddenBy.clear();
+    collapsedNode = null;
+    focusedNode = null;
+    notifyLayoutStarted();
+  }
 
   void animateToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, true);
+
+  void panAndZoomToNode(ValueKey key, {double scale = 1.5}) {
+    _state?.jumpToNodeWithScale(key, true, scale);
+  }
+
+  void panAndZoomToNodeId(String id, {double scale = 1.5}) {
+    // Search the graph nodes directly to find a match for this ID string
+    final node = _state?.widget.graph.nodes.firstWhereOrNull(
+      (n) => n.key?.value.toString() == id,
+    );
+
+    if (node != null && node.key is ValueKey) {
+      _state?.jumpToNodeWithScale(node.key! as ValueKey, true, scale);
+    } else {
+      zoomToFit();
+    }
+  }
 
   void jumpToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, false);
 
@@ -47,9 +116,21 @@ class GraphViewController {
   void forceRecalculation() => _state?.forceRecalculation();
 
   // Visibility management methods
-  bool isNodeCollapsed(Node node) => collapsedNodes.containsKey(node);
+  bool isNodeCollapsed(dynamic nodeOrId) {
+    if (nodeOrId is Node) {
+      return collapsedNodes.containsKey(nodeOrId);
+    }
+    final nodeId = nodeOrId.toString();
+    return collapsedNodes.keys.any((n) => n.key?.value.toString() == nodeId);
+  }
 
-  bool isNodeHidden(Node node) => hiddenBy.containsKey(node);
+  bool isNodeHidden(dynamic nodeOrId) {
+    if (nodeOrId is Node) {
+      return hiddenBy.containsKey(nodeOrId);
+    }
+    final nodeId = nodeOrId.toString();
+    return hiddenBy.keys.any((n) => n.key?.value.toString() == nodeId);
+  }
 
   Set<String> getCollapsedNodeIds() =>
       collapsedNodes.keys.map((n) => n.key!.value.toString()).toSet();
@@ -230,7 +311,8 @@ class GraphViewController {
       // 1. Get exact positions (handling ongoing collapse/expand animations)
       final posA =
           renderBox.animatedPositions[edge.source] ?? edge.source.position;
-      final posB = renderBox.animatedPositions[edge.destination] ??
+      final posB =
+          renderBox.animatedPositions[edge.destination] ??
           edge.destination.position;
 
       // 2. Calculate the center points of the nodes where the edge connects
@@ -396,7 +478,7 @@ class GraphView extends StatefulWidget {
             graph: graph,
             algorithm: algorithm,
             builder: builder,
-            controller: null),
+            controller: controller),
         super(key: key);
 
   GraphView.builder({
@@ -432,17 +514,25 @@ class GraphView extends StatefulWidget {
 
 class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   late TransformationController _transformationController;
+  bool _isInternalTransformationController = false;
   late final AnimationController _panController;
   late final AnimationController _nodeController;
   Animation<Matrix4>? _panAnimation;
   final GlobalKey _graphWidgetKey = GlobalKey();
 
+  Size _viewportSize = Size.zero;
+
   @override
   void initState() {
     super.initState();
 
-    _transformationController = widget.controller?.transformationController ??
-        TransformationController();
+    if (widget.controller?.transformationController != null) {
+      _transformationController = widget.controller!.transformationController!;
+      _isInternalTransformationController = false;
+    } else {
+      _transformationController = TransformationController();
+      _isInternalTransformationController = true;
+    }
 
     _panController = AnimationController(
       vsync: this,
@@ -474,7 +564,9 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     widget.controller?._detach();
     _panController.dispose();
     _nodeController.dispose();
-    _transformationController.dispose();
+    if (_isInternalTransformationController) {
+      _transformationController.dispose();
+    }
     super.dispose();
   }
 
@@ -499,19 +591,25 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       ),
     );
 
-    if (widget._isBuilder) {
-      return InteractiveViewer.builder(
-          transformationController: _transformationController,
-          boundaryMargin: EdgeInsets.all(double.infinity),
-          minScale: 0.01,
-          maxScale: 10,
-          trackpadScrollCausesScale: widget._trackpadScrollCausesScale,
-          builder: (context, viewport) {
-            return view;
-          });
-    }
+    return LayoutBuilder(
+        builder: (context, constraints) {
+            _viewportSize = constraints.biggest;
+            
+            if (widget._isBuilder) {
+                return InteractiveViewer.builder(
+                    transformationController: _transformationController,
+                    boundaryMargin: EdgeInsets.all(double.infinity),
+                    minScale: 0.01,
+                    maxScale: 10,
+                    trackpadScrollCausesScale: widget._trackpadScrollCausesScale,
+                    builder: (context, viewport) {
+                        return view;
+                    });
+            }
 
-    return view;
+            return view;
+        }
+    );
   }
 
   void jumpToNodeUsingKey(ValueKey key, bool animated) {
@@ -519,6 +617,37 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     if (node == null) return;
 
     jumpToNode(node, animated);
+  }
+
+  void jumpToNodeWithScale(ValueKey key, bool animated, double scale) {
+    final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
+    if (node == null) {
+      return;
+    }
+
+    final nodeCenter = Offset(
+      node.position.dx + node.width / 2,
+      node.position.dy + node.height / 2,
+    );
+
+    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) {
+      return;
+    }
+
+    final center = Offset(_viewportSize.width / 2, _viewportSize.height / 2);
+
+    final scaledNodeCenter = nodeCenter * scale;
+    final translation = center - scaledNodeCenter;
+
+    final target = Matrix4.identity()
+      ..translate(translation.dx, translation.dy)
+      ..scale(scale);
+
+    if (animated) {
+      animateToMatrix(target);
+    } else {
+      _transformationController.value = target;
+    }
   }
 
   void jumpToNode(Node node, bool animated) {
@@ -529,11 +658,11 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   }
 
   void jumpToOffset(Offset offset, bool animated) {
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) {
+      return;
+    }
 
-    final viewport = renderBox.size;
-    final center = Offset(viewport.width / 2, viewport.height / 2);
+    final center = Offset(_viewportSize.width / 2, _viewportSize.height / 2);
 
     final currentScale = _transformationController.value.getMaxScaleOnAxis();
 
@@ -555,18 +684,15 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
   void zoomToFit() {
     var graph = widget.delegate.getVisibleGraphOnly();
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-
-    final vp = renderBox.size;
-    if (vp.width <= 0 || vp.height <= 0) return;
+    
+    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) return;
 
     final bounds = graph.calculateGraphBounds();
     if (bounds.width <= 0 || bounds.height <= 0) return;
 
     const paddingFactor = 0.95;
-    final scaleX = (vp.width / bounds.width) * paddingFactor;
-    final scaleY = (vp.height / bounds.height) * paddingFactor;
+    final scaleX = (_viewportSize.width / bounds.width) * paddingFactor;
+    final scaleY = (_viewportSize.height / bounds.height) * paddingFactor;
 
     // Clamp the scale to prevent the matrix from collapsing (0) or exploding (infinity)
     var scale = min(scaleX, scaleY);
@@ -577,8 +703,8 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final scaledHeight = bounds.height * scale;
 
     final centerOffset = Offset(
-        (vp.width - scaledWidth) * 0.5 - bounds.left * scale,
-        (vp.height - scaledHeight) * 0.5 - bounds.top * scale);
+        (_viewportSize.width - scaledWidth) * 0.5 - bounds.left * scale,
+        (_viewportSize.height - scaledHeight) * 0.5 - bounds.top * scale);
 
     final target = Matrix4.identity()
       ..translate(centerOffset.dx, centerOffset.dy)
@@ -592,10 +718,8 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   }
 
   void adjustZoom(double factor) {
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) return;
 
-    final vpSize = renderBox.size;
     final graph = widget.delegate.getVisibleGraphOnly();
     final bounds = graph.calculateGraphBounds();
 
@@ -616,8 +740,8 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     // 3. Calculate the translation needed to put that Graph Center
     // into the Viewport Center at the new scale.
     // Formula: ViewportCenter - (GraphCenter * Scale)
-    final tx = (vpSize.width / 2) - (graphCenterX * targetScale);
-    final ty = (vpSize.height / 2) - (graphCenterY * targetScale);
+    final tx = (_viewportSize.width / 2) - (graphCenterX * targetScale);
+    final ty = (_viewportSize.height / 2) - (graphCenterY * targetScale);
 
     // 4. Create a clean absolute matrix
     final targetMatrix = Matrix4.identity()
@@ -629,12 +753,11 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   }
 
   void animateToMatrix(Matrix4 target) {
-    _panController.reset();
+    _panController.forward(from: 0);
     _panAnimation = Matrix4Tween(
             begin: _transformationController.value, end: target)
         .animate(CurvedAnimation(parent: _panController, curve: Curves.linear));
     _panAnimation!.addListener(_onPanTick);
-    _panController.forward();
   }
 
   void _onPanTick() {
@@ -643,7 +766,6 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     if (!_panController.isAnimating) {
       _panAnimation!.removeListener(_onPanTick);
       _panAnimation = null;
-      _panController.reset();
     }
   }
 
@@ -1113,6 +1235,7 @@ class RenderCustomLayoutBox extends RenderBox
         _updateNodePositions();
       }
     }
+    _delegate.controller?.notifyLayoutFinished();
   }
 
   void _paintNodes(PaintingContext context, Offset offset, double t) {

@@ -16,13 +16,10 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   var path = Path();
 
   SugiyamaEdgeRenderer(
-      this.nodeData, this.edgeData, this.bendPointShape, this.addTriangleToEdge,
-      {super.animation});
+      this.nodeData, this.edgeData, this.bendPointShape, this.addTriangleToEdge);
 
   bool hasBendEdges(Edge edge) =>
       edgeData.containsKey(edge) && edgeData[edge]!.bendPoints.isNotEmpty;
-
-  bool _shouldAnimate(Edge edge) => edge.animation != null;
 
   @override
   void render(Canvas canvas, Graph graph, Paint paint) {
@@ -33,361 +30,80 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
   @override
   void renderEdge(Canvas canvas, Edge edge, Paint paint) {
+    final currentPaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
+
     var trianglePaint = Paint()
-      ..color = paint.color
+      ..color = edge.paint?.color ?? paint.color
       ..style = PaintingStyle.fill;
 
-    Paint? edgeTrianglePaint;
-    if (edge.paint != null) {
-      edgeTrianglePaint = Paint()
-        ..color = edge.paint?.color ?? paint.color
-        ..style = PaintingStyle.fill;
-    }
-
-    var currentPaint = (edge.paint ?? paint)..style = PaintingStyle.stroke;
-
-    if (edge.source == edge.destination) {
-      final loopResult = buildSelfLoopPath(
-        edge,
-        arrowLength: addTriangleToEdge ? ARROW_LENGTH : 0.0,
-      );
-
-      if (loopResult != null) {
-        final lineType = nodeData[edge.destination]?.lineType;
-        drawStyledPath(canvas, loopResult.path, currentPaint,
-            lineType: lineType);
-
-        if (addTriangleToEdge) {
-          final triangleCentroid = drawTriangle(
-            canvas,
-            edgeTrianglePaint ?? trianglePaint,
-            loopResult.arrowBase.dx,
-            loopResult.arrowBase.dy,
-            loopResult.arrowTip.dx,
-            loopResult.arrowTip.dy,
-          );
-
-          drawStyledLine(
-            canvas,
-            loopResult.arrowBase,
-            triangleCentroid,
-            currentPaint,
-            lineType: lineType,
-          );
-        }
-
-        return;
-      }
-    }
-
     if (hasBendEdges(edge)) {
-      _renderEdgeWithBendPoints(
-          canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);
+      _renderEdgeWithBendPoints(canvas, edge, currentPaint, trianglePaint);
     } else {
-      _renderStraightEdge(
-          canvas, edge, currentPaint, edgeTrianglePaint ?? trianglePaint);
-    }
-  }
-
-  void _drawAnimatedIcon(
-      Canvas canvas, Path path, Paint paint, TextPainter iconPainter) {
-    _drawAnimation(
-      canvas,
-      paint,
-      path,
-      (canvas, paint, tangent) {
-        canvas.save();
-        canvas.translate(tangent.position.dx, tangent.position.dy);
-        canvas.rotate(-tangent.angle + pi);
-        iconPainter.paint(
-          canvas,
-          Offset(-iconPainter.width / 2, -iconPainter.height / 2),
-        );
-        canvas.restore();
-      },
-    );
-  }
-
-  void _drawAnimatedCircle(Canvas canvas, Path path, Paint paint) {
-    _drawAnimation(
-      canvas,
-      paint,
-      path,
-      (canvas, paint, tangent) {
-        canvas.drawCircle(
-          tangent.position,
-          4.0,
-          paint..style = PaintingStyle.fill,
-        );
-      },
-    );
-  }
-
-  void _drawAnimatedSquare(Canvas canvas, Path path, Paint paint) {
-    _drawAnimation(
-      canvas,
-      paint,
-      path,
-      (canvas, paint, tangent) {
-        canvas.drawRRect(
-          RRect.fromRectXY(
-            Rect.fromCenter(
-              center: tangent.position,
-              width: 12,
-              height: 12,
-            ),
-            1,
-            1,
-          ),
-          paint..style = PaintingStyle.fill,
-        );
-      },
-    );
-  }
-
-  void _drawAnimatedTriangle(Canvas canvas, Path path, Paint paint) {
-    _drawAnimation(
-      canvas,
-      paint,
-      path,
-      (canvas, paint, tangent) {
-        const sideLength = 12.0;
-        final height = (sqrt(3) / 2) * sideLength;
-
-        canvas.save();
-        canvas.translate(tangent.position.dx, tangent.position.dy);
-        canvas.rotate(-tangent.angle + pi / 2);
-
-        final trianglePath = Path();
-        trianglePath.moveTo(0, -height / 2);
-        trianglePath.lineTo(sideLength / 2, height / 2);
-        trianglePath.lineTo(-sideLength / 2, height / 2);
-        trianglePath.close();
-
-        canvas.drawPath(
-          trianglePath,
-          Paint.from(paint)..style = PaintingStyle.fill,
-        );
-        canvas.restore();
-      },
-    );
-  }
-
-  void _drawAnimation(Canvas canvas, Paint paint, Path path,
-      void Function(Canvas canvas, Paint paint, Tangent tangent) animate) {
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isEmpty) return;
-
-    final totalLength = metrics.fold<double>(0, (sum, m) => sum + m.length);
-
-    if (totalLength == 0) return;
-
-    var targetDistance = totalLength * (animation?.value ?? 0);
-
-    for (final metric in metrics) {
-      if (targetDistance <= metric.length) {
-        final tangent = metric.getTangentForOffset(targetDistance);
-        if (tangent != null) {
-          animate(canvas, paint, tangent);
-        }
-        return;
-      }
-      targetDistance -= metric.length;
+      super.renderEdge(canvas, edge, paint);
     }
   }
 
   void _renderEdgeWithBendPoints(
       Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
-    final source = edge.source;
-    final destination = edge.destination;
-    var bendPoints = edgeData[edge]!.bendPoints;
+    var source = edge.source;
+    var destination = edge.destination;
 
-    var sourceCenter = getNodeCenter(source);
+    var sourceOffset = getNodePosition(source);
+    var destinationOffset = getNodePosition(destination);
 
-    // Calculate the transition/offset from the original bend point to animated position
-    final transitionDx = sourceCenter.dx - bendPoints[0];
-    final transitionDy = sourceCenter.dy - bendPoints[1];
+    var startX = sourceOffset.dx + source.width * 0.5;
+    var startY = sourceOffset.dy + source.height * 0.5;
+    var stopX = destinationOffset.dx + destination.width * 0.5;
+    var stopY = destinationOffset.dy + destination.height * 0.5;
+
+    final bendPoints = edgeData[edge]!.bendPoints;
 
     path.reset();
-    path.moveTo(sourceCenter.dx, sourceCenter.dy);
-
-    final bendPointsWithoutDuplication = <Offset>[];
+    path.moveTo(startX, startY);
 
     for (var i = 0; i < bendPoints.length; i += 2) {
-      final isLastPoint = i == bendPoints.length - 2;
-
-      // Apply the same transition to all bend points
-      final x = bendPoints[i] + transitionDx;
-      final y = bendPoints[i + 1] + transitionDy;
-      final x2 = isLastPoint ? -1 : bendPoints[i + 2] + transitionDx;
-      final y2 = isLastPoint ? -1 : bendPoints[i + 3] + transitionDy;
-
-      if (x == x2 && y == y2) {
-        // Skip when two consecutive points are identical
-        // because drawing a line between would be redundant in this case.
-        continue;
-      }
-      bendPointsWithoutDuplication.add(Offset(x, y));
+        var bendX = bendPoints[i];
+        var bendY = bendPoints[i + 1];
+        path.lineTo(bendX, bendY);
     }
 
-    if (bendPointShape is MaxCurvedBendPointShape) {
-      _drawMaxCurvedBendPointsEdge(bendPointsWithoutDuplication);
-    } else if (bendPointShape is CurvedBendPointShape) {
-      final shape = bendPointShape as CurvedBendPointShape;
-      _drawCurvedBendPointsEdge(
-          bendPointsWithoutDuplication, shape.curveLength);
-    } else {
-      _drawSharpBendPointsEdge(bendPointsWithoutDuplication);
-    }
+    path.lineTo(stopX, stopY);
 
-    var descOffset = getNodePosition(destination);
-    var stopX = descOffset.dx + destination.width * 0.5;
-    var stopY = descOffset.dy + destination.height * 0.5;
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+
+    final metric = metrics.first;
+    final totalLength = metric.length;
+
+    var triangleCentroid = Offset.zero;
 
     if (addTriangleToEdge) {
-      var clippedLine = <double>[];
-      final size = bendPoints.length;
-      if (nodeData[source]!.isReversed) {
-        clippedLine = clipLineEnd(
-            bendPoints[2],
-            bendPoints[3],
-            stopX,
-            stopY,
-            destination.x,
-            destination.y,
-            destination.width,
-            destination.height);
-      } else {
-        clippedLine = clipLineEnd(
-            bendPoints[size - 4],
-            bendPoints[size - 3],
-            stopX,
-            stopY,
-            descOffset.dx,
-            descOffset.dy,
-            destination.width,
-            destination.height);
-      }
-      final triangleCentroid = drawTriangle(canvas, trianglePaint,
-          clippedLine[0], clippedLine[1], clippedLine[2], clippedLine[3]);
-      path.lineTo(triangleCentroid.dx, triangleCentroid.dy);
-    } else {
-      path.lineTo(stopX, stopY);
-    }
-    canvas.drawPath(path, currentPaint);
+      final tipPos = metric.getTangentForOffset(totalLength - 1.0);
+      final basePos = metric.getTangentForOffset(max(0, totalLength - ARROW_LENGTH - 1.0));
 
-    if (_shouldAnimate(edge)) {
-      if (edge.animation!.shape != null) {
-        switch (edge.animation!.shape!) {
-          case EdgeAnimationShape.circle:
-            _drawAnimatedCircle(canvas, path, currentPaint);
-            break;
-          case EdgeAnimationShape.square:
-            _drawAnimatedSquare(canvas, path, currentPaint);
-            break;
-          case EdgeAnimationShape.triangle:
-            _drawAnimatedTriangle(canvas, path, currentPaint);
-            break;
+      if (tipPos != null && basePos != null) {
+        triangleCentroid = drawTriangle(
+          canvas,
+          trianglePaint,
+          basePos.position.dx,
+          basePos.position.dy,
+          tipPos.position.dx,
+          tipPos.position.dy,
+        );
+      }
+    }
+
+    final edgePath = addTriangleToEdge
+        ? metric.extractPath(0, max(0, totalLength - ARROW_LENGTH))
+        : path;
+
+    canvas.drawPath(edgePath, currentPaint);
+
+    if (addTriangleToEdge && triangleCentroid != Offset.zero) {
+        final tipPos = metric.getTangentForOffset(totalLength - 1.0);
+        if (tipPos != null) {
+            canvas.drawLine(tipPos.position, triangleCentroid, currentPaint);
         }
-      } else if (edge.animation!.icon != null) {
-        _drawAnimatedIcon(canvas, path, currentPaint, edge.animation!.icon!);
-      }
-    }
-  }
-
-  void _renderStraightEdge(
-      Canvas canvas, Edge edge, Paint currentPaint, Paint trianglePaint) {
-    final source = edge.source;
-    final destination = edge.destination;
-    final sourceCenter = getNodeCenter(source);
-    var destCenter = getNodeCenter(destination);
-
-    if (addTriangleToEdge) {
-      final clippedLine = clipLineEnd(
-          sourceCenter.dx,
-          sourceCenter.dy,
-          destCenter.dx,
-          destCenter.dy,
-          destination.x,
-          destination.y,
-          destination.width,
-          destination.height);
-
-      destCenter = drawTriangle(canvas, trianglePaint, clippedLine[0],
-          clippedLine[1], clippedLine[2], clippedLine[3]);
-    }
-
-    // Draw the line with appropriate line type using the base class method
-    final lineType = nodeData[destination]?.lineType;
-
-    final path = Path()
-      ..moveTo(sourceCenter.dx, sourceCenter.dy)
-      ..lineTo(destCenter.dx, destCenter.dy);
-
-    drawStyledPath(canvas, path, currentPaint, lineType: lineType);
-
-    if (_shouldAnimate(edge)) {
-      if (edge.animation!.shape != null) {
-        switch (edge.animation!.shape!) {
-          case EdgeAnimationShape.circle:
-            _drawAnimatedCircle(canvas, path, currentPaint);
-            break;
-          case EdgeAnimationShape.square:
-            _drawAnimatedSquare(canvas, path, currentPaint);
-            break;
-          case EdgeAnimationShape.triangle:
-            _drawAnimatedTriangle(canvas, path, currentPaint);
-            break;
-        }
-      } else if (edge.animation!.icon != null) {
-        _drawAnimatedIcon(canvas, path, currentPaint, edge.animation!.icon!);
-      }
-    }
-  }
-
-  void _drawSharpBendPointsEdge(List<Offset> bendPoints) {
-    for (var i = 1; i < bendPoints.length - 1; i++) {
-      path.lineTo(bendPoints[i].dx, bendPoints[i].dy);
-    }
-  }
-
-  void _drawMaxCurvedBendPointsEdge(List<Offset> bendPoints) {
-    for (var i = 1; i < bendPoints.length - 1; i++) {
-      final nextNode = bendPoints[i];
-      final afterNextNode = bendPoints[i + 1];
-      final curveEndPoint = Offset((nextNode.dx + afterNextNode.dx) / 2,
-          (nextNode.dy + afterNextNode.dy) / 2);
-      path.quadraticBezierTo(
-          nextNode.dx, nextNode.dy, curveEndPoint.dx, curveEndPoint.dy);
-    }
-  }
-
-  void _drawCurvedBendPointsEdge(List<Offset> bendPoints, double curveLength) {
-    for (var i = 1; i < bendPoints.length - 1; i++) {
-      final previousNode = i == 1 ? null : bendPoints[i - 2];
-      final currentNode = bendPoints[i - 1];
-      final nextNode = bendPoints[i];
-      final afterNextNode = bendPoints[i + 1];
-
-      final arcStartPointRadians =
-          atan2(nextNode.dy - currentNode.dy, nextNode.dx - currentNode.dx);
-      final arcStartPoint =
-          nextNode - Offset.fromDirection(arcStartPointRadians, curveLength);
-      final arcEndPointRadians =
-          atan2(nextNode.dy - afterNextNode.dy, nextNode.dx - afterNextNode.dx);
-      final arcEndPoint =
-          nextNode - Offset.fromDirection(arcEndPointRadians, curveLength);
-
-      if (previousNode != null &&
-          ((currentNode.dx == nextNode.dx && nextNode.dx == afterNextNode.dx) ||
-              (currentNode.dy == nextNode.dy &&
-                  nextNode.dy == afterNextNode.dy))) {
-        path.lineTo(nextNode.dx, nextNode.dy);
-      } else {
-        path.lineTo(arcStartPoint.dx, arcStartPoint.dy);
-        path.quadraticBezierTo(
-            nextNode.dx, nextNode.dy, arcEndPoint.dx, arcEndPoint.dy);
-      }
     }
   }
 }
