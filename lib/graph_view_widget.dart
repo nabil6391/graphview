@@ -458,34 +458,6 @@ class GraphView extends StatefulWidget {
   final bool centerGraph;
   final Listenable? edgeAnimation;
 
-  static Widget build({
-    required Graph graph,
-    required Algorithm algorithm,
-    Paint? paint,
-    required NodeWidgetBuilder builder,
-    GraphViewController? controller,
-    bool centerGraph = false,
-    bool trackpadScrollCausesScale = true,
-    Duration panAnimationDuration = const Duration(milliseconds: 300),
-    bool autoZoomToFit = true,
-    Listenable? edgeAnimation,
-    bool animated = true,
-  }) {
-    return GraphView.builder(
-      graph: graph,
-      algorithm: algorithm,
-      paint: paint,
-      builder: builder,
-      controller: controller,
-      centerGraph: centerGraph,
-      trackpadScrollCausesScale: trackpadScrollCausesScale,
-      panAnimationDuration: panAnimationDuration,
-      autoZoomToFit: autoZoomToFit,
-      edgeAnimation: edgeAnimation,
-      animated: animated,
-    );
-  }
-
   GraphView({
     Key? key,
     required this.graph,
