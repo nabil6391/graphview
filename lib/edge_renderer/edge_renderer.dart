@@ -5,6 +5,10 @@ import 'package:graphview/graph.dart';
 
 abstract class EdgeRenderer {
   Map<Node, Offset>? _animatedPositions;
+  Animation<double>? edgeAnimation;
+  Animation<double>? animation;
+
+  EdgeRenderer({this.animation});
 
   void setAnimatedPositions(Map<Node, Offset> positions) =>
       _animatedPositions = positions;
@@ -46,49 +50,58 @@ abstract class EdgeRenderer {
       {LineType? lineType}) {
     if (lineType == null || lineType == LineType.Default) {
       canvas.drawPath(path, paint);
-    } else {
-      // For non-solid lines, we need to convert the path to segments
-      // This is a simplified approach - for complex paths with curves,
-      // you might need a more sophisticated solution
-      canvas.drawPath(path, paint);
+      return;
     }
+
+    final dashWidth = lineType == LineType.DottedLine ? 2.0 : 6.0;
+    final dashSpace = lineType == LineType.DottedLine ? 4.0 : 4.0;
+
+    final dashedPath = Path();
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        dashedPath.addPath(
+          metric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
+        distance += dashWidth + dashSpace;
+      }
+    }
+    canvas.drawPath(dashedPath, paint);
   }
 
   /// Draws a dashed line between two points
   void drawDashedLine(Canvas canvas, Offset source, Offset destination,
-      Paint paint, double lineLength) {
+      Paint paint, double lineLengthFactor) {
     final dx = destination.dx - source.dx;
     final dy = destination.dy - source.dy;
     final distance = sqrt(dx * dx + dy * dy);
 
     if (distance == 0) return;
 
-    final numLines = lineLength == 0.0 ? (distance / 5).ceil() : 14;
-    final stepX = dx / numLines;
-    final stepY = dy / numLines;
+    final dashWidth = lineLengthFactor == 0.0 ? 2.0 : 10.0;
+    final dashSpace = lineLengthFactor == 0.0 ? 4.0 : 10.0;
 
-    if (lineLength == 0.0) {
-      // Draw dots
-      final circleRadius = 1.0;
-      final circlePaint = Paint()
-        ..color = paint.color
-        ..strokeWidth = 1.0
-        ..style = PaintingStyle.fill;
+    var currentDist = 0.0;
+    final dirX = dx / distance;
+    final dirY = dy / distance;
 
-      for (var i = 0; i < numLines; i++) {
-        final x = source.dx + (i * stepX);
-        final y = source.dy + (i * stepY);
-        canvas.drawCircle(Offset(x, y), circleRadius, circlePaint);
-      }
-    } else {
-      // Draw dashes
-      for (var i = 0; i < numLines; i++) {
-        final startX = source.dx + (i * stepX);
-        final startY = source.dy + (i * stepY);
-        final endX = startX + (stepX * lineLength);
-        final endY = startY + (stepY * lineLength);
+    while (currentDist < distance) {
+      final startX = source.dx + dirX * currentDist;
+      final startY = source.dy + dirY * currentDist;
+
+      final actualDashWidth = min(dashWidth, distance - currentDist);
+      final endX = startX + dirX * actualDashWidth;
+      final endY = startY + dirY * actualDashWidth;
+
+      if (lineLengthFactor == 0.0) {
+        canvas.drawCircle(Offset(startX, startY), 1.0,
+            Paint()..color = paint.color..style = PaintingStyle.fill);
+      } else {
         canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
       }
+
+      currentDist += dashWidth + dashSpace;
     }
   }
 

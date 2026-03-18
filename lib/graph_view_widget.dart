@@ -1140,6 +1140,9 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
     algorithm.renderer?.setAnimatedPositions(animatedPositions);
+    if (_edgeAnimation is Animation<double>) {
+      algorithm.renderer?.edgeAnimation = _edgeAnimation as Animation<double>;
+    }
 
     final renderer = algorithm.renderer;
     if (renderer is ArrowEdgeRenderer) {

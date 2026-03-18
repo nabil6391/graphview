@@ -182,7 +182,7 @@ class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
 
     if (totalLength == 0) return;
 
-    var targetDistance = totalLength * (animation?.value ?? 0);
+    var targetDistance = totalLength * ((edgeAnimation ?? animation)?.value ?? 0);
 
     for (final metric in metrics) {
       if (targetDistance <= metric.length) {

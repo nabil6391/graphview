@@ -309,6 +309,9 @@ class Edge {
   Color? interactiveBorderColor;
   LineType? lineType;
 
+  /// Optional list of points for multi-segment edges (e.g. from ELK)
+  List<Offset>? sections;
+
   Edge(
     this.source,
     this.destination, {
@@ -319,6 +322,7 @@ class Edge {
     this.interactiveFillColor,
     this.interactiveBorderColor,
     this.lineType,
+    this.sections,
   });
 
   @override

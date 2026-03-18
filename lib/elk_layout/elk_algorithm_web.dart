@@ -23,6 +23,7 @@ class ELKAlgorithm implements Algorithm {
   /// The computed bounding size of the graph after [computeLayout] finishes.
   Size _graphSize = Size.zero;
   final Map<Node, Offset> _basePositions = {};
+  final Map<Edge, List<Offset>> _baseSections = {};
 
   ELKAlgorithm({
     this.layoutOptions = const {
@@ -44,6 +45,11 @@ class ELKAlgorithm implements Algorithm {
     Set<String> hiddenNodeIds = const {},
     Set<String> hubNodeIds = const {},
   }) async {
+    // 0. Clear stale data
+    for (final e in graph.edges) { e.sections = null; }
+    _basePositions.clear();
+    _baseSections.clear();
+
     // 1. Build hierarchy map from structural edges, ignoring hidden nodes
     final childrenMap = <String, List<Node>>{};
     final containedNodeIds = <String>{};
@@ -168,7 +174,6 @@ class ELKAlgorithm implements Algorithm {
 
     // 4. Recursively apply relative coordinates to calculate absolute positions
     double maxX = 0, maxY = 0;
-    _basePositions.clear();
 
     void processElkNode(JSObject elkNode, double offsetX, double offsetY) {
       final id = (elkNode.getProperty('id'.toJS) as JSString).toDart;
@@ -212,6 +217,77 @@ class ELKAlgorithm implements Algorithm {
       }
     }
 
+    // 5. Recursively process edges to capture sections and bend points
+    void processEdges(JSObject elkNode, double offsetX, double offsetY) {
+        final edges = elkNode.getProperty('edges'.toJS) as JSArray?;
+        if (edges != null) {
+            for (var i = 0; i < edges.length; i++) {
+                final elkEdge = edges.getProperty(i.toJS) as JSObject;
+                final id = (elkEdge.getProperty('id'.toJS) as JSString).toDart;
+                
+                // Identify the graph edge. We used 'e$i' or 'e_${edge.hashCode}'
+                Edge? edge;
+                if (id.startsWith('e_')) {
+                    final hashCodeString = id.substring(2);
+                    final hashCode = int.tryParse(hashCodeString);
+                    edge = graph.edges.firstWhereOrNull((e) => e.hashCode == hashCode);
+                } else if (id.startsWith('e')) {
+                    final indexString = id.substring(1);
+                    final index = int.tryParse(indexString);
+                    if (index != null && index < graph.edges.length) {
+                        edge = graph.edges[index];
+                    }
+                }
+
+                if (edge != null) {
+                    final sections = elkEdge.getProperty('sections'.toJS) as JSArray?;
+                    if (sections != null && sections.length > 0) {
+                        final section = sections.getProperty(0.toJS) as JSObject;
+                        final start = section.getProperty('startPoint'.toJS) as JSObject;
+                        final end = section.getProperty('endPoint'.toJS) as JSObject;
+                        final bends = section.getProperty('bendPoints'.toJS) as JSArray?;
+
+                        final List<Offset> points = [];
+                        points.add(Offset(
+                            (start.getProperty('x'.toJS) as JSNumber).toDartDouble + offsetX,
+                            (start.getProperty('y'.toJS) as JSNumber).toDartDouble + offsetY,
+                        ));
+
+                        if (bends != null) {
+                            for (var j = 0; j < bends.length; j++) {
+                                final bend = bends.getProperty(j.toJS) as JSObject;
+                                points.add(Offset(
+                                    (bend.getProperty('x'.toJS) as JSNumber).toDartDouble + offsetX,
+                                    (bend.getProperty('y'.toJS) as JSNumber).toDartDouble + offsetY,
+                                ));
+                            }
+                        }
+
+                        points.add(Offset(
+                            (end.getProperty('x'.toJS) as JSNumber).toDartDouble + offsetX,
+                            (end.getProperty('y'.toJS) as JSNumber).toDartDouble + offsetY,
+                        ));
+
+                        edge.sections = points;
+                        _baseSections[edge] = List<Offset>.from(points);
+                    }
+                }
+            }
+        }
+
+        final children = elkNode.getProperty('children'.toJS) as JSArray?;
+        if (children != null) {
+            for (var i = 0; i < children.length; i++) {
+                final child = children.getProperty(i.toJS) as JSObject;
+                final x = (child.getProperty('x'.toJS) as JSNumber).toDartDouble;
+                final y = (child.getProperty('y'.toJS) as JSNumber).toDartDouble;
+                processEdges(child, offsetX + x, offsetY + y);
+            }
+        }
+    }
+
+    processEdges(resultObj, 0, 0);
+
     _graphSize = Size(maxX, maxY);
     return _graphSize;
   }
@@ -233,6 +309,13 @@ class ELKAlgorithm implements Algorithm {
       final base = _basePositions[node] ?? Offset(node.x, node.y);
       node.x = base.dx + shiftX;
       node.y = base.dy + shiftY;
+    }
+
+    for (final edge in graph.edges) {
+        final base = _baseSections[edge];
+        if (base != null) {
+            edge.sections = base.map((p) => Offset(p.dx + shiftX, p.dy + shiftY)).toList();
+        }
     }
 
     return _graphSize;
