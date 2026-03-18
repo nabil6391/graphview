@@ -264,6 +264,9 @@ class Node {
 
   Offset position = Offset(0, 0);
 
+  /// Optional metadata for layout engines (e.g. ELK hints)
+  Map<String, dynamic> metadata = {};
+
   LineType lineType = LineType.Default;
 
   double get height => size.height;

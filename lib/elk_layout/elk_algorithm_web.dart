@@ -111,6 +111,8 @@ class ELKAlgorithm implements Algorithm {
               'id': id,
               'width': node.width <= 0 ? 350.0 : node.width,
               'height': node.height <= 0 ? 150.0 : node.height,
+              if (node.metadata.containsKey('partition'))
+                'partition': node.metadata['partition'],
             },
             ...children.map((c) => buildElkNode(c)),
           ],
@@ -133,6 +135,8 @@ class ELKAlgorithm implements Algorithm {
         'id': id,
         'width': node.width <= 0 ? 350.0 : node.width,
         'height': node.height <= 0 ? 150.0 : node.height,
+        if (node.metadata.containsKey('partition'))
+          'partition': node.metadata['partition'],
       };
     }
 
