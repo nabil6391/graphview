@@ -8,7 +8,8 @@ import 'package:collection/collection.dart';
 
 const double ARROW_DEGREES = 0.5;
 const double ARROW_LENGTH = 10;
-const double ANCHOR_OFFSET = 12.0; // Distance from node boundary
+const double MIN_ANCHOR_OFFSET = 12.0; 
+const double MAX_ANCHOR_OFFSET = 32.0;
 const double ANCHOR_RADIUS = 2.5;
 
 class AnchorInfo {
@@ -75,12 +76,15 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       sourceContact = edge.sections!.first + sourceShift;
       destContact = edge.sections!.last + destinationShift;
 
-      // 3. Calculate 90° Perpendicular Anchors
+      // 3. Calculate DYNAMIC 90° Perpendicular Anchors
+      // Offset is larger at side center, smaller at corners
       final sNormal = _getNormal(source, sourceContact);
-      sourceAnchor = sourceContact + (sNormal * ANCHOR_OFFSET);
+      final sOffset = _getDynamicOffset(source, sourceContact);
+      sourceAnchor = sourceContact + (sNormal * sOffset);
 
       final dNormal = _getNormal(destination, destContact);
-      destAnchor = destContact + (dNormal * ANCHOR_OFFSET);
+      final dOffset = _getDynamicOffset(destination, destContact);
+      destAnchor = destContact + (dNormal * dOffset);
 
       // 4. Build Edge Path
       Offset finalSegmentStart;
@@ -126,10 +130,10 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
     renderedPaths[edge] = edgePath;
 
-    // 5. Draw the main path (the "Edge")
+    // 5. Draw the main path
     drawStyledPath(canvas, edgePath, currentPaint, lineType: lineType);
 
-    // 6. Draw 90° Anchor Structures (the "Node Interface") - using Node Colors
+    // 6. Draw 90° Anchor Structures using Node Colors
     if (edge.sections != null && edge.sections!.isNotEmpty) {
         final sourceColor = _getNodeColor(source, currentPaint.color);
         final destColor = _getNodeColor(destination, currentPaint.color);
@@ -144,7 +148,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         _drawAnchorDot(canvas, destAnchor, destColor);
     }
 
-    // 7. Draw the arrowhead at the OFFSET position
+    // 7. Draw the arrowhead
     if (!noArrow) {
       var trianglePaint = Paint()
         ..color = currentPaint.color
@@ -179,6 +183,26 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         }
       }
     }
+  }
+
+  double _getDynamicOffset(Node node, Offset contact) {
+    final center = Offset(node.x + node.width / 2, node.y + node.height / 2);
+    final rel = contact - center;
+    
+    final nx = rel.dx / (node.width > 0 ? node.width : 1.0);
+    final ny = rel.dy / (node.height > 0 ? node.height : 1.0);
+    
+    double t; // 0.0 at center, 1.0 at corner
+    if (nx.abs() > ny.abs()) {
+        // Left/Right side - depth is determined by vertical deviation
+        t = (ny.abs() * 2.0).clamp(0.0, 1.0);
+    } else {
+        // Top/Bottom side - depth is determined by horizontal deviation
+        t = (nx.abs() * 2.0).clamp(0.0, 1.0);
+    }
+
+    // Parabolic curve: connections at center are farther out (MaxOffset)
+    return MIN_ANCHOR_OFFSET + (MAX_ANCHOR_OFFSET - MIN_ANCHOR_OFFSET) * (1.0 - t * t);
   }
 
   Color _getNodeColor(Node node, Color fallback) {
