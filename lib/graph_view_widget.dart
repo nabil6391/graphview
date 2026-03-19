@@ -250,34 +250,6 @@ class GraphView extends StatefulWidget {
   final bool centerGraph;
   final Listenable? edgeAnimation;
 
-  static Widget build({
-    required Graph graph,
-    required Algorithm algorithm,
-    Paint? paint,
-    required NodeWidgetBuilder builder,
-    GraphViewController? controller,
-    bool centerGraph = false,
-    bool trackpadScrollCausesScale = true,
-    Duration panAnimationDuration = const Duration(milliseconds: 300),
-    bool autoZoomToFit = true,
-    Listenable? edgeAnimation,
-    bool animated = true,
-  }) {
-    return GraphView.builder(
-      graph: graph,
-      algorithm: algorithm,
-      paint: paint,
-      builder: builder,
-      controller: controller,
-      centerGraph: centerGraph,
-      trackpadScrollCausesScale: trackpadScrollCausesScale,
-      panAnimationDuration: panAnimationDuration,
-      autoZoomToFit: autoZoomToFit,
-      edgeAnimation: edgeAnimation,
-      animated: animated,
-    );
-  }
-
   const GraphView({
     super.key,
     required this.graph,
@@ -522,7 +494,15 @@ class _GraphViewInternal extends MultiChildRenderObjectWidget {
     this.controller,
     this.centerGraph = false,
     required this.animatedPositions,
-  }) : super(children: _buildNodes(graph, builder));
+  }) : super(
+          children: graph.nodes.map((node) {
+            return GraphNodeData(
+              key: node.key,
+              node: node,
+              child: builder(node),
+            );
+          }).toList(),
+        );
 
   final Graph graph;
   final Algorithm algorithm;
@@ -531,16 +511,6 @@ class _GraphViewInternal extends MultiChildRenderObjectWidget {
   final GraphViewController? controller;
   final bool centerGraph;
   final Map<Node, Offset> animatedPositions;
-
-  static List<Widget> _buildNodes(Graph graph, NodeWidgetBuilder builder) {
-    return graph.nodes.map((node) {
-      return GraphNodeData(
-        key: node.key,
-        node: node,
-        child: builder(node),
-      );
-    }).toList();
-  }
 
   @override
   RenderCustomLayoutBox createRenderObject(BuildContext context) {
