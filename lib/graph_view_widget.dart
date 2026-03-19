@@ -80,6 +80,12 @@ class GraphViewController {
     isAttached.value = false;
   }
 
+  void dispose() {
+    isAttached.dispose();
+    isLayoutFinished.dispose();
+    transformationController?.dispose();
+  }
+
   void reset() {
     collapsedNodes.clear();
     expandingNodes.clear();
