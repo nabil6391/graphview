@@ -1,8 +1,9 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:graphview/algorithm.dart';
@@ -14,7 +15,7 @@ typedef NodeWidgetBuilder = Widget Function(Node node);
 class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
-  
+
   /// Callback triggered when an edge is tapped
   void Function(Edge edge)? onEdgeTap;
 
@@ -24,6 +25,7 @@ class GraphViewController {
 
   /// Notifier tracking if the controller is attached to a GraphView widget
   final ValueNotifier<bool> isAttached = ValueNotifier(false);
+
   /// Notifier tracking if the graph layout has been computed and applied
   final ValueNotifier<bool> isLayoutFinished = ValueNotifier(false);
 
@@ -47,6 +49,7 @@ class GraphViewController {
         if (!completer.isCompleted) completer.complete();
       }
     }
+
     notifier.addListener(listener);
     return completer.future;
   }
@@ -75,11 +78,6 @@ class GraphViewController {
     isAttached.value = state != null;
   }
 
-  void _detach() {
-    _state = null;
-    isAttached.value = false;
-  }
-
   void dispose() {
     isAttached.dispose();
     isLayoutFinished.dispose();
@@ -95,19 +93,24 @@ class GraphViewController {
     notifyLayoutStarted();
   }
 
-  void animateToNode(ValueKey key, {Offset centeringOffset = Offset.zero}) => _state?.jumpToNodeUsingKey(key, true, centeringOffset: centeringOffset);
+  void animateToNode(ValueKey key, {Offset centeringOffset = Offset.zero}) =>
+      _state?.jumpToNodeUsingKey(key, true, centeringOffset: centeringOffset);
 
-  void panAndZoomToNode(ValueKey key, {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
-    _state?.jumpToNodeWithScale(key, true, scale, centeringOffset: centeringOffset);
+  void panAndZoomToNode(ValueKey key,
+      {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
+    _state?.jumpToNodeWithScale(key, true, scale,
+        centeringOffset: centeringOffset);
   }
 
-  void panAndZoomToNodeId(String id, {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
+  void panAndZoomToNodeId(String id,
+      {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
     final node = _state?.widget.graph.nodes.firstWhereOrNull(
       (n) => n.key?.value.toString() == id,
     );
 
     if (node != null && node.key is ValueKey) {
-      _state?.jumpToNodeWithScale(node.key! as ValueKey, true, scale, centeringOffset: centeringOffset);
+      _state?.jumpToNodeWithScale(node.key!, true, scale,
+          centeringOffset: centeringOffset);
     } else {
       zoomToFit();
     }
@@ -189,7 +192,8 @@ class GraphViewController {
         final edge = entry.value.edge;
         final isSourceAnchor = entry.value.isSource;
 
-        if ((localOffset - anchorPos).distance <= 15.0) { // Large hit area for dots
+        if ((localOffset - anchorPos).distance <= 15.0) {
+          // Large hit area for dots
           final targetNode = isSourceAnchor ? edge.destination : edge.source;
           if (onAnchorTap != null) {
             onAnchorTap!(targetNode);
@@ -229,7 +233,7 @@ class GraphNodeData extends ParentDataWidget<NodeBoxData> {
     final parentData = renderObject.parentData as NodeBoxData;
     if (parentData.node != node) {
       parentData.node = node;
-      final RenderObject? targetParent = renderObject.parent;
+      final targetParent = renderObject.parent;
       if (targetParent is RenderCustomLayoutBox) {
         targetParent.markNeedsLayout();
       }
@@ -308,6 +312,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
         element.visitChildren(visitor);
       }
     }
+
     context.visitChildElements(visitor);
     return result;
   }
@@ -317,7 +322,8 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: widget.panAnimationDuration ?? const Duration(milliseconds: 300),
+      duration:
+          widget.panAnimationDuration ?? const Duration(milliseconds: 300),
     );
     widget.controller?._attach(this);
 
@@ -356,15 +362,18 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     update();
   }
 
-  void jumpToNodeUsingKey(ValueKey key, bool animated, {Offset centeringOffset = Offset.zero}) {
+  void jumpToNodeUsingKey(ValueKey key, bool animated,
+      {Offset centeringOffset = Offset.zero}) {
     // Determine current scale from the transformation controller
     final currentMatrix = widget.controller?.transformationController?.value;
     final currentScale = currentMatrix?.getMaxScaleOnAxis() ?? 1.0;
-    
-    jumpToNodeWithScale(key, animated, currentScale, centeringOffset: centeringOffset);
+
+    jumpToNodeWithScale(key, animated, currentScale,
+        centeringOffset: centeringOffset);
   }
 
-  void jumpToNodeWithScale(ValueKey key, bool animated, double scale, {Offset centeringOffset = Offset.zero}) {
+  void jumpToNodeWithScale(ValueKey key, bool animated, double scale,
+      {Offset centeringOffset = Offset.zero}) {
     final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
     if (node == null || _viewportSize == Size.zero) return;
 
@@ -373,8 +382,10 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       node.y + node.height / 2,
     );
 
-    final tx = ((_viewportSize.width + centeringOffset.dx) / 2) - (nodeCenter.dx * scale);
-    final ty = ((_viewportSize.height + centeringOffset.dy) / 2) - (nodeCenter.dy * scale);
+    final tx = ((_viewportSize.width + centeringOffset.dx) / 2) -
+        (nodeCenter.dx * scale);
+    final ty = ((_viewportSize.height + centeringOffset.dy) / 2) -
+        (nodeCenter.dy * scale);
 
     final target = Matrix4.identity()
       ..translate(tx, ty)
@@ -413,8 +424,8 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
   void zoomToFit() {
     if (_viewportSize == Size.zero || widget.graph.nodes.isEmpty) return;
 
-    double minX = double.infinity, minY = double.infinity;
-    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+    var minX = double.infinity, minY = double.infinity;
+    var maxX = double.negativeInfinity, maxY = double.negativeInfinity;
 
     for (final node in widget.graph.nodes) {
       minX = min(minX, node.x);
@@ -445,11 +456,14 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
 
   void adjustZoom(double factor) {
     if (widget.controller?.transformationController == null) return;
-    final currentScale = widget.controller!.transformationController!.value.getMaxScaleOnAxis();
+    final currentScale =
+        widget.controller!.transformationController!.value.getMaxScaleOnAxis();
     final newScale = currentScale + factor;
     if (newScale <= 0) return;
-    
-    widget.controller!.transformationController!.value = widget.controller!.transformationController!.value.clone()..scale(newScale / currentScale);
+
+    widget.controller!.transformationController!.value =
+        widget.controller!.transformationController!.value.clone()
+          ..scale(newScale / currentScale);
   }
 
   @override
@@ -476,7 +490,11 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
                 return _GraphViewInternal(
                   graph: widget.graph,
                   algorithm: widget.algorithm,
-                  paint: widget.paint ?? (Paint()..color = Colors.black..strokeWidth = 1.0..style = PaintingStyle.stroke),
+                  paint: widget.paint ??
+                      (Paint()
+                        ..color = Colors.black
+                        ..strokeWidth = 1.0
+                        ..style = PaintingStyle.stroke),
                   builder: widget.builder,
                   controller: widget.controller,
                   centerGraph: widget.centerGraph,
@@ -531,7 +549,8 @@ class _GraphViewInternal extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderCustomLayoutBox renderObject) {
+  void updateRenderObject(
+      BuildContext context, RenderCustomLayoutBox renderObject) {
     renderObject
       ..graph = graph
       ..algorithm = algorithm
@@ -543,7 +562,8 @@ class _GraphViewInternal extends MultiChildRenderObjectWidget {
 }
 
 class RenderCustomLayoutBox extends RenderBox
-    with ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
+    with
+        ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
         RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
   RenderCustomLayoutBox({
     required Graph graph,
@@ -616,10 +636,11 @@ class RenderCustomLayoutBox extends RenderBox
 
     var child = firstChild;
     while (child != null) {
-      final NodeBoxData childParentData = child.parentData as NodeBoxData;
+      final childParentData = child.parentData as NodeBoxData;
       final node = childParentData.node;
-      
-      child.layout(BoxConstraints.loose(const Size(1000, 1000)), parentUsesSize: true);
+
+      child.layout(BoxConstraints.loose(const Size(1000, 1000)),
+          parentUsesSize: true);
       if (node != null) {
         node.size = child.size;
       }
@@ -627,14 +648,14 @@ class RenderCustomLayoutBox extends RenderBox
     }
 
     final graphSize = algorithm.run(graph, 0, 0);
-    
+
     const logicalCanvasSize = 200000.0;
     final desiredWidth = max(graphSize.width, constraints.maxWidth);
     final desiredHeight = max(graphSize.height, constraints.maxHeight);
-    
+
     size = constraints.constrain(Size(
-        desiredWidth.isFinite ? desiredWidth : logicalCanvasSize,
-        desiredHeight.isFinite ? desiredHeight : logicalCanvasSize,
+      desiredWidth.isFinite ? desiredWidth : logicalCanvasSize,
+      desiredHeight.isFinite ? desiredHeight : logicalCanvasSize,
     ));
 
     if (centerGraph) {
@@ -642,7 +663,7 @@ class RenderCustomLayoutBox extends RenderBox
       final shiftY = (size.height - graphSize.height) / 2;
       algorithm.run(graph, shiftX, shiftY);
     }
-    
+
     _controller?.notifyLayoutFinished();
   }
 
@@ -650,17 +671,20 @@ class RenderCustomLayoutBox extends RenderBox
   void paint(PaintingContext context, Offset offset) {
     context.canvas.save();
     context.canvas.translate(offset.dx, offset.dy);
-    
+
     if (algorithm.renderer != null) {
       algorithm.renderer!.setAnimatedPositions(animatedPositions);
       algorithm.renderer!.render(context.canvas, graph, edgePaint);
     } else {
       for (final edge in graph.edges) {
         final srcPos = animatedPositions[edge.source] ?? edge.source.position;
-        final dstPos = animatedPositions[edge.destination] ?? edge.destination.position;
+        final dstPos =
+            animatedPositions[edge.destination] ?? edge.destination.position;
         context.canvas.drawLine(
-          Offset(srcPos.dx + edge.source.width / 2, srcPos.dy + edge.source.height / 2),
-          Offset(dstPos.dx + edge.destination.width / 2, dstPos.dy + edge.destination.height / 2),
+          Offset(srcPos.dx + edge.source.width / 2,
+              srcPos.dy + edge.source.height / 2),
+          Offset(dstPos.dx + edge.destination.width / 2,
+              dstPos.dy + edge.destination.height / 2),
           edge.paint ?? edgePaint,
         );
       }
@@ -670,7 +694,7 @@ class RenderCustomLayoutBox extends RenderBox
 
     var child = firstChild;
     while (child != null) {
-      final NodeBoxData childParentData = child.parentData as NodeBoxData;
+      final childParentData = child.parentData as NodeBoxData;
       final node = childParentData.node;
       if (node != null) {
         final pos = animatedPositions[node] ?? node.position;
@@ -684,11 +708,11 @@ class RenderCustomLayoutBox extends RenderBox
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     var child = lastChild;
     while (child != null) {
-      final NodeBoxData childParentData = child.parentData as NodeBoxData;
+      final childParentData = child.parentData as NodeBoxData;
       final node = childParentData.node;
       if (node != null) {
         final pos = animatedPositions[node] ?? node.position;
-        final bool isHit = result.addWithPaintOffset(
+        final isHit = result.addWithPaintOffset(
           offset: pos,
           position: position,
           hitTest: (BoxHitTestResult result, Offset transformed) {

@@ -56,12 +56,11 @@ class ELKAlgorithm extends Algorithm {
     final nodeLookup = <String, Node>{};
     final containers = <String, Map<String, dynamic>>{};
 
-    String elkId(String id) => 'n_$id';
-
     Map<String, dynamic> getElkNode(String id) {
       if (containers.containsKey(id)) return containers[id]!;
 
-      final node = graph.nodes.firstWhereOrNull((n) => n.key?.value.toString() == id);
+      final node =
+          graph.nodes.firstWhereOrNull((n) => n.key?.value.toString() == id);
       if (node == null) return elkGraph;
 
       final Map<String, dynamic> elkNode;
@@ -88,12 +87,13 @@ class ELKAlgorithm extends Algorithm {
 
       final parentId = node.metadata['parentId']?.toString();
       if (parentId != null && parentId != id) {
-          final parentElk = getElkNode(parentId);
-          final childrenList = (parentElk['children'] ?? elkGraph['children']) as List<Map<String, dynamic>>;
-          childrenList.add(elkNode);
+        final parentElk = getElkNode(parentId);
+        final childrenList = (parentElk['children'] ?? elkGraph['children'])
+            as List<Map<String, dynamic>>;
+        childrenList.add(elkNode);
       } else {
-          final childrenList = elkGraph['children'] as List<Map<String, dynamic>>;
-          childrenList.add(elkNode);
+        final childrenList = elkGraph['children'] as List<Map<String, dynamic>>;
+        childrenList.add(elkNode);
       }
 
       return elkNode;
@@ -126,7 +126,8 @@ class ELKAlgorithm extends Algorithm {
     _basePositions.clear();
     _baseSections.clear();
 
-    void updateNodePositions(Map<String, dynamic> elkNode, double offsetX, double offsetY) {
+    void updateNodePositions(
+        Map<String, dynamic> elkNode, double offsetX, double offsetY) {
       final id = elkNode['id']?.toString() ?? '';
       final x = (elkNode['x'] as num?)?.toDouble() ?? 0.0;
       final y = (elkNode['y'] as num?)?.toDouble() ?? 0.0;
@@ -143,7 +144,8 @@ class ELKAlgorithm extends Algorithm {
       final children = elkNode['children'] as List?;
       if (children != null) {
         for (final child in children) {
-          updateNodePositions(child as Map<String, dynamic>, absoluteX, absoluteY);
+          updateNodePositions(
+              child as Map<String, dynamic>, absoluteX, absoluteY);
         }
       }
     }
@@ -157,14 +159,14 @@ class ELKAlgorithm extends Algorithm {
         final id = rawId.startsWith('e_') ? rawId.substring(2) : rawId;
         final parts = id.split('_');
         if (parts.length < 2) continue;
-        
+
         final srcId = parts[0];
         final dstId = parts[1];
 
-        final edge = graph.edges.firstWhereOrNull((e) => 
-            e.source.key?.value.toString() == srcId && 
+        final edge = graph.edges.firstWhereOrNull((e) =>
+            e.source.key?.value.toString() == srcId &&
             e.destination.key?.value.toString() == dstId);
-            
+
         if (edge != null) {
           final sections = edgeData['sections'] as List?;
           if (sections != null && sections.isNotEmpty) {
@@ -173,14 +175,17 @@ class ELKAlgorithm extends Algorithm {
             final endPoint = section['endPoint'] as Map<String, dynamic>;
             final bendPoints = section['bendPoints'] as List?;
 
-            final List<Offset> points = [];
-            points.add(Offset((startPoint['x'] as num).toDouble(), (startPoint['y'] as num).toDouble()));
+            final points = <Offset>[];
+            points.add(Offset((startPoint['x'] as num).toDouble(),
+                (startPoint['y'] as num).toDouble()));
             if (bendPoints != null) {
               for (final bend in bendPoints) {
-                points.add(Offset((bend['x'] as num).toDouble(), (bend['y'] as num).toDouble()));
+                points.add(Offset((bend['x'] as num).toDouble(),
+                    (bend['y'] as num).toDouble()));
               }
             }
-            points.add(Offset((endPoint['x'] as num).toDouble(), (endPoint['y'] as num).toDouble()));
+            points.add(Offset((endPoint['x'] as num).toDouble(),
+                (endPoint['y'] as num).toDouble()));
             edge.sections = points;
             _baseSections[edge] = List.from(points);
           }
@@ -188,7 +193,8 @@ class ELKAlgorithm extends Algorithm {
       }
     }
 
-    _graphSize = Size((result['width'] as num).toDouble(), (result['height'] as num).toDouble());
+    _graphSize = Size((result['width'] as num).toDouble(),
+        (result['height'] as num).toDouble());
     return run(graph, shiftX, shiftY);
   }
 
@@ -197,17 +203,18 @@ class ELKAlgorithm extends Algorithm {
     if (graph == null) return _graphSize;
 
     for (var node in graph.nodes) {
-        final base = _basePositions[node];
-        if (base != null) {
-            node.position = Offset(base.dx + shiftX, base.dy + shiftY);
-        }
+      final base = _basePositions[node];
+      if (base != null) {
+        node.position = Offset(base.dx + shiftX, base.dy + shiftY);
+      }
     }
 
     for (final edge in graph.edges) {
-        final base = _baseSections[edge];
-        if (base != null) {
-            edge.sections = base.map((p) => Offset(p.dx + shiftX, p.dy + shiftY)).toList();
-        }
+      final base = _baseSections[edge];
+      if (base != null) {
+        edge.sections =
+            base.map((p) => Offset(p.dx + shiftX, p.dy + shiftY)).toList();
+      }
     }
 
     return _graphSize;
