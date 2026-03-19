@@ -89,19 +89,19 @@ class GraphViewController {
     notifyLayoutStarted();
   }
 
-  void animateToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, true);
+  void animateToNode(ValueKey key, {Offset centeringOffset = Offset.zero}) => _state?.jumpToNodeUsingKey(key, true, centeringOffset: centeringOffset);
 
-  void panAndZoomToNode(ValueKey key, {double scale = 1.5}) {
-    _state?.jumpToNodeWithScale(key, true, scale);
+  void panAndZoomToNode(ValueKey key, {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
+    _state?.jumpToNodeWithScale(key, true, scale, centeringOffset: centeringOffset);
   }
 
-  void panAndZoomToNodeId(String id, {double scale = 1.5}) {
+  void panAndZoomToNodeId(String id, {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
     final node = _state?.widget.graph.nodes.firstWhereOrNull(
       (n) => n.key?.value.toString() == id,
     );
 
     if (node != null && node.key is ValueKey) {
-      _state?.jumpToNodeWithScale(node.key! as ValueKey, true, scale);
+      _state?.jumpToNodeWithScale(node.key! as ValueKey, true, scale, centeringOffset: centeringOffset);
     } else {
       zoomToFit();
     }
@@ -378,15 +378,15 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     update();
   }
 
-  void jumpToNodeUsingKey(ValueKey key, bool animated) {
+  void jumpToNodeUsingKey(ValueKey key, bool animated, {Offset centeringOffset = Offset.zero}) {
     // Determine current scale from the transformation controller
     final currentMatrix = widget.controller?.transformationController?.value;
     final currentScale = currentMatrix?.getMaxScaleOnAxis() ?? 1.0;
     
-    jumpToNodeWithScale(key, animated, currentScale);
+    jumpToNodeWithScale(key, animated, currentScale, centeringOffset: centeringOffset);
   }
 
-  void jumpToNodeWithScale(ValueKey key, bool animated, double scale) {
+  void jumpToNodeWithScale(ValueKey key, bool animated, double scale, {Offset centeringOffset = Offset.zero}) {
     final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
     if (node == null || _viewportSize == Size.zero) return;
 
@@ -395,8 +395,8 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
       node.y + node.height / 2,
     );
 
-    final tx = (_viewportSize.width / 2) - (nodeCenter.dx * scale);
-    final ty = (_viewportSize.height / 2) - (nodeCenter.dy * scale);
+    final tx = ((_viewportSize.width + centeringOffset.dx) / 2) - (nodeCenter.dx * scale);
+    final ty = ((_viewportSize.height + centeringOffset.dy) / 2) - (nodeCenter.dy * scale);
 
     final target = Matrix4.identity()
       ..translate(tx, ty)
