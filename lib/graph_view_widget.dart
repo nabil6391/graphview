@@ -7,15 +7,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:graphview/algorithm.dart';
 import 'package:graphview/edge_renderer/arrow_edge_renderer.dart';
-import 'package:graphview/force_directed/fruchterman_reingold_algorithm.dart';
 import 'package:graphview/graph.dart';
 
 typedef NodeWidgetBuilder = Widget Function(Node node);
-typedef EdgeWidgetBuilder = Widget Function(Edge edge);
 
 class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
+  
+  /// Callback triggered when an edge is tapped
+  void Function(Edge edge)? onEdgeTap;
+
+  /// Callback triggered when an anchor (connection dot) is tapped.
+  /// The [targetNode] is the node on the OTHER side of the edge.
+  void Function(Node targetNode)? onAnchorTap;
 
   /// Notifier tracking if the controller is attached to a GraphView widget
   final ValueNotifier<bool> isAttached = ValueNotifier(false);
@@ -84,20 +89,19 @@ class GraphViewController {
     notifyLayoutStarted();
   }
 
-  void animateToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, true);
+  void animateToNode(ValueKey key, {Offset centeringOffset = Offset.zero}) => _state?.jumpToNodeUsingKey(key, true, centeringOffset: centeringOffset);
 
-  void panAndZoomToNode(ValueKey key, {double scale = 1.5}) {
-    _state?.jumpToNodeWithScale(key, true, scale);
+  void panAndZoomToNode(ValueKey key, {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
+    _state?.jumpToNodeWithScale(key, true, scale, centeringOffset: centeringOffset);
   }
 
-  void panAndZoomToNodeId(String id, {double scale = 1.5}) {
-    // Search the graph nodes directly to find a match for this ID string
+  void panAndZoomToNodeId(String id, {double scale = 1.5, Offset centeringOffset = Offset.zero}) {
     final node = _state?.widget.graph.nodes.firstWhereOrNull(
       (n) => n.key?.value.toString() == id,
     );
 
     if (node != null && node.key is ValueKey) {
-      _state?.jumpToNodeWithScale(node.key! as ValueKey, true, scale);
+      _state?.jumpToNodeWithScale(node.key! as ValueKey, true, scale, centeringOffset: centeringOffset);
     } else {
       zoomToFit();
     }
@@ -142,302 +146,92 @@ class GraphViewController {
     return !hiddenBy.containsKey(node);
   }
 
-  Node? findClosestVisibleAncestor(Graph graph, Node node) {
-    var current = graph.predecessorsOf(node).firstOrNull;
-
-    // Walk up until we find a visible ancestor
-    while (current != null) {
-      if (isNodeVisible(graph, current)) {
-        return current; // Return the first (closest) visible ancestor
-      }
-      current = graph.predecessorsOf(current).firstOrNull;
-    }
-
-    return null;
-  }
-
-  void _markDescendantsHiddenBy(
-      Graph graph, Node collapsedNode, Node currentNode) {
-    // 1. Get only outgoing edges that are NOT ghost edges
-    final validEdges = graph.getOutEdges(currentNode);
-
-    // 2. Traverse the destinations of those valid edges
-    for (final edge in validEdges) {
-      final child = edge.destination;
-
-      // Only mark as hidden if:
-      // 1. Not already hidden, OR
-      // 2. Was hidden by a node that's no longer collapsed
-      if (!hiddenBy.containsKey(child) ||
-          !collapsedNodes.containsKey(hiddenBy[child])) {
-        hiddenBy[child] = collapsedNode;
-      }
-
-      // Recurse only if this child isn't itself a collapsed node
-      if (!collapsedNodes.containsKey(child)) {
-        _markDescendantsHiddenBy(graph, collapsedNode, child);
-      }
-    }
-  }
-
-  void _markExpandingDescendants(Graph graph, Node node) {
-    // 1. Get only outgoing edges that are NOT ghost edges
-    final validEdges = graph.getOutEdges(node);
-
-    // 2. Traverse the destinations of those valid edges
-    for (final edge in validEdges) {
-      final child = edge.destination;
-
-      expandingNodes[child] = true;
-      if (!collapsedNodes.containsKey(child)) {
-        _markExpandingDescendants(graph, child);
-      }
-    }
-  }
-
-  void expandNode(Graph graph, Node node, {animate = false}) {
-    collapsedNodes.remove(node);
-    hiddenBy.removeWhere((hiddenNode, hiddenBy) => hiddenBy == node);
-
-    expandingNodes.clear();
-    _markExpandingDescendants(graph, node);
-
-    if (animate) {
-      focusedNode = node;
-    }
-    forceRecalculation();
-  }
-
-  void collapseNode(Graph graph, Node node, {animate = false}) {
-    if (graph.hasSuccessor(node)) {
-      collapsedNodes[node] = true;
-      collapsedNode = node;
-      if (animate) {
-        focusedNode = node;
-      }
-      _markDescendantsHiddenBy(graph, node, node);
-      forceRecalculation();
-    }
-    expandingNodes.clear();
-  }
-
-  void toggleNodeExpanded(Graph graph, Node node, {animate = false}) {
-    if (isNodeCollapsed(node)) {
-      expandNode(graph, node, animate: animate);
-    } else {
-      collapseNode(graph, node, animate: animate);
-    }
-  }
-
-  List<Edge> getCollapsingEdges(Graph graph) {
-    if (collapsedNode == null) return [];
-
-    return graph.edges.where((edge) {
-      return hiddenBy[edge.destination] == collapsedNode;
-    }).toList();
-  }
-
-  List<Edge> getExpandingEdges(Graph graph) {
-    final expandingEdges = <Edge>[];
-
-    for (final node in expandingNodes.keys) {
-      // Get all incoming edges to expanding nodes
-      for (final edge in graph.getInEdges(node)) {
-        expandingEdges.add(edge);
-      }
-    }
-
-    return expandingEdges;
-  }
-
-  // Additional convenience methods for setting initial state
-  void setInitiallyCollapsedNodes(Graph graph, List<Node> nodes) {
-    for (final node in nodes) {
-      collapsedNodes[node] = true;
-      // Mark descendants as hidden by this node
-      _markDescendantsHiddenBy(graph, node, node);
-    }
-  }
-
-  void setInitiallyCollapsedByKeys(Graph graph, Set<ValueKey> keys) {
-    for (final key in keys) {
-      try {
-        final node = graph.getNodeUsingKey(key);
-        collapsedNodes[node] = true;
-        // Mark descendants as hidden by this node
-        _markDescendantsHiddenBy(graph, node, node);
-      } catch (e) {
-        // Node with key not found, ignore
-      }
-    }
-  }
-
   bool isNodeExpanding(Node node) => expandingNodes.containsKey(node);
 
-  void removeCollapsingNodes() {
-    collapsedNode = null;
-  }
+  void toggleNodeExpanded(Graph graph, Node node, {bool animate = true}) {
+    if (collapsedNodes.containsKey(node)) {
+      collapsedNodes.remove(node);
+      expandingNodes[node] = true;
+      _state?.update();
 
-  void jumpToFocusedNode() {
-    if (focusedNode != null) {
-      final nodeCenter = Offset(
-        focusedNode!.position.dx + focusedNode!.width / 2,
-        focusedNode!.position.dy + focusedNode!.height / 2,
-      );
-      _state?.jumpToOffset(nodeCenter, true);
-      focusedNode = null;
+      if (animate) {
+        Timer(const Duration(milliseconds: 100), () {
+          expandingNodes.remove(node);
+          _state?.update();
+        });
+      }
+    } else {
+      collapsedNodes[node] = true;
+      _state?.update();
     }
   }
 
-  void Function(Edge edge)? onEdgeTap;
+  void setNodeFocused(Node? node) {
+    focusedNode = node;
+    _state?.update();
+  }
 
-  Edge? getEdgeAtOffset(Offset localOffset) {
-    if (_state == null) return null;
+  void handleTapAt(Offset localOffset) {
+    final renderObject = _state?.renderObject;
+    if (renderObject == null) return;
 
-    final renderBox = _state!._graphWidgetKey.currentContext?.findRenderObject()
-        as RenderCustomLayoutBox?;
-    if (renderBox == null) return null;
+    // 1. Check for Anchor Tap
+    final renderer = renderObject.algorithm.renderer;
+    if (renderer is ArrowEdgeRenderer) {
+      for (final entry in renderer.anchorLookup.entries) {
+        final anchorPos = entry.key;
+        final edge = entry.value.edge;
+        final isSourceAnchor = entry.value.isSource;
 
-    // The invisible hit-box thickness of the edge.
-    const touchThreshold = 5.0;
-
-    // Iterate over all visible edges
-    for (final edge in _state!.widget.graph.edges) {
-      if (!_state!.widget.delegate.isNodeVisible(edge.source) ||
-          !_state!.widget.delegate.isNodeVisible(edge.destination)) {
-        continue;
+        if ((localOffset - anchorPos).distance <= 15.0) { // Large hit area for dots
+          final targetNode = isSourceAnchor ? edge.destination : edge.source;
+          if (onAnchorTap != null) {
+            onAnchorTap!(targetNode);
+          }
+          return;
+        }
       }
 
-      // 1. Get exact positions (handling ongoing collapse/expand animations)
-      final posA =
-          renderBox.animatedPositions[edge.source] ?? edge.source.position;
-      final posB =
-          renderBox.animatedPositions[edge.destination] ??
-          edge.destination.position;
-
-      // 2. Calculate the center points of the nodes where the edge connects
-      final centerA = Offset(posA.dx + edge.source.size.width / 2,
-          posA.dy + edge.source.size.height / 2);
-      final centerB = Offset(posB.dx + edge.destination.size.width / 2,
-          posB.dy + edge.destination.size.height / 2);
-
-      // 3. Mathematical distance check
-      final distance = _distanceToSegment(localOffset, centerA, centerB);
-
-      if (distance <= touchThreshold) {
-        return edge; // Perfect hit!
+      // 2. Check for Edge Tap (fallback)
+      for (final entry in renderer.renderedPaths.entries) {
+        if (entry.value.contains(localOffset)) {
+          if (onEdgeTap != null) {
+            onEdgeTap!(entry.key);
+          }
+          return;
+        }
       }
     }
-    return null;
-  }
-
-  // Pure math helper that calculates the shortest distance from a point to a line segment
-  double _distanceToSegment(Offset p, Offset a, Offset b) {
-    final l2 = (a.dx - b.dx) * (a.dx - b.dx) + (a.dy - b.dy) * (a.dy - b.dy);
-    // If the nodes are exactly overlapping, just return distance to the point
-    if (l2 == 0) return (p - a).distance;
-
-    // t is the scalar projection of point P onto the segment AB
-    var t =
-        ((p.dx - a.dx) * (b.dx - a.dx) + (p.dy - a.dy) * (b.dy - a.dy)) / l2;
-
-    // Clamp t to ensure the closest point lies strictly ON the segment between A and B
-    t = t.clamp(0.0, 1.0);
-
-    // Calculate the actual coordinates of that closest point
-    final projection =
-        Offset(a.dx + t * (b.dx - a.dx), a.dy + t * (b.dy - a.dy));
-
-    // Return the distance from the tap to that point
-    return (p - projection).distance;
-  }
-
-  void markGraphNeedsPaint() {
-    _state?.forceRecalculation();
   }
 }
 
-class GraphChildDelegate {
-  final Graph graph;
-  final Algorithm algorithm;
-  final NodeWidgetBuilder builder;
-  GraphViewController? controller;
-  final bool centerGraph;
-  Graph? _cachedVisibleGraph;
-  bool _needsRecalculation = true;
+class NodeBoxData extends ContainerBoxParentData<RenderBox> {
+  Node? node;
+}
 
-  GraphChildDelegate({
-    required this.graph,
-    required this.algorithm,
-    required this.builder,
-    required this.controller,
-    this.centerGraph = false,
+class GraphNodeData extends ParentDataWidget<NodeBoxData> {
+  const GraphNodeData({
+    required this.node,
+    required super.child,
+    super.key,
   });
 
-  Graph getVisibleGraph() {
-    if (_cachedVisibleGraph != null && !_needsRecalculation) {
-      return _cachedVisibleGraph!;
-    }
+  final Node node;
 
-    final visibleGraph = getVisibleGraphOnly();
-
-    final collapsingEdges = controller?.getCollapsingEdges(graph) ?? [];
-    visibleGraph.addEdges(collapsingEdges);
-
-    _cachedVisibleGraph = visibleGraph;
-    _needsRecalculation = false;
-    return visibleGraph;
-  }
-
-  Graph getVisibleGraphOnly() {
-    final visibleGraph = Graph();
-    for (final edge in graph.edges) {
-      if (isNodeVisible(edge.source) && isNodeVisible(edge.destination)) {
-        visibleGraph.addEdgeS(edge);
+  @override
+  void applyParentData(RenderObject renderObject) {
+    final parentData = renderObject.parentData as NodeBoxData;
+    if (parentData.node != node) {
+      parentData.node = node;
+      final RenderObject? targetParent = renderObject.parent;
+      if (targetParent is RenderCustomLayoutBox) {
+        targetParent.markNeedsLayout();
       }
     }
-
-    if (visibleGraph.nodes.isEmpty && graph.nodes.isNotEmpty) {
-      visibleGraph.addNode(graph.nodes.first);
-    }
-    return visibleGraph;
   }
 
-  Widget? build(Node node) {
-    var child = node.data ?? builder(node);
-    return KeyedSubtree(key: node.key, child: child);
-  }
-
-  bool shouldRebuild(GraphChildDelegate oldDelegate) {
-    final result =
-        graph != oldDelegate.graph || algorithm != oldDelegate.algorithm;
-    if (result) _needsRecalculation = true;
-    return result;
-  }
-
-  Size runAlgorithm() {
-    final visibleGraph = getVisibleGraphOnly();
-
-    if (centerGraph) {
-      // Use large viewport and center the graph
-      var viewPortSize = Size(200000, 200000);
-      var centerX = viewPortSize.width / 2;
-      var centerY = viewPortSize.height / 2;
-      algorithm.run(visibleGraph, centerX, centerY);
-      return viewPortSize;
-    } else {
-      // Use default algorithm behavior
-      return algorithm.run(visibleGraph, 0, 0);
-    }
-  }
-
-  bool isNodeVisible(Node node) {
-    return controller?.isNodeVisible(graph, node) ?? true;
-  }
-
-  Node? findClosestVisibleAncestor(Node node) {
-    return controller?.findClosestVisibleAncestor(graph, node);
-  }
+  @override
+  Type get debugTypicalAncestorWidgetClass => _GraphViewInternal;
 }
 
 class GraphView extends StatefulWidget {
@@ -447,23 +241,21 @@ class GraphView extends StatefulWidget {
   final NodeWidgetBuilder builder;
   final bool animated;
   final GraphViewController? controller;
-  final bool _isBuilder;
-  final bool _trackpadScrollCausesScale;
+  final bool trackpadScrollCausesScale;
 
   final Duration? panAnimationDuration;
   final Duration? toggleAnimationDuration;
   final ValueKey? initialNode;
   final bool autoZoomToFit;
-  late final GraphChildDelegate delegate;
   final bool centerGraph;
   final Listenable? edgeAnimation;
 
-  GraphView({
-    Key? key,
+  const GraphView({
+    super.key,
     required this.graph,
     required this.algorithm,
-    this.paint,
     required this.builder,
+    this.paint,
     this.animated = true,
     this.controller,
     this.toggleAnimationDuration,
@@ -472,990 +264,335 @@ class GraphView extends StatefulWidget {
     this.panAnimationDuration,
     this.autoZoomToFit = false,
     this.edgeAnimation,
-  })  : _isBuilder = false,
-        _trackpadScrollCausesScale = false,
-        delegate = GraphChildDelegate(
-            graph: graph,
-            algorithm: algorithm,
-            builder: builder,
-            controller: controller),
-        super(key: key);
+    this.trackpadScrollCausesScale = false,
+  });
 
-  GraphView.builder({
-    Key? key,
+  const GraphView.builder({
+    super.key,
     required this.graph,
     required this.algorithm,
-    this.paint,
     required this.builder,
-    this.controller,
+    this.paint,
     this.animated = true,
-    this.initialNode,
-    this.panAnimationDuration,
+    this.controller,
     this.toggleAnimationDuration,
     this.centerGraph = false,
-    bool trackpadScrollCausesScale = false,
+    this.initialNode,
+    this.panAnimationDuration,
     this.autoZoomToFit = false,
     this.edgeAnimation,
-  })  : _isBuilder = true,
-        _trackpadScrollCausesScale = trackpadScrollCausesScale,
-        delegate = GraphChildDelegate(
-            graph: graph,
-            algorithm: algorithm,
-            builder: builder,
-            controller: controller,
-            centerGraph: centerGraph),
-        assert(!(autoZoomToFit && initialNode != null),
-            'Cannot use both autoZoomToFit and initialNode together. Choose one.'),
-        super(key: key);
+    this.trackpadScrollCausesScale = true,
+  });
 
   @override
   _GraphViewState createState() => _GraphViewState();
 }
 
 class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
-  late TransformationController _transformationController;
-  bool _isInternalTransformationController = false;
-  late final AnimationController _panController;
-  late final AnimationController _nodeController;
-  Animation<Matrix4>? _panAnimation;
-  final GlobalKey _graphWidgetKey = GlobalKey();
-
   Size _viewportSize = Size.zero;
+  late AnimationController _animationController;
+  Map<Node, Offset> animatedPositions = {};
+
+  RenderCustomLayoutBox? get renderObject {
+    RenderCustomLayoutBox? result;
+    void visitor(Element element) {
+      if (element.renderObject is RenderCustomLayoutBox) {
+        result = element.renderObject as RenderCustomLayoutBox;
+      } else {
+        element.visitChildren(visitor);
+      }
+    }
+    context.visitChildElements(visitor);
+    return result;
+  }
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.controller?.transformationController != null) {
-      _transformationController = widget.controller!.transformationController!;
-      _isInternalTransformationController = false;
-    } else {
-      _transformationController = TransformationController();
-      _isInternalTransformationController = true;
-    }
-
-    _panController = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration:
-          widget.panAnimationDuration ?? const Duration(milliseconds: 600),
+      duration: widget.panAnimationDuration ?? const Duration(milliseconds: 300),
     );
-
-    _nodeController = AnimationController(
-      vsync: this,
-      duration:
-          widget.toggleAnimationDuration ?? const Duration(milliseconds: 600),
-    );
-
     widget.controller?._attach(this);
 
-    if (widget.autoZoomToFit || widget.initialNode != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (widget.autoZoomToFit) {
-          zoomToFit();
-        } else if (widget.initialNode != null) {
-          jumpToNodeUsingKey(widget.initialNode!, false);
-        }
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialNode != null) {
+        jumpToNodeUsingKey(widget.initialNode!, false);
+      } else if (widget.autoZoomToFit) {
+        zoomToFit();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(GraphView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?._attach(null);
+      widget.controller?._attach(this);
     }
   }
 
   @override
   void dispose() {
-    widget.controller?._detach();
-    _panController.dispose();
-    _nodeController.dispose();
-    if (_isInternalTransformationController) {
-      _transformationController.dispose();
-    }
+    widget.controller?._attach(null);
+    _animationController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final view = GestureDetector(
-      behavior: HitTestBehavior.deferToChild,
-      onTapUp: (details) {
-        // Find the edge at the tap location
-        final edge = widget.controller?.getEdgeAtOffset(details.localPosition);
-        if (edge != null) {
-          widget.controller?.onEdgeTap?.call(edge);
-        }
-      },
-      child: GraphViewWidget(
-        key: _graphWidgetKey,
-        paint: widget.paint,
-        nodeAnimationController: _nodeController,
-        enableAnimation: widget.animated,
-        delegate: widget.delegate,
-        edgeAnimation: widget.edgeAnimation,
-      ),
-    );
-
-    return LayoutBuilder(
-        builder: (context, constraints) {
-            _viewportSize = constraints.biggest;
-            
-            if (widget._isBuilder) {
-                return InteractiveViewer.builder(
-                    transformationController: _transformationController,
-                    boundaryMargin: EdgeInsets.all(double.infinity),
-                    minScale: 0.01,
-                    maxScale: 10,
-                    trackpadScrollCausesScale: widget._trackpadScrollCausesScale,
-                    builder: (context, viewport) {
-                        return view;
-                    });
-            }
-
-            return view;
-        }
-    );
-  }
-
-  void jumpToNodeUsingKey(ValueKey key, bool animated) {
-    final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
-    if (node == null) return;
-
-    jumpToNode(node, animated);
-  }
-
-  void jumpToNodeWithScale(ValueKey key, bool animated, double scale) {
-    final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
-    if (node == null) {
-      return;
+  void update() {
+    if (mounted) {
+      setState(() {});
     }
+  }
+
+  void forceRecalculation() {
+    update();
+  }
+
+  void jumpToNodeUsingKey(ValueKey key, bool animated, {Offset centeringOffset = Offset.zero}) {
+    // Determine current scale from the transformation controller
+    final currentMatrix = widget.controller?.transformationController?.value;
+    final currentScale = currentMatrix?.getMaxScaleOnAxis() ?? 1.0;
+    
+    jumpToNodeWithScale(key, animated, currentScale, centeringOffset: centeringOffset);
+  }
+
+  void jumpToNodeWithScale(ValueKey key, bool animated, double scale, {Offset centeringOffset = Offset.zero}) {
+    final node = widget.graph.nodes.firstWhereOrNull((n) => n.key == key);
+    if (node == null || _viewportSize == Size.zero) return;
 
     final nodeCenter = Offset(
-      node.position.dx + node.width / 2,
-      node.position.dy + node.height / 2,
+      node.x + node.width / 2,
+      node.y + node.height / 2,
     );
 
-    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) {
-      return;
-    }
-
-    final center = Offset(_viewportSize.width / 2, _viewportSize.height / 2);
-
-    final scaledNodeCenter = nodeCenter * scale;
-    final translation = center - scaledNodeCenter;
+    final tx = ((_viewportSize.width + centeringOffset.dx) / 2) - (nodeCenter.dx * scale);
+    final ty = ((_viewportSize.height + centeringOffset.dy) / 2) - (nodeCenter.dy * scale);
 
     final target = Matrix4.identity()
-      ..translate(translation.dx, translation.dy)
+      ..translate(tx, ty)
       ..scale(scale);
 
     if (animated) {
       animateToMatrix(target);
     } else {
-      _transformationController.value = target;
+      final transform = widget.controller?.transformationController;
+      if (transform != null) {
+        transform.value = target;
+      }
     }
   }
 
-  void jumpToNode(Node node, bool animated) {
-    final nodeCenter = Offset(
-        node.position.dx + node.width / 2, node.position.dy + node.height / 2);
+  void animateToMatrix(Matrix4 target) {
+    if (widget.controller?.transformationController == null) return;
 
-    jumpToOffset(nodeCenter, animated);
-  }
+    final animation = Matrix4Tween(
+      begin: widget.controller!.transformationController!.value,
+      end: target,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
 
-  void jumpToOffset(Offset offset, bool animated) {
-    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) {
-      return;
-    }
+    animation.addListener(() {
+      widget.controller?.transformationController?.value = animation.value;
+    });
 
-    final center = Offset(_viewportSize.width / 2, _viewportSize.height / 2);
-
-    final currentScale = _transformationController.value.getMaxScaleOnAxis();
-
-    final scaledNodeCenter = offset * currentScale;
-    final translation = center - scaledNodeCenter;
-
-    final target = Matrix4.identity()
-      ..translate(translation.dx, translation.dy)
-      ..scale(currentScale);
-
-    if (widget.animated) {
-      animateToMatrix(target);
-    } else {
-      _transformationController.value = target;
-    }
+    _animationController.forward(from: 0);
   }
 
   void resetView() => animateToMatrix(Matrix4.identity());
 
   void zoomToFit() {
-    var graph = widget.delegate.getVisibleGraphOnly();
-    
-    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) return;
+    if (_viewportSize == Size.zero || widget.graph.nodes.isEmpty) return;
 
-    final bounds = graph.calculateGraphBounds();
-    if (bounds.width <= 0 || bounds.height <= 0) return;
+    double minX = double.infinity, minY = double.infinity;
+    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
 
-    const paddingFactor = 0.95;
-    final scaleX = (_viewportSize.width / bounds.width) * paddingFactor;
-    final scaleY = (_viewportSize.height / bounds.height) * paddingFactor;
+    for (final node in widget.graph.nodes) {
+      minX = min(minX, node.x);
+      minY = min(minY, node.y);
+      maxX = max(maxX, node.x + node.width);
+      maxY = max(maxY, node.y + node.height);
+    }
 
-    // Clamp the scale to prevent the matrix from collapsing (0) or exploding (infinity)
-    var scale = min(scaleX, scaleY);
-    if (scale.isNaN || scale.isInfinite) scale = 1.0;
-    scale = scale.clamp(0.01, 10.0);
+    final graphWidth = maxX - minX;
+    final graphHeight = maxY - minY;
 
-    final scaledWidth = bounds.width * scale;
-    final scaledHeight = bounds.height * scale;
+    if (graphWidth <= 0 || graphHeight <= 0) return;
 
-    final centerOffset = Offset(
-        (_viewportSize.width - scaledWidth) * 0.5 - bounds.left * scale,
-        (_viewportSize.height - scaledHeight) * 0.5 - bounds.top * scale);
+    const padding = 40.0;
+    final scaleX = (_viewportSize.width - padding * 2) / graphWidth;
+    final scaleY = (_viewportSize.height - padding * 2) / graphHeight;
+    final scale = min(scaleX, scaleY).clamp(0.01, 2.0);
+
+    final tx = (_viewportSize.width - graphWidth * scale) / 2 - minX * scale;
+    final ty = (_viewportSize.height - graphHeight * scale) / 2 - minY * scale;
 
     final target = Matrix4.identity()
-      ..translate(centerOffset.dx, centerOffset.dy)
+      ..translate(tx, ty)
       ..scale(scale);
 
-    if (widget.animated) {
-      animateToMatrix(target);
-    } else {
-      _transformationController.value = target;
-    }
+    animateToMatrix(target);
   }
 
   void adjustZoom(double factor) {
-    if (_viewportSize.width <= 0 || _viewportSize.height <= 0) return;
-
-    final graph = widget.delegate.getVisibleGraphOnly();
-    final bounds = graph.calculateGraphBounds();
-
-    // 1. Get current scale and calculate target scale
-    final currentScale = _transformationController.value.getMaxScaleOnAxis();
-
-    // Define your range explicitly to match minScale/maxScale of InteractiveViewer
-    const minLimit = 0.01;
-    const maxLimit = 10.0;
-
-    final targetScale = (currentScale + (maxLimit - minLimit) * factor)
-        .clamp(minLimit, maxLimit);
-
-    // 2. Calculate the "Center of the Graph" in its own local coordinates
-    final graphCenterX = bounds.left + (bounds.width / 2);
-    final graphCenterY = bounds.top + (bounds.height / 2);
-
-    // 3. Calculate the translation needed to put that Graph Center
-    // into the Viewport Center at the new scale.
-    // Formula: ViewportCenter - (GraphCenter * Scale)
-    final tx = (_viewportSize.width / 2) - (graphCenterX * targetScale);
-    final ty = (_viewportSize.height / 2) - (graphCenterY * targetScale);
-
-    // 4. Create a clean absolute matrix
-    final targetMatrix = Matrix4.identity()
-      ..translate(tx, ty)
-      ..scale(targetScale);
-
-    // 5. Animate to the result
-    animateToMatrix(targetMatrix);
+    if (widget.controller?.transformationController == null) return;
+    final currentScale = widget.controller!.transformationController!.value.getMaxScaleOnAxis();
+    final newScale = currentScale + factor;
+    if (newScale <= 0) return;
+    
+    widget.controller!.transformationController!.value = widget.controller!.transformationController!.value.clone()..scale(newScale / currentScale);
   }
-
-  void animateToMatrix(Matrix4 target) {
-    _panController.forward(from: 0);
-    _panAnimation = Matrix4Tween(
-            begin: _transformationController.value, end: target)
-        .animate(CurvedAnimation(parent: _panController, curve: Curves.linear));
-    _panAnimation!.addListener(_onPanTick);
-  }
-
-  void _onPanTick() {
-    if (_panAnimation == null) return;
-    _transformationController.value = _panAnimation!.value;
-    if (!_panController.isAnimating) {
-      _panAnimation!.removeListener(_onPanTick);
-      _panAnimation = null;
-    }
-  }
-
-  void forceRecalculation() {
-    // Invalidate the delegate's cached graph
-    widget.delegate._needsRecalculation = true;
-
-    setState(() {});
-  }
-}
-
-abstract class GraphChildManager {
-  void startLayout();
-
-  void buildChild(Node node);
-
-  void reuseChild(Node node);
-
-  void endLayout();
-}
-
-class GraphViewWidget extends RenderObjectWidget {
-  final GraphChildDelegate delegate;
-  final Paint? paint;
-  final AnimationController nodeAnimationController;
-  final bool enableAnimation;
-  final Listenable? edgeAnimation;
-
-  const GraphViewWidget({
-    Key? key,
-    required this.delegate,
-    this.paint,
-    required this.nodeAnimationController,
-    required this.enableAnimation,
-    this.edgeAnimation,
-  }) : super(key: key);
 
   @override
-  GraphViewElement createElement() => GraphViewElement(this);
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+        return InteractiveViewer(
+          transformationController: widget.controller?.transformationController,
+          boundaryMargin: const EdgeInsets.all(double.infinity),
+          constrained: false,
+          minScale: 0.001,
+          maxScale: 10.0,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTapUp: (details) {
+              widget.controller?.handleTapAt(details.localPosition);
+            },
+            child: ListenableBuilder(
+              listenable: Listenable.merge([
+                if (widget.edgeAnimation != null) widget.edgeAnimation!,
+              ]),
+              builder: (context, child) {
+                return _GraphViewInternal(
+                  graph: widget.graph,
+                  algorithm: widget.algorithm,
+                  paint: widget.paint ?? (Paint()..color = Colors.black..strokeWidth = 1.0..style = PaintingStyle.stroke),
+                  builder: widget.builder,
+                  controller: widget.controller,
+                  centerGraph: widget.centerGraph,
+                  animatedPositions: animatedPositions,
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _GraphViewInternal extends MultiChildRenderObjectWidget {
+  _GraphViewInternal({
+    required this.graph,
+    required this.algorithm,
+    required this.paint,
+    required this.builder,
+    this.controller,
+    this.centerGraph = false,
+    required this.animatedPositions,
+  }) : super(
+          children: graph.nodes.map((node) {
+            return GraphNodeData(
+              key: node.key,
+              node: node,
+              child: builder(node),
+            );
+          }).toList(),
+        );
+
+  final Graph graph;
+  final Algorithm algorithm;
+  final Paint paint;
+  final NodeWidgetBuilder builder;
+  final GraphViewController? controller;
+  final bool centerGraph;
+  final Map<Node, Offset> animatedPositions;
 
   @override
   RenderCustomLayoutBox createRenderObject(BuildContext context) {
     return RenderCustomLayoutBox(
-      delegate,
-      paint,
-      enableAnimation,
-      nodeAnimationController: nodeAnimationController,
-      childManager: context as GraphChildManager,
-      edgeAnimation: edgeAnimation,
+      graph: graph,
+      algorithm: algorithm,
+      edgePaint: paint,
+      controller: controller,
+      centerGraph: centerGraph,
+      animatedPositions: animatedPositions,
     );
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context, RenderCustomLayoutBox renderObject) {
+  void updateRenderObject(BuildContext context, RenderCustomLayoutBox renderObject) {
     renderObject
-      ..delegate = delegate
+      ..graph = graph
+      ..algorithm = algorithm
       ..edgePaint = paint
-      ..nodeAnimationController = nodeAnimationController
-      ..enableAnimation = enableAnimation
-      ..edgeAnimation = edgeAnimation;
-  }
-}
-
-class GraphViewElement extends RenderObjectElement
-    implements GraphChildManager {
-  GraphViewElement(GraphViewWidget super.widget);
-
-  @override
-  GraphViewWidget get widget => super.widget as GraphViewWidget;
-
-  @override
-  RenderCustomLayoutBox get renderObject =>
-      super.renderObject as RenderCustomLayoutBox;
-
-  // Contains all children, including those that are keyed
-  Map<Node, Element> _nodeToElement = <Node, Element>{};
-  Map<Key, Element> _keyToElement = <Key, Element>{};
-
-  // Used between startLayout() & endLayout() to compute the new values
-  Map<Node, Element>? _newNodeToElement;
-  Map<Key, Element>? _newKeyToElement;
-
-  bool get _debugIsDoingLayout =>
-      _newNodeToElement != null && _newKeyToElement != null;
-
-  @override
-  void performRebuild() {
-    super.performRebuild();
-    // Children list is updated during layout since we only know during layout
-    // which children will be visible
-    renderObject.markNeedsLayout();
-  }
-
-  @override
-  void forgetChild(Element child) {
-    assert(!_debugIsDoingLayout);
-    super.forgetChild(child);
-    _nodeToElement.remove(child.slot as Node);
-    if (child.widget.key != null) {
-      _keyToElement.remove(child.widget.key);
-    }
-  }
-
-  @override
-  void insertRenderObjectChild(RenderBox child, Node slot) {
-    renderObject._insertChild(child, slot);
-  }
-
-  @override
-  void moveRenderObjectChild(RenderBox child, Node oldSlot, Node newSlot) {
-    renderObject._moveChild(child, from: oldSlot, to: newSlot);
-  }
-
-  @override
-  void removeRenderObjectChild(RenderBox child, Node slot) {
-    renderObject._removeChild(child, slot);
-  }
-
-  @override
-  void visitChildren(ElementVisitor visitor) {
-    _nodeToElement.values.forEach(visitor);
-  }
-
-  // ---- GraphChildManager implementation ----
-
-  @override
-  void startLayout() {
-    assert(!_debugIsDoingLayout);
-    _newNodeToElement = <Node, Element>{};
-    _newKeyToElement = <Key, Element>{};
-  }
-
-  @override
-  void buildChild(Node node) {
-    assert(_debugIsDoingLayout);
-    owner!.buildScope(this, () {
-      final newWidget = widget.delegate.build(node);
-      if (newWidget == null) {
-        return;
-      }
-
-      final oldElement = _retrieveOldElement(newWidget, node);
-      final newChild = updateChild(oldElement, newWidget, node);
-
-      if (newChild != null) {
-        // Ensure we are not overwriting an existing child
-        assert(_newNodeToElement![node] == null);
-        _newNodeToElement![node] = newChild;
-        if (newWidget.key != null) {
-          // Ensure we are not overwriting an existing key
-          assert(_newKeyToElement![newWidget.key!] == null);
-          _newKeyToElement![newWidget.key!] = newChild;
-        }
-      }
-    });
-  }
-
-  @override
-  void reuseChild(Node node) {
-    assert(_debugIsDoingLayout);
-    final elementToReuse = _nodeToElement.remove(node);
-    assert(
-      elementToReuse != null,
-      'Expected to re-use an element at $node, but none was found.',
-    );
-    _newNodeToElement![node] = elementToReuse!;
-    if (elementToReuse.widget.key != null) {
-      assert(_keyToElement.containsKey(elementToReuse.widget.key));
-      assert(_keyToElement[elementToReuse.widget.key] == elementToReuse);
-      _newKeyToElement![elementToReuse.widget.key!] =
-          _keyToElement.remove(elementToReuse.widget.key)!;
-    }
-  }
-
-  Element? _retrieveOldElement(Widget newWidget, Node node) {
-    if (newWidget.key != null) {
-      final result = _keyToElement.remove(newWidget.key);
-      if (result != null) {
-        _nodeToElement.remove(result.slot as Node);
-      }
-      return result;
-    }
-
-    final potentialOldElement = _nodeToElement[node];
-    if (potentialOldElement != null && potentialOldElement.widget.key == null) {
-      return _nodeToElement.remove(node);
-    }
-    return null;
-  }
-
-  @override
-  void endLayout() {
-    assert(_debugIsDoingLayout);
-
-    // Unmount all elements that have not been reused in the layout cycle
-    for (final element in _nodeToElement.values) {
-      if (element.widget.key == null) {
-        // If it has a key, we handle it below
-        updateChild(element, null, null);
-      } else {
-        assert(_keyToElement.containsValue(element));
-      }
-    }
-    for (final element in _keyToElement.values) {
-      assert(element.widget.key != null);
-      updateChild(element, null, null);
-    }
-
-    _nodeToElement = _newNodeToElement!;
-    _keyToElement = _newKeyToElement!;
-    _newNodeToElement = null;
-    _newKeyToElement = null;
-    assert(!_debugIsDoingLayout);
-
-    centerNodeWhileToggling();
-  }
-
-  void centerNodeWhileToggling() {
-    widget.delegate.controller?.jumpToFocusedNode();
+      ..controller = controller
+      ..centerGraph = centerGraph
+      ..animatedPositions = animatedPositions;
   }
 }
 
 class RenderCustomLayoutBox extends RenderBox
-    with
-        ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
+    with ContainerRenderObjectMixin<RenderBox, NodeBoxData>,
         RenderBoxContainerDefaultsMixin<RenderBox, NodeBoxData> {
-  late Paint _paint;
-  late AnimationController _nodeAnimationController;
-  late GraphChildDelegate _delegate;
-  GraphChildManager? childManager;
+  RenderCustomLayoutBox({
+    required Graph graph,
+    required Algorithm algorithm,
+    required Paint edgePaint,
+    GraphViewController? controller,
+    bool centerGraph = false,
+    required this.animatedPositions,
+  })  : _graph = graph,
+        _algorithm = algorithm,
+        _edgePaint = edgePaint,
+        _controller = controller,
+        _centerGraph = centerGraph;
 
-  Size? _cachedSize;
-  bool _isInitialized = false;
-  bool _needsFullRecalculation = false;
-  late bool enableAnimation;
-  final opacityPaint = Paint();
-
-  final animatedPositions = <Node, Offset>{};
-  final _children = <Node, RenderBox>{};
-  final _activeChildrenForLayoutPass = <Node, RenderBox>{};
-
-  Listenable? _edgeAnimation;
-
-  RenderCustomLayoutBox(
-    GraphChildDelegate delegate,
-    Paint? paint,
-    bool enableAnimation, {
-    required AnimationController nodeAnimationController,
-    this.childManager,
-    Listenable? edgeAnimation,
-  }) {
-    _nodeAnimationController = nodeAnimationController;
-    _delegate = delegate;
-    edgePaint = paint;
-    this.enableAnimation = enableAnimation;
-    _edgeAnimation = edgeAnimation;
+  Graph _graph;
+  Graph get graph => _graph;
+  set graph(Graph value) {
+    if (_graph == value) return;
+    _graph = value;
+    markNeedsLayout();
   }
 
-  RenderBox? buildOrObtainChildFor(Node node) {
-    assert(debugDoingThisLayout);
-
-    if (_needsFullRecalculation || !_children.containsKey(node)) {
-      invokeLayoutCallback<BoxConstraints>((BoxConstraints _) {
-        childManager!.buildChild(node);
-      });
-    } else {
-      childManager!.reuseChild(node);
-    }
-
-    if (!_children.containsKey(node)) {
-      // There is no child for this node, the delegate may not provide one
-      return null;
-    }
-
-    assert(_children.containsKey(node));
-    final child = _children[node]!;
-    _activeChildrenForLayoutPass[node] = child;
-    return child;
+  Algorithm _algorithm;
+  Algorithm get algorithm => _algorithm;
+  set algorithm(Algorithm value) {
+    if (_algorithm == value) return;
+    _algorithm = value;
+    markNeedsLayout();
   }
 
-  GraphChildDelegate get delegate => _delegate;
-
-  Graph get graph => _delegate.getVisibleGraph();
-
-  Algorithm get algorithm => _delegate.algorithm;
-
-  set edgeAnimation(Listenable? value) {
-    if (_edgeAnimation == value) return;
-    if (attached) {
-      _edgeAnimation?.removeListener(markNeedsPaint);
-    }
-    _edgeAnimation = value;
-    if (attached) {
-      _edgeAnimation?.addListener(markNeedsPaint);
-    }
+  Paint _edgePaint;
+  Paint get edgePaint => _edgePaint;
+  set edgePaint(Paint value) {
+    if (_edgePaint == value) return;
+    _edgePaint = value;
     markNeedsPaint();
   }
 
-  set delegate(GraphChildDelegate value) {
-    // if (value != _delegate) {
-    _needsFullRecalculation = true;
-    _isInitialized = false;
-    _delegate = value;
-    markNeedsLayout();
-    // }
-  }
-
-  void markNeedsRecalculation() {
-    _needsFullRecalculation = false;
-    _isInitialized = false;
+  GraphViewController? _controller;
+  GraphViewController? get controller => _controller;
+  set controller(GraphViewController? value) {
+    if (_controller == value) return;
+    _controller = value;
     markNeedsLayout();
   }
 
-  @override
-  void attach(PipelineOwner owner) {
-    super.attach(owner);
-    _nodeAnimationController.addListener(_onAnimationTick);
-    _edgeAnimation?.addListener(markNeedsPaint);
-    for (final child in _children.values) {
-      child.attach(owner);
-    }
-  }
-
-  @override
-  void detach() {
-    _nodeAnimationController.removeListener(_onAnimationTick);
-    _edgeAnimation?.removeListener(markNeedsPaint);
-    super.detach();
-    for (final child in _children.values) {
-      child.detach();
-    }
-  }
-
-  void forceRecalculation() {
-    _needsFullRecalculation = true;
-    _isInitialized = false;
+  bool _centerGraph;
+  bool get centerGraph => _centerGraph;
+  set centerGraph(bool value) {
+    if (_centerGraph == value) return;
+    _centerGraph = value;
     markNeedsLayout();
   }
 
-  Paint get edgePaint => _paint;
-
-  set edgePaint(Paint? value) {
-    final newPaint = value ??
-        (Paint()
-          ..color = Colors.black
-          ..strokeWidth = 3)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt;
-
-    _paint = newPaint;
-    markNeedsPaint();
-  }
-
-  AnimationController get nodeAnimationController => _nodeAnimationController;
-
-  set nodeAnimationController(AnimationController value) {
-    if (identical(_nodeAnimationController, value)) return;
-    _nodeAnimationController.removeListener(_onAnimationTick);
-    _nodeAnimationController = value;
-    _nodeAnimationController.addListener(_onAnimationTick);
-    markNeedsLayout();
-  }
-
-  void _onAnimationTick() {
-    markNeedsPaint();
-  }
-
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    if (_children.isEmpty) return;
-
-    final t = _nodeAnimationController.value;
-    animatedPositions.clear();
-
-    // 1. Calculate positions for ALL nodes involved in the master graph
-    // This ensures ghost edges have a 'start' and 'end' even if nodes are collapsing.
-    for (final node in _delegate.graph.nodes) {
-      if (_children.containsKey(node)) {
-        final nodeData = _children[node]!.parentData as NodeBoxData;
-        animatedPositions[node] =
-            Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
-      } else {
-        // For hidden/collapsing nodes, anchor them to their visible ancestor
-        final ancestor = _delegate.findClosestVisibleAncestor(node);
-        if (ancestor != null && _children.containsKey(ancestor)) {
-          final nodeData = _children[ancestor]!.parentData as NodeBoxData;
-          animatedPositions[node] =
-              Offset.lerp(nodeData.startOffset, nodeData.targetOffset, t)!;
-        } else {
-          animatedPositions[node] = node.position;
-        }
-      }
-    }
-
-    context.canvas.save();
-    context.canvas.translate(offset.dx, offset.dy);
-    algorithm.renderer?.setAnimatedPositions(animatedPositions);
-
-    final renderer = algorithm.renderer;
-    if (renderer is ArrowEdgeRenderer) {
-      renderer.renderedPaths.clear();
-    }
-
-    final collapsingEdges =
-        _delegate.controller?.getCollapsingEdges(_delegate.graph).toSet() ?? {};
-    final expandingEdges =
-        _delegate.controller?.getExpandingEdges(_delegate.graph).toSet() ?? {};
-
-    // 2. Iterate Master Edges instead of the layout graph edges
-    for (final edge in _delegate.graph.edges) {
-      final sourceVisible = _delegate.isNodeVisible(edge.source);
-      final destVisible = _delegate.isNodeVisible(edge.destination);
-
-      // Paint if nodes are visible, or if they are currently animating (collapsing/expanding)
-      if ((sourceVisible && destVisible) ||
-          _nodeAnimationController.isAnimating) {
-        var edgePaintWithOpacity = Paint.from(edge.paint ?? edgePaint);
-
-        if (enableAnimation) {
-          if (collapsingEdges.contains(edge)) {
-            edgePaintWithOpacity.color =
-                edgePaintWithOpacity.color.withValues(alpha: 1.0 - t);
-          } else if (expandingEdges.contains(edge)) {
-            edgePaintWithOpacity.color =
-                edgePaintWithOpacity.color.withValues(alpha: t);
-          }
-        }
-
-        algorithm.renderer
-            ?.renderEdge(context.canvas, edge, edgePaintWithOpacity);
-      }
-    }
-
-    context.canvas.restore();
-    _paintNodes(context, offset, t);
-  }
-
-  @override
-  void performLayout() {
-    _activeChildrenForLayoutPass.clear();
-    childManager!.startLayout();
-
-    final looseConstraints = BoxConstraints.loose(constraints.biggest);
-
-    bool didRecalculate = false;
-    if (_needsFullRecalculation || !_isInitialized) {
-      _layoutNodesLazily(looseConstraints);
-      _cachedSize = _delegate.runAlgorithm();
-      _isInitialized = true;
-      _needsFullRecalculation = false;
-      didRecalculate = true;
-    }
-
-    size = _cachedSize ?? Size.zero;
-
-    invokeLayoutCallback<BoxConstraints>((BoxConstraints _) {
-      childManager!.endLayout();
-    });
-
-    if (enableAnimation) {
-      if (didRecalculate) {
-        _updateAnimationStates();
-      }
-    } else {
-      if (didRecalculate) {
-        _updateNodePositions();
-      }
-    }
-    _delegate.controller?.notifyLayoutFinished();
-  }
-
-  void _paintNodes(PaintingContext context, Offset offset, double t) {
-    for (final entry in _children.entries) {
-      final node = entry.key;
-      final child = entry.value;
-      final nodeData = child.parentData as NodeBoxData;
-      final pos = animatedPositions[node]!;
-
-      final isVisible = _delegate.isNodeVisible(node);
-      if (isVisible) {
-        final isExpanding =
-            _delegate.controller?.isNodeExpanding(node) ?? false;
-        if (_nodeAnimationController.isAnimating && isExpanding) {
-          _paintExpandingNode(context, child, offset, pos, t);
-        } else {
-          context.paintChild(child, offset + pos);
-        }
-      } else {
-        if (_nodeAnimationController.isAnimating &&
-            nodeData.startOffset != nodeData.targetOffset) {
-          _paintCollapsingNode(context, child, offset, pos, t);
-        } else if (_nodeAnimationController.isCompleted) {
-          nodeData.startOffset = nodeData.targetOffset;
-        }
-      }
-
-      // ALWAYS UPDATE THE PHYSICAL COLLISION BOX TO MATCH THE RENDERED POSITION
-      nodeData.offset = pos;
-
-      if (_nodeAnimationController.isCompleted) {
-        nodeData.offset = node.position;
-      }
-    }
-
-    if (_nodeAnimationController.isCompleted) {
-      _delegate.controller?.removeCollapsingNodes();
-    }
-  }
-
-  void _paintExpandingNode(PaintingContext context, RenderBox child,
-      Offset offset, Offset pos, double t) {
-    final center =
-        pos + offset + Offset(child.size.width * 0.5, child.size.height * 0.5);
-
-    context.canvas.save();
-
-    // Apply scaling from center
-    context.canvas.translate(center.dx, center.dy);
-    context.canvas.scale(t, t);
-    context.canvas.translate(-center.dx, -center.dy);
-
-    // Paint with opacity using saveLayer
-    opacityPaint
-      ..color = Color.fromRGBO(255, 255, 255, t)
-      ..colorFilter = ColorFilter.mode(
-          Colors.white.withValues(alpha: t), BlendMode.modulate);
-
-    context.canvas.saveLayer(
-        Rect.fromLTWH(pos.dx + offset.dx - 20, pos.dy + offset.dy - 20,
-            child.size.width + 40, child.size.height + 40),
-        opacityPaint);
-
-    context.paintChild(child, offset + pos);
-
-    context.canvas.restore(); // Restore saveLayer
-    context.canvas.restore(); // Restore main save
-  }
-
-  void _paintCollapsingNode(PaintingContext context, RenderBox child,
-      Offset offset, Offset pos, double t) {
-    final progress = (1.0 - t);
-    final center =
-        pos + offset + Offset(child.size.width * 0.5, child.size.height * 0.5);
-
-    context.canvas.save();
-
-    // Apply scaling from center
-    context.canvas.translate(center.dx, center.dy);
-    context.canvas.scale(progress, progress);
-    context.canvas.translate(-center.dx, -center.dy);
-
-    // Paint with opacity using saveLayer
-    opacityPaint
-      ..color = Color.fromRGBO(255, 255, 255, progress)
-      ..colorFilter = ColorFilter.mode(
-          Colors.white.withValues(alpha: progress), BlendMode.modulate);
-
-    context.canvas.saveLayer(
-        Rect.fromLTWH(pos.dx + offset.dx - 20, pos.dy + offset.dy - 20,
-            child.size.width + 40, child.size.height + 40),
-        opacityPaint);
-
-    context.paintChild(child, offset + pos);
-
-    context.canvas.restore(); // Restore saveLayer
-    context.canvas.restore(); // Restore main save
-  }
-
-  void _updateNodePositions() {
-    for (final entry in _children.entries) {
-      final node = entry.key;
-      final child = entry.value;
-      final nodeData = child.parentData as NodeBoxData;
-
-      if (_delegate.isNodeVisible(node)) {
-        nodeData.offset = node.position;
-      } else {
-        final parent = _delegate.findClosestVisibleAncestor(node);
-        nodeData.offset = parent?.position ?? node.position;
-      }
-    }
-  }
-
-  void _layoutNodesLazily(BoxConstraints constraints) {
-    for (final node in graph.nodes) {
-      final child = buildOrObtainChildFor(node);
-      if (child != null) {
-        child.layout(constraints, parentUsesSize: true);
-        node.size = Size(child.size.width.ceilToDouble(), child.size.height);
-      }
-    }
-  }
-
-  void _updateAnimationStates() {
-    for (final entry in _children.entries) {
-      final node = entry.key;
-      final child = entry.value;
-      final nodeData = child.parentData as NodeBoxData;
-      final isVisible = _delegate.isNodeVisible(node);
-
-      if (isVisible) {
-        _updateVisibleNodeAnimation(nodeData, node);
-      } else {
-        _updateCollapsedNodeAnimation(nodeData, node);
-      }
-    }
-
-    _nodeAnimationController.reset();
-    _nodeAnimationController.forward();
-  }
-
-  void _updateVisibleNodeAnimation(NodeBoxData nodeData, Node graphNode) {
-    final prevTarget = nodeData.targetOffset;
-    var newPos = graphNode.position;
-
-    if (prevTarget == null) {
-      final parent = graph.predecessorsOf(graphNode).firstOrNull;
-      final pastParentPosition = animatedPositions[parent];
-      nodeData.startOffset = pastParentPosition ?? parent?.position ?? newPos;
-      nodeData.targetOffset = newPos;
-    } else if (prevTarget != newPos) {
-      nodeData.startOffset = prevTarget;
-      nodeData.targetOffset = newPos;
-    } else {
-      nodeData.startOffset = newPos;
-      nodeData.targetOffset = newPos;
-    }
-  }
-
-  void _updateCollapsedNodeAnimation(NodeBoxData nodeData, Node graphNode) {
-    final parent = delegate.findClosestVisibleAncestor(graphNode);
-    final parentPos = parent?.position ?? Offset.zero;
-
-    final prevTarget = nodeData.targetOffset;
-
-    if (nodeData.startOffset == nodeData.targetOffset) {
-      nodeData.targetOffset = parentPos;
-    } else if (prevTarget != null && prevTarget != parentPos) {
-      // Just collapsed now → animate toward parent
-      nodeData.startOffset = graphNode.position;
-      nodeData.targetOffset = parentPos;
-    } else {
-      // animation finished → lock to parent
-      nodeData.startOffset = parentPos;
-      nodeData.targetOffset = parentPos;
-    }
-  }
-
-  @override
-  bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    // 1. Check if we hit a Node first (Standard Flutter behavior)
-    if (hitTestChildren(result, position: position)) {
-      return true;
-    }
-
-    // 2. If no Node was hit, check if we hit an Edge via the Controller
-    final edge = _delegate.controller?.getEdgeAtOffset(position);
-    if (edge != null) {
-      // Add a hit test entry so the GestureDetector recognizes this area
-      result.add(BoxHitTestEntry(this, position));
-      return true;
-    }
-
-    return super.hitTest(result, position: position);
-  }
-
-  @override
-  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    for (final entry in _children.entries) {
-      final node = entry.key;
-
-      if (delegate.isNodeVisible(node)) {
-        final child = entry.value;
-
-        final childParentData = child.parentData as BoxParentData;
-        final targetOffset = childParentData.offset;
-        final isHit = result.addWithPaintOffset(
-          offset: targetOffset,
-          position: position,
-          hitTest: (BoxHitTestResult result, Offset transformed) {
-            return child.hitTest(result, position: transformed);
-          },
-        );
-        if (isHit) return true;
-      }
-    }
-
-    return false;
-  }
+  Map<Node, Offset> animatedPositions;
 
   @override
   void setupParentData(RenderBox child) {
@@ -1464,158 +601,112 @@ class RenderCustomLayoutBox extends RenderBox
     }
   }
 
-  // ---- Called from GraphViewElement ----
-  void _insertChild(RenderBox child, Node slot) {
-    _children[slot] = child;
-    adoptChild(child);
-  }
-
-  void _moveChild(RenderBox child, {required Node from, required Node to}) {
-    if (_children[from] == child) {
-      _children.remove(from);
+  @override
+  void performLayout() {
+    if (childCount == 0) {
+      size = constraints.smallest;
+      return;
     }
-    _children[to] = child;
-  }
 
-  void _removeChild(RenderBox child, Node slot) {
-    if (_children[slot] == child) {
-      _children.remove(slot);
+    var child = firstChild;
+    while (child != null) {
+      final NodeBoxData childParentData = child.parentData as NodeBoxData;
+      final node = childParentData.node;
+      
+      child.layout(BoxConstraints.loose(const Size(1000, 1000)), parentUsesSize: true);
+      if (node != null) {
+        node.size = child.size;
+      }
+      child = childParentData.nextSibling;
     }
-    dropChild(child);
+
+    final graphSize = algorithm.run(graph, 0, 0);
+    
+    const logicalCanvasSize = 200000.0;
+    final desiredWidth = max(graphSize.width, constraints.maxWidth);
+    final desiredHeight = max(graphSize.height, constraints.maxHeight);
+    
+    size = constraints.constrain(Size(
+        desiredWidth.isFinite ? desiredWidth : logicalCanvasSize,
+        desiredHeight.isFinite ? desiredHeight : logicalCanvasSize,
+    ));
+
+    if (centerGraph) {
+      final shiftX = (size.width - graphSize.width) / 2;
+      final shiftY = (size.height - graphSize.height) / 2;
+      algorithm.run(graph, shiftX, shiftY);
+    }
+    
+    _controller?.notifyLayoutFinished();
   }
 
   @override
-  void visitChildren(RenderObjectVisitor visitor) {
-    for (final child in _children.values) {
-      visitor(child);
+  void paint(PaintingContext context, Offset offset) {
+    context.canvas.save();
+    context.canvas.translate(offset.dx, offset.dy);
+    
+    if (algorithm.renderer != null) {
+      algorithm.renderer!.setAnimatedPositions(animatedPositions);
+      algorithm.renderer!.render(context.canvas, graph, edgePaint);
+    } else {
+      for (final edge in graph.edges) {
+        final srcPos = animatedPositions[edge.source] ?? edge.source.position;
+        final dstPos = animatedPositions[edge.destination] ?? edge.destination.position;
+        context.canvas.drawLine(
+          Offset(srcPos.dx + edge.source.width / 2, srcPos.dy + edge.source.height / 2),
+          Offset(dstPos.dx + edge.destination.width / 2, dstPos.dy + edge.destination.height / 2),
+          edge.paint ?? edgePaint,
+        );
+      }
+    }
+
+    context.canvas.restore();
+
+    var child = firstChild;
+    while (child != null) {
+      final NodeBoxData childParentData = child.parentData as NodeBoxData;
+      final node = childParentData.node;
+      if (node != null) {
+        final pos = animatedPositions[node] ?? node.position;
+        context.paintChild(child, pos + offset);
+      }
+      child = childParentData.nextSibling;
     }
   }
 
   @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Graph>('graph', graph));
-    properties.add(DiagnosticsProperty<Algorithm>('algorithm', algorithm));
-    properties.add(DiagnosticsProperty<Paint>('paint', edgePaint));
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    var child = lastChild;
+    while (child != null) {
+      final NodeBoxData childParentData = child.parentData as NodeBoxData;
+      final node = childParentData.node;
+      if (node != null) {
+        final pos = animatedPositions[node] ?? node.position;
+        final bool isHit = result.addWithPaintOffset(
+          offset: pos,
+          position: position,
+          hitTest: (BoxHitTestResult result, Offset transformed) {
+            return child!.hitTest(result, position: transformed);
+          },
+        );
+        if (isHit) return true;
+      }
+      child = childParentData.previousSibling;
+    }
+    return false;
   }
 }
 
-class NodeBoxData extends ContainerBoxParentData<RenderBox> {
-  Offset? startOffset;
-  Offset? targetOffset;
-}
-
-class GraphViewCustomPainter extends StatefulWidget {
+class GraphChildDelegate {
   final Graph graph;
-  final FruchtermanReingoldAlgorithm algorithm;
-  final Paint? paint;
+  final Algorithm algorithm;
   final NodeWidgetBuilder builder;
-  final stepMilis = 25;
+  final GraphViewController? controller;
 
-  GraphViewCustomPainter({
-    Key? key,
+  GraphChildDelegate({
     required this.graph,
     required this.algorithm,
-    this.paint,
     required this.builder,
-  }) : super(key: key);
-
-  @override
-  _GraphViewCustomPainterState createState() => _GraphViewCustomPainterState();
-}
-
-class _GraphViewCustomPainterState extends State<GraphViewCustomPainter> {
-  late Timer timer;
-  late Graph graph;
-  late FruchtermanReingoldAlgorithm algorithm;
-
-  @override
-  void initState() {
-    graph = widget.graph;
-
-    algorithm = widget.algorithm;
-    algorithm.init(graph);
-    startTimer();
-
-    super.initState();
-  }
-
-  void startTimer() {
-    timer = Timer.periodic(Duration(milliseconds: widget.stepMilis), (timer) {
-      algorithm.step(graph);
-      update();
-    });
-  }
-
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    algorithm.setDimensions(
-        MediaQuery.of(context).size.width, MediaQuery.of(context).size.height);
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        CustomPaint(
-          size: MediaQuery.of(context).size,
-          painter: EdgeRender(algorithm, graph, Offset(20, 20), widget.paint),
-        ),
-        ...List<Widget>.generate(graph.nodeCount(), (index) {
-          return Positioned(
-            child: GestureDetector(
-              child:
-                  graph.nodes[index].data ?? widget.builder(graph.nodes[index]),
-              onPanUpdate: (details) {
-                graph.getNodeAtPosition(index).position += details.delta;
-                update();
-              },
-            ),
-            top: graph.getNodeAtPosition(index).position.dy,
-            left: graph.getNodeAtPosition(index).position.dx,
-          );
-        }),
-      ],
-    );
-  }
-
-  Future<void> update() async {
-    setState(() {});
-  }
-}
-
-class EdgeRender extends CustomPainter {
-  Algorithm algorithm;
-  Graph graph;
-  Offset offset;
-  Paint? customPaint;
-
-  EdgeRender(this.algorithm, this.graph, this.offset, this.customPaint);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    var edgePaint = customPaint ??
-        (Paint()
-          ..color = Colors.black
-          ..strokeWidth = 3
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.butt);
-
-    canvas.save();
-    canvas.translate(offset.dx, offset.dy);
-
-    for (var value in graph.edges) {
-      algorithm.renderer?.renderEdge(canvas, value, edgePaint);
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
-  }
+    this.controller,
+  });
 }

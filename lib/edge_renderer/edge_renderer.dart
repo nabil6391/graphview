@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:graphview/graph.dart';
 
 abstract class EdgeRenderer {
-  Map<Node, Offset>? _animatedPositions;
+  @protected
+  Map<Node, Offset>? animatedPositions;
 
   void setAnimatedPositions(Map<Node, Offset> positions) =>
-      _animatedPositions = positions;
+      animatedPositions = positions;
 
   Offset getNodePosition(Node node) =>
-      _animatedPositions?[node] ?? node.position;
+      animatedPositions?[node] ?? node.position;
 
   void renderEdge(Canvas canvas, Edge edge, Paint paint);
 
