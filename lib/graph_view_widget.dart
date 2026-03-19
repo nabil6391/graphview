@@ -475,6 +475,7 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
           transformationController: widget.controller?.transformationController,
           boundaryMargin: const EdgeInsets.all(double.infinity),
           constrained: false,
+          trackpadScrollCausesScale: widget.trackpadScrollCausesScale,
           minScale: 0.001,
           maxScale: 10.0,
           child: GestureDetector(
