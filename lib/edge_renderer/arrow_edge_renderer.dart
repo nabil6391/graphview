@@ -1,14 +1,12 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:graphview/edge_renderer/edge_renderer.dart';
 import 'package:graphview/graph.dart';
-import 'package:collection/collection.dart';
 
 const double ARROW_DEGREES = 0.5;
 const double ARROW_LENGTH = 10;
-const double MIN_ANCHOR_OFFSET = 12.0; 
+const double MIN_ANCHOR_OFFSET = 12.0;
 const double MAX_ANCHOR_OFFSET = 32.0;
 const double ANCHOR_RADIUS = 2.5;
 
@@ -23,10 +21,10 @@ class ArrowEdgeRenderer extends EdgeRenderer {
   var trianglePath = Path();
   final bool noArrow;
   final Map<Edge, Path> renderedPaths = {};
-  
+
   // Stores the local positions of all drawn anchors for hit testing
   final Map<Offset, AnchorInfo> anchorLookup = {};
-  
+
   // Track unique anchor coordinates to avoid drawing dots on top of each other
   final Set<String> _drawnAnchors = {};
 
@@ -37,7 +35,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     _drawnAnchors.clear();
     anchorLookup.clear();
     renderedPaths.clear();
-    
+
     graph.edges.forEach((edge) {
       renderEdge(canvas, edge, paint);
     });
@@ -52,14 +50,14 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       ..color = edge.paint?.color ?? paint.color
       ..strokeWidth = edge.paint?.strokeWidth ?? paint.strokeWidth
       ..style = PaintingStyle.stroke;
-      
+
     final lineType = edge.lineType ?? LineType.Default;
     var edgePath = Path();
 
     // 1. Get real-time positions
     var sourceOffset = getNodePosition(source);
     var destinationOffset = getNodePosition(destination);
-    
+
     final sourceShift = sourceOffset - source.position;
     final destinationShift = destinationOffset - destination.position;
 
@@ -89,11 +87,12 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       // 4. Build Edge Path
       Offset finalSegmentStart;
       if (count > 2) {
-          final tLast = (count - 2) / (count - 1);
-          final lastBend = edge.sections![count - 2] + Offset.lerp(sourceShift, destinationShift, tLast)!;
-          finalSegmentStart = lastBend;
+        final tLast = (count - 2) / (count - 1);
+        final lastBend = edge.sections![count - 2] +
+            Offset.lerp(sourceShift, destinationShift, tLast)!;
+        finalSegmentStart = lastBend;
       } else {
-          finalSegmentStart = sourceAnchor;
+        finalSegmentStart = sourceAnchor;
       }
 
       final dir = destAnchor - finalSegmentStart;
@@ -111,13 +110,15 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         }
       }
       edgePath.lineTo(arrowTip.dx, arrowTip.dy);
-      
+
       anchorLookup[sourceAnchor] = AnchorInfo(edge: edge, isSource: true);
       anchorLookup[destAnchor] = AnchorInfo(edge: edge, isSource: false);
     } else {
       // Fallback
-      final sCenter = sourceOffset + Offset(source.width / 2, source.height / 2);
-      final dCenter = destinationOffset + Offset(destination.width / 2, destination.height / 2);
+      final sCenter =
+          sourceOffset + Offset(source.width / 2, source.height / 2);
+      final dCenter = destinationOffset +
+          Offset(destination.width / 2, destination.height / 2);
       edgePath.moveTo(sCenter.dx, sCenter.dy);
       edgePath.lineTo(dCenter.dx, dCenter.dy);
       arrowTip = dCenter;
@@ -135,17 +136,23 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
     // 6. Draw 90° Anchor Structures using Node Colors
     if (edge.sections != null && edge.sections!.isNotEmpty) {
-        final sourceColor = _getNodeColor(source, currentPaint.color);
-        final destColor = _getNodeColor(destination, currentPaint.color);
+      final sourceColor = _getNodeColor(source, currentPaint.color);
+      final destColor = _getNodeColor(destination, currentPaint.color);
 
-        final sInterfacePaint = Paint()..color = sourceColor..strokeWidth = 1.0..style = PaintingStyle.stroke;
-        final dInterfacePaint = Paint()..color = destColor..strokeWidth = 1.0..style = PaintingStyle.stroke;
+      final sInterfacePaint = Paint()
+        ..color = sourceColor
+        ..strokeWidth = 1.0
+        ..style = PaintingStyle.stroke;
+      final dInterfacePaint = Paint()
+        ..color = destColor
+        ..strokeWidth = 1.0
+        ..style = PaintingStyle.stroke;
 
-        canvas.drawLine(sourceContact, sourceAnchor, sInterfacePaint);
-        canvas.drawLine(destContact, destAnchor, dInterfacePaint);
+      canvas.drawLine(sourceContact, sourceAnchor, sInterfacePaint);
+      canvas.drawLine(destContact, destAnchor, dInterfacePaint);
 
-        _drawAnchorDot(canvas, sourceAnchor, sourceColor);
-        _drawAnchorDot(canvas, destAnchor, destColor);
+      _drawAnchorDot(canvas, sourceAnchor, sourceColor);
+      _drawAnchorDot(canvas, destAnchor, destColor);
     }
 
     // 7. Draw the arrowhead
@@ -154,13 +161,8 @@ class ArrowEdgeRenderer extends EdgeRenderer {
         ..color = currentPaint.color
         ..style = PaintingStyle.fill;
 
-      drawTriangle(
-          canvas,
-          trianglePaint,
-          secondToLast.dx,
-          secondToLast.dy,
-          arrowTip.dx,
-          arrowTip.dy);
+      drawTriangle(canvas, trianglePaint, secondToLast.dx, secondToLast.dy,
+          arrowTip.dx, arrowTip.dy);
     }
 
     // 8. Interactive Dot
@@ -188,29 +190,30 @@ class ArrowEdgeRenderer extends EdgeRenderer {
   double _getDynamicOffset(Node node, Offset contact) {
     final center = Offset(node.x + node.width / 2, node.y + node.height / 2);
     final rel = contact - center;
-    
+
     final nx = rel.dx / (node.width > 0 ? node.width : 1.0);
     final ny = rel.dy / (node.height > 0 ? node.height : 1.0);
-    
+
     double t; // 0.0 at center, 1.0 at corner
     if (nx.abs() > ny.abs()) {
-        // Left/Right side - depth is determined by vertical deviation
-        t = (ny.abs() * 2.0).clamp(0.0, 1.0);
+      // Left/Right side - depth is determined by vertical deviation
+      t = (ny.abs() * 2.0).clamp(0.0, 1.0);
     } else {
-        // Top/Bottom side - depth is determined by horizontal deviation
-        t = (nx.abs() * 2.0).clamp(0.0, 1.0);
+      // Top/Bottom side - depth is determined by horizontal deviation
+      t = (nx.abs() * 2.0).clamp(0.0, 1.0);
     }
 
     // Parabolic curve: connections at center are farther out (MaxOffset)
-    return MIN_ANCHOR_OFFSET + (MAX_ANCHOR_OFFSET - MIN_ANCHOR_OFFSET) * (1.0 - t * t);
+    return MIN_ANCHOR_OFFSET +
+        (MAX_ANCHOR_OFFSET - MIN_ANCHOR_OFFSET) * (1.0 - t * t);
   }
 
   Color _getNodeColor(Node node, Color fallback) {
-      final colorVal = node.metadata['color'];
-      if (colorVal is int) {
-          return Color(colorVal);
-      }
-      return fallback;
+    final colorVal = node.metadata['color'];
+    if (colorVal is int) {
+      return Color(colorVal);
+    }
+    return fallback;
   }
 
   Offset _getNormal(Node node, Offset contact) {
@@ -226,7 +229,8 @@ class ArrowEdgeRenderer extends EdgeRenderer {
   }
 
   void _drawAnchorDot(Canvas canvas, Offset anchor, Color color) {
-    final anchorKey = '${anchor.dx.toStringAsFixed(1)}_${anchor.dy.toStringAsFixed(1)}';
+    final anchorKey =
+        '${anchor.dx.toStringAsFixed(1)}_${anchor.dy.toStringAsFixed(1)}';
     if (_drawnAnchors.contains(anchorKey)) return;
     _drawnAnchors.add(anchorKey);
 
@@ -234,7 +238,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
       ..color = color
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
-    
+
     final anchorFillPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
@@ -246,38 +250,53 @@ class ArrowEdgeRenderer extends EdgeRenderer {
   Offset drawTriangle(Canvas canvas, Paint paint, double lineStartX,
       double lineStartY, double arrowTipX, double arrowTipY) {
     var angle = atan2(arrowTipY - lineStartY, arrowTipX - lineStartX);
-    if ((arrowTipX - lineStartX).abs() < 0.1 && (arrowTipY - lineStartY).abs() < 0.1) {
-        return Offset(arrowTipX, arrowTipY);
+    if ((arrowTipX - lineStartX).abs() < 0.1 &&
+        (arrowTipY - lineStartY).abs() < 0.1) {
+      return Offset(arrowTipX, arrowTipY);
     }
     var leftWingX = arrowTipX - ARROW_LENGTH * cos(angle - ARROW_DEGREES);
     var leftWingY = arrowTipY - ARROW_LENGTH * sin(angle - ARROW_DEGREES);
     var rightWingX = arrowTipX - ARROW_LENGTH * cos(angle + ARROW_DEGREES);
     var rightWingY = arrowTipY - ARROW_LENGTH * sin(angle + ARROW_DEGREES);
     trianglePath.reset();
-    trianglePath.moveTo(arrowTipX, arrowTipY); 
-    trianglePath.lineTo(leftWingX, leftWingY); 
-    trianglePath.lineTo(rightWingX, rightWingY); 
-    trianglePath.close(); 
+    trianglePath.moveTo(arrowTipX, arrowTipY);
+    trianglePath.lineTo(leftWingX, leftWingY);
+    trianglePath.lineTo(rightWingX, rightWingY);
+    trianglePath.close();
     canvas.drawPath(trianglePath, paint);
-    return Offset((arrowTipX + leftWingX + rightWingX) / 3, (arrowTipY + leftWingY + rightWingY) / 3);
+    return Offset((arrowTipX + leftWingX + rightWingX) / 3,
+        (arrowTipY + leftWingY + rightWingY) / 3);
   }
 
   List<double> clipLineEnd(
-      double startX, double startY, double stopX, double stopY, 
-      double destX, double destY, double destWidth, double destHeight) {
+      double startX,
+      double startY,
+      double stopX,
+      double stopY,
+      double destX,
+      double destY,
+      double destWidth,
+      double destHeight) {
     final dx = stopX - startX;
     final dy = stopY - startY;
     if (dx.abs() < 0.1 && dy.abs() < 0.1) return [startX, startY, stopX, stopY];
     if (dx.abs() < 0.001) {
-        final halfHeight = destHeight * 0.5;
-        return [startX, startY, stopX, stopY + (dy > 0 ? -halfHeight : halfHeight)];
+      final halfHeight = destHeight * 0.5;
+      return [
+        startX,
+        startY,
+        stopX,
+        stopY + (dy > 0 ? -halfHeight : halfHeight)
+      ];
     }
     var slope = dy / dx;
     final halfHeight = destHeight * 0.5;
     final halfWidth = destWidth * 0.5;
     final xDist = stopX > startX ? halfWidth : -halfWidth;
     final yAtVerticalBoundary = stopY - (slope * xDist);
-    if ((yAtVerticalBoundary - stopY).abs() <= halfHeight) return [startX, startY, stopX - xDist, yAtVerticalBoundary];
+    if ((yAtVerticalBoundary - stopY).abs() <= halfHeight) {
+      return [startX, startY, stopX - xDist, yAtVerticalBoundary];
+    }
     final yDist = stopY > startY ? halfHeight : -halfHeight;
     final xAtHorizontalBoundary = stopX - (yDist / slope);
     return [startX, startY, xAtHorizontalBoundary, stopY - yDist];
@@ -285,6 +304,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
 
   List<double> clipLine(double startX, double startY, double stopX,
       double stopY, Node destination) {
-    return clipLineEnd(startX, startY, stopX, stopY, destination.x, destination.y, destination.width, destination.height);
+    return clipLineEnd(startX, startY, stopX, stopY, destination.x,
+        destination.y, destination.width, destination.height);
   }
 }

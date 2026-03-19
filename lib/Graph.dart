@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 class Graph {
@@ -21,8 +17,8 @@ class Graph {
 
   void removeNode(Node node) {
     _nodes.remove(node);
-    _edges.removeWhere(
-        (edge) => edge.source == node || edge.destination == node);
+    _edges
+        .removeWhere((edge) => edge.source == node || edge.destination == node);
     notifyGraphInvalidated();
   }
 

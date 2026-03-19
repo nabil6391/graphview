@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:graphview/graph.dart';
@@ -68,8 +67,12 @@ abstract class EdgeRenderer {
       final endY = startY + dirY * actualDashWidth;
 
       if (lineLengthFactor == 0.0) {
-        canvas.drawCircle(Offset(startX, startY), 1.0,
-            Paint()..color = paint.color..style = PaintingStyle.fill);
+        canvas.drawCircle(
+            Offset(startX, startY),
+            1.0,
+            Paint()
+              ..color = paint.color
+              ..style = PaintingStyle.fill);
       } else {
         canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
       }
@@ -119,7 +122,6 @@ abstract class EdgeRenderer {
         drawDashedPath(canvas, path, paint, dashWidth: 2, dashSpace: 4);
         break;
       case LineType.Default:
-      default:
         canvas.drawPath(path, paint);
         break;
     }
@@ -136,7 +138,6 @@ abstract class EdgeRenderer {
         drawDashedLine(canvas, source, destination, paint, 0.0);
         break;
       case LineType.Default:
-      default:
         canvas.drawLine(source, destination, paint);
         break;
     }
@@ -157,19 +158,21 @@ abstract class EdgeRenderer {
     final start = Offset(center.dx, position.dy);
 
     // Points for a "teardrop" loop above the node
-    final cp1 = Offset(center.dx - loopRadius * 2, position.dy - loopRadius * 2);
-    final cp2 = Offset(center.dx + loopRadius * 2, position.dy - loopRadius * 2);
+    final cp1 =
+        Offset(center.dx - loopRadius * 2, position.dy - loopRadius * 2);
+    final cp2 =
+        Offset(center.dx + loopRadius * 2, position.dy - loopRadius * 2);
 
     loopPath.moveTo(start.dx, start.dy);
     loopPath.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, start.dx, start.dy);
 
     // If no arrow needed, return the path with dummy offsets
     if (arrowLength == 0) {
-        return EdgeSelfLoopResult(
-            path: loopPath,
-            arrowBase: start,
-            arrowTip: start,
-        );
+      return EdgeSelfLoopResult(
+        path: loopPath,
+        arrowBase: start,
+        arrowTip: start,
+      );
     }
 
     // To place an arrow at the end, we need a slightly shortened path
