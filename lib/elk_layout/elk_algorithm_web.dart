@@ -25,12 +25,12 @@ class ELKAlgorithm extends Algorithm {
       'elk.edgeRouting': 'ORTHOGONAL',
       'elk.layered.edgeRouting': 'ORTHOGONAL',
       'elk.portConstraints': 'FREE',
-      'elk.layered.spacing.nodeNodeLayered': '150',
+      'elk.layered.spacing.nodeNodeLayered': '350',
       'elk.spacing.nodeNode': '150',
       'elk.spacing.componentComponent': '250',
       'elk.padding': '[top=50,left=50,bottom=50,right=50]',
-      'elk.spacing.edgeNode': '40',
-      'elk.spacing.edgeEdge': '20',
+      'elk.spacing.edgeNode': '100',
+      'elk.spacing.edgeEdge': '60',
     },
     this.renderer,
   });
@@ -70,7 +70,7 @@ class ELKAlgorithm extends Algorithm {
           'layoutOptions': {
             ...layoutOptions,
             'elk.padding': '[top=150,left=150,bottom=150,right=150]',
-            'elk.spacing.edgeNode': '60',
+            'elk.spacing.edgeNode': '150',
           },
           'children': <Map<String, dynamic>>[],
           'edges': <Map<String, dynamic>>[],
@@ -78,9 +78,16 @@ class ELKAlgorithm extends Algorithm {
       } else {
         elkNode = {
           'id': id,
-          'width': node.width,
-          'height': node.height,
+          'width': node.width > 0 ? node.width : 150.0,
+          'height': node.height > 0 ? node.height : 50.0,
         };
+        if (hubNodeIds.contains(id)) {
+          elkNode['layoutOptions'] = {
+            'elk.padding': '[top=0,left=0,bottom=0,right=80]',
+            'elk.spacing.edgeNode': '200',
+            'elk.spacing.nodeNode': '300',
+          };
+        }
       }
 
       containers[id] = elkNode;
@@ -102,12 +109,18 @@ class ELKAlgorithm extends Algorithm {
     for (final node in graph.nodes) {
       final id = node.key?.value.toString() ?? '';
       nodeLookup[id] = node;
-      getElkNode(id);
+      if (!hiddenNodeIds.contains(id)) {
+        getElkNode(id);
+      }
     }
 
     for (final edge in graph.edges) {
       final sourceId = edge.source.key?.value.toString() ?? '';
       final destinationId = edge.destination.key?.value.toString() ?? '';
+
+      if (hiddenNodeIds.contains(sourceId) || hiddenNodeIds.contains(destinationId)) {
+        continue;
+      }
 
       final elkEdges = elkGraph['edges'] as List<Map<String, dynamic>>;
       elkEdges.add({
