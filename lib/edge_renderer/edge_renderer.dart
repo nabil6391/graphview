@@ -7,8 +7,13 @@ abstract class EdgeRenderer {
   @protected
   Map<Node, Offset>? animatedPositions;
 
+  @protected
+  Set<String> hiddenNodeIds = {};
+
   void setAnimatedPositions(Map<Node, Offset> positions) =>
       animatedPositions = positions;
+
+  void setHiddenNodes(Set<String> nodes) => hiddenNodeIds = nodes;
 
   Offset getNodePosition(Node node) =>
       animatedPositions?[node] ?? node.position;

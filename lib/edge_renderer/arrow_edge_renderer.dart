@@ -37,6 +37,10 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     renderedPaths.clear();
 
     graph.edges.forEach((edge) {
+      if (hiddenNodeIds.contains(edge.source.key?.value.toString()) ||
+          hiddenNodeIds.contains(edge.destination.key?.value.toString())) {
+        return;
+      }
       renderEdge(canvas, edge, paint);
     });
   }

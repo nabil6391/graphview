@@ -64,7 +64,7 @@ class GraphViewController {
 
   final Map<Node, bool> collapsedNodes = {};
   final Map<Node, bool> expandingNodes = {};
-  final Map<Node, Node> hiddenBy = {};
+  final Set<String> _hiddenNodeIds = {};
 
   Node? collapsedNode;
   Node? focusedNode;
@@ -87,7 +87,7 @@ class GraphViewController {
   void reset() {
     collapsedNodes.clear();
     expandingNodes.clear();
-    hiddenBy.clear();
+    _hiddenNodeIds.clear();
     collapsedNode = null;
     focusedNode = null;
     notifyLayoutStarted();
@@ -137,22 +137,26 @@ class GraphViewController {
     return collapsedNodes.keys.any((n) => n.key?.value.toString() == nodeId);
   }
 
+  void setHiddenNodes(Set<String> nodeIds) {
+    _hiddenNodeIds.clear();
+    _hiddenNodeIds.addAll(nodeIds);
+    _state?.update();
+  }
+
   bool isNodeHidden(dynamic nodeOrId) {
     if (nodeOrId is Node) {
-      return hiddenBy.containsKey(nodeOrId);
+      return _hiddenNodeIds.contains(nodeOrId.key?.value.toString());
     }
-    final nodeId = nodeOrId.toString();
-    return hiddenBy.keys.any((n) => n.key?.value.toString() == nodeId);
+    return _hiddenNodeIds.contains(nodeOrId.toString());
   }
 
   Set<String> getCollapsedNodeIds() =>
       collapsedNodes.keys.map((n) => n.key!.value.toString()).toSet();
 
-  Set<String> getHiddenNodeIds() =>
-      hiddenBy.keys.map((n) => n.key!.value.toString()).toSet();
+  Set<String> getHiddenNodeIds() => _hiddenNodeIds.toSet();
 
   bool isNodeVisible(Graph graph, Node node) {
-    return !hiddenBy.containsKey(node);
+    return !isNodeHidden(node);
   }
 
   bool isNodeExpanding(Node node) => expandingNodes.containsKey(node);
@@ -427,7 +431,11 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     var minX = double.infinity, minY = double.infinity;
     var maxX = double.negativeInfinity, maxY = double.negativeInfinity;
 
+    final hiddenNodes = widget.controller?.getHiddenNodeIds() ?? <String>{};
+
     for (final node in widget.graph.nodes) {
+      if (hiddenNodes.contains(node.key?.value.toString() ?? '')) continue;
+      
       minX = min(minX, node.x);
       minY = min(minY, node.y);
       maxX = max(maxX, node.x + node.width);
@@ -521,10 +529,17 @@ class _GraphViewInternal extends MultiChildRenderObjectWidget {
     required this.animatedPositions,
   }) : super(
           children: graph.nodes.map((node) {
+            final isHidden = controller?.isNodeHidden(node) ?? false;
             return GraphNodeData(
               key: node.key,
               node: node,
-              child: builder(node),
+              child: Visibility(
+                visible: !isHidden,
+                maintainSize: true,
+                maintainAnimation: true,
+                maintainState: true,
+                child: builder(node),
+              ),
             );
           }).toList(),
         );
@@ -674,10 +689,15 @@ class RenderCustomLayoutBox extends RenderBox
     context.canvas.translate(offset.dx, offset.dy);
 
     if (algorithm.renderer != null) {
+      algorithm.renderer!.setHiddenNodes(_controller?.getHiddenNodeIds() ?? {});
       algorithm.renderer!.setAnimatedPositions(animatedPositions);
       algorithm.renderer!.render(context.canvas, graph, edgePaint);
     } else {
       for (final edge in graph.edges) {
+        if ((_controller?.isNodeHidden(edge.source) ?? false) ||
+            (_controller?.isNodeHidden(edge.destination) ?? false)) {
+          continue;
+        }
         final srcPos = animatedPositions[edge.source] ?? edge.source.position;
         final dstPos =
             animatedPositions[edge.destination] ?? edge.destination.position;
