@@ -4,13 +4,18 @@ version: 1.5.1
 homepage: https://github.com/nabil6391/graphview
 
 environment:
-  sdk: '>=2.17.0 <4.0.0'
+  sdk: '>=3.6.0 <4.0.0'
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
   collection: ^1.15.0
+  squadron: ^7.4.0
+  build_runner:
+  squadron_builder: ^9.0.0
+  js: ^0.7.2
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

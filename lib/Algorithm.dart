@@ -1,4 +1,6 @@
-part of graphview;
+import 'package:flutter/material.dart';
+import 'package:graphview/edge_renderer/edge_renderer.dart';
+import 'package:graphview/graph.dart';
 
 abstract class Algorithm {
   EdgeRenderer? renderer;
