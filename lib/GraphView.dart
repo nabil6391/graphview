@@ -202,7 +202,11 @@ class GraphViewController {
 
   void jumpToFocusedNode() {
     if (focusedNode != null) {
-      _state?.jumpToOffset(focusedNode!.position, true);
+      final nodeCenter = Offset(
+        focusedNode!.position.dx + focusedNode!.width / 2,
+        focusedNode!.position.dy + focusedNode!.height / 2,
+      );
+      _state?.jumpToOffset(nodeCenter, true);
       focusedNode = null;
     }
   }
@@ -306,6 +310,8 @@ class GraphView extends StatefulWidget {
   bool autoZoomToFit = false;
   late GraphChildDelegate delegate;
   final bool centerGraph;
+  final double horizontalBias;
+  final double verticalBias;
 
   GraphView({
     Key? key,
@@ -317,6 +323,8 @@ class GraphView extends StatefulWidget {
     this.controller,
     this.toggleAnimationDuration,
     this.centerGraph = false,
+    this.horizontalBias = 0.5,
+    this.verticalBias = 0.5,
   })  : _isBuilder = false,
         delegate = GraphChildDelegate(
             graph: graph,
@@ -338,6 +346,8 @@ class GraphView extends StatefulWidget {
     this.panAnimationDuration,
     this.toggleAnimationDuration,
     this.centerGraph = false,
+    this.horizontalBias = 0.5,
+    this.verticalBias = 0.5,
   })  : _isBuilder = true,
         delegate = GraphChildDelegate(
             graph: graph,
@@ -442,7 +452,9 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     if (renderBox == null) return;
 
     final viewport = renderBox.size;
-    final center = Offset(viewport.width / 2, viewport.height / 2);
+    final center = Offset(
+        viewport.width * widget.horizontalBias,
+        viewport.height * widget.verticalBias);
 
     final currentScale = _transformationController.value.getMaxScaleOnAxis();
 
@@ -479,8 +491,8 @@ class _GraphViewState extends State<GraphView> with TickerProviderStateMixin {
     final scaledHeight = bounds.height * scale;
 
     final centerOffset = Offset(
-        (vp.width - scaledWidth) * 0.5 - bounds.left * scale,
-        (vp.height - scaledHeight) * 0.5 - bounds.top * scale);
+        (vp.width - scaledWidth) * widget.horizontalBias - bounds.left * scale,
+        (vp.height - scaledHeight) * widget.verticalBias - bounds.top * scale);
 
     final target = Matrix4.identity()
       ..translate(centerOffset.dx, centerOffset.dy)
