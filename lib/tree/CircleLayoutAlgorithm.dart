@@ -1,8 +1,14 @@
 part of graphview;
 
+/// Configuration for [CircleLayoutAlgorithm].
 class CircleLayoutConfiguration {
+  /// Circle radius in logical pixels. Use 0 for auto-calculation.
   final double radius;
+
+  /// Whether to reorder nodes to minimize edge crossings.
   final bool reduceEdgeCrossing;
+
+  /// Maximum number of edges to consider during crossing reduction.
   final int reduceEdgeCrossingMaxEdges;
 
   CircleLayoutConfiguration({
@@ -12,6 +18,7 @@ class CircleLayoutConfiguration {
   });
 }
 
+/// Arranges all nodes evenly spaced on a circle with optional edge crossing reduction.
 class CircleLayoutAlgorithm extends Algorithm {
   final CircleLayoutConfiguration config;
   double _radius = 0.0;

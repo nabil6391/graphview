@@ -1,5 +1,6 @@
 part of graphview;
 
+/// Internal data attached to each node during [BuchheimWalkerAlgorithm] execution.
 class BuchheimWalkerNodeData {
   Node? ancestor;
   Node? thread;

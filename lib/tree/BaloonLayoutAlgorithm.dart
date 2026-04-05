@@ -1,8 +1,10 @@
 part of graphview;
 
-// Polar coordinate representation
+/// A point in polar coordinates, used by radial/balloon layout algorithms.
 class PolarPoint {
-  final double theta; // angle in radians
+  /// The angle in radians.
+  final double theta;
+  /// The distance from the origin.
   final double radius;
 
   const PolarPoint(this.theta, this.radius);
@@ -25,6 +27,10 @@ class PolarPoint {
   String toString() => 'PolarPoint(theta: $theta, radius: $radius)';
 }
 
+/// Radial tree layout that arranges children in circular groups around their parent.
+///
+/// Each subtree is allocated an angular wedge proportional to its size,
+/// producing a balloon-like radial visualization.
 class BalloonLayoutAlgorithm extends Algorithm {
   late BuchheimWalkerConfiguration config;
   final Map<Node, TreeLayoutNodeData> nodeData = {};

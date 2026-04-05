@@ -1,5 +1,6 @@
 part of graphview;
 
+/// A container of [Segment]s used during Eiglsperger layer compaction.
 class ContainerX {
   List<Segment> segments = [];
   int index = -1;
@@ -69,6 +70,7 @@ class ContainerX {
   String toString() => 'Container(${segments.length} segments, pos: $pos, measure: $measure)';
 }
 
+/// A pair of [ContainerX] instances resulting from a split operation.
 class ContainerPair {
   final ContainerX left;
   final ContainerX right;
@@ -76,7 +78,7 @@ class ContainerPair {
   ContainerPair(this.left, this.right);
 }
 
-// Segment represents a vertical edge span between P and Q vertices
+/// A vertical edge span between a P-vertex (top) and Q-vertex (bottom).
 class Segment {
   final Node pVertex; // top vertex (P-vertex)
   final Node qVertex; // bottom vertex (Q-vertex)
@@ -97,6 +99,7 @@ class Segment {
   String toString() => 'Segment($id)';
 }
 
+/// Internal data attached to each node during [EiglspergerAlgorithm] execution.
 class EiglspergerNodeData {
   bool isDummy = false;
   bool isPVertex = false;
@@ -117,11 +120,12 @@ class EiglspergerNodeData {
   bool get isReversed => reversed.isNotEmpty;
 }
 
+/// Internal data attached to each edge during [EiglspergerAlgorithm] execution.
 class EiglspergerEdgeData {
   List<double> bendPoints = [];
 }
 
-// Virtual edge for container connections
+/// A virtual edge representing a connection between containers during layer compaction.
 class VirtualEdge {
   final dynamic source;
   final dynamic target;
@@ -133,14 +137,14 @@ class VirtualEdge {
   String toString() => 'VirtualEdge($source -> $target, weight: $weight)';
 }
 
-// Layer element that can be either a Node or Container
+/// Base class for elements in a layer — either a [NodeElement] or [ContainerElement].
 abstract class LayerElement {
   int index = -1;
   int pos = -1;
   double measure = -1;
 }
 
-// Node wrapper for layer elements
+/// Wraps a [Node] as a [LayerElement] for mixed node/container layers.
 class NodeElement extends LayerElement {
   final Node node;
   NodeElement(this.node);
@@ -149,7 +153,7 @@ class NodeElement extends LayerElement {
   String toString() => 'NodeElement(${node.toString()})';
 }
 
-// Container wrapper for layer elements
+/// Wraps a [ContainerX] as a [LayerElement] for mixed node/container layers.
 class ContainerElement extends LayerElement {
   final ContainerX container;
   ContainerElement(this.container);
@@ -158,6 +162,8 @@ class ContainerElement extends LayerElement {
   String toString() => 'ContainerElement(${container.toString()})';
 }
 
+/// Layered graph layout using the Eiglsperger algorithm, an optimization
+/// of the Sugiyama framework that uses segment containers for more compact layouts.
 class EiglspergerAlgorithm extends Algorithm {
   Map<Node, EiglspergerNodeData> nodeData = {};
   final Map<Edge, EiglspergerEdgeData> _edgeData = {};

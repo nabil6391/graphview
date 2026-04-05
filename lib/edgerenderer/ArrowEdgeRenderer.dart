@@ -1,12 +1,22 @@
 part of graphview;
 
+/// The angular spread (in radians) of the arrowhead triangle.
 const double ARROW_DEGREES = 0.5;
+
+/// The length (in logical pixels) of the arrowhead triangle.
 const double ARROW_LENGTH = 10;
 
+/// Renders edges as straight lines with optional directional arrowheads.
+///
+/// Supports self-loop rendering via cubic Bezier arcs and clips lines
+/// at node boundaries so arrows point to the edge of the node widget.
 class ArrowEdgeRenderer extends EdgeRenderer {
   var trianglePath = Path();
+
+  /// When true, renders lines without arrowheads.
   final bool noArrow;
 
+  /// Creates an arrow edge renderer. Set [noArrow] to true for plain lines.
   ArrowEdgeRenderer({this.noArrow = false});
 
   Offset _getNodeCenter(Node node) {
@@ -135,6 +145,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     return null;
   }
 
+  /// Draws an arrowhead triangle at the end of a line and returns its centroid.
   Offset drawTriangle(Canvas canvas, Paint paint, double lineStartX,
       double lineStartY, double arrowTipX, double arrowTipY) {
     // Calculate direction from line start to arrow tip, then flip 180° to point backwards from tip
@@ -166,6 +177,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     return Offset(triangleCenterX, triangleCenterY);
   }
 
+  /// Clips a line endpoint to the boundary of the destination node rectangle.
   List<double> clipLineEnd(
       double startX,
       double startY,
@@ -219,6 +231,7 @@ class ArrowEdgeRenderer extends EdgeRenderer {
     return [startX, startY, clippedStopX, clippedStopY];
   }
 
+  /// Clips a line to the boundary of the [destination] node.
   List<double> clipLine(double startX, double startY, double stopX,
       double stopY, Node destination) {
     final resultLine = [startX, startY, stopX, stopY];

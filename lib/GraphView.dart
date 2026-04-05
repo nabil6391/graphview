@@ -1,3 +1,5 @@
+/// A Flutter library for displaying data in graph structures including
+/// trees, directed graphs, layered graphs, mindmaps, and radial layouts.
 library graphview;
 
 import 'dart:async';
@@ -33,18 +35,34 @@ part 'tree/RadialTreeLayoutAlgorithm.dart';
 part 'tree/TidierTreeLayoutAlgorithm.dart';
 part 'tree/TreeEdgeRenderer.dart';
 
+/// Builder function that creates a widget for a given [Node].
 typedef NodeWidgetBuilder = Widget Function(Node node);
+
+/// Builder function that creates a widget for a given [Edge].
 typedef EdgeWidgetBuilder = Widget Function(Edge edge);
 
+/// Controls a [GraphView] widget programmatically.
+///
+/// Provides methods for navigation ([jumpToNode], [animateToNode], [zoomToFit]),
+/// node visibility ([collapseNode], [expandNode], [toggleNodeExpanded]),
+/// and view manipulation ([resetView], [forceRecalculation]).
 class GraphViewController {
   _GraphViewState? _state;
   final TransformationController? transformationController;
 
+  /// Tracks which nodes are currently collapsed (children hidden).
   final Map<Node, bool> collapsedNodes = {};
+
+  /// Tracks nodes currently being revealed by an expand animation.
   final Map<Node, bool> expandingNodes = {};
+
+  /// Maps each hidden node to the collapsed ancestor that hides it.
   final Map<Node, Node> hiddenBy = {};
 
+  /// The most recently collapsed node (used for edge fade-out animation).
   Node? collapsedNode;
+
+  /// The node to center the view on after a collapse/expand operation.
   Node? focusedNode;
 
   GraphViewController({
@@ -55,27 +73,36 @@ class GraphViewController {
 
   void _detach() => _state = null;
 
+  /// Smoothly animates the view to center on the node with the given [key].
   void animateToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, true);
 
+  /// Instantly jumps the view to center on the node with the given [key].
   void jumpToNode(ValueKey key) => _state?.jumpToNodeUsingKey(key, false);
 
+  /// Smoothly animates the transformation matrix to the [target].
   void animateToMatrix(Matrix4 target) => _state?.animateToMatrix(target);
 
+  /// Resets the view to the identity transformation (no pan, no zoom).
   void resetView() => _state?.resetView();
 
+  /// Scales and translates the view to fit all visible nodes within the viewport.
   void zoomToFit() => _state?.zoomToFit();
 
+  /// Forces the layout algorithm to recalculate all node positions.
   void forceRecalculation() => _state?.forceRecalculation();
 
-  // Visibility management methods
+  /// Whether [node] is currently collapsed (its children are hidden).
   bool isNodeCollapsed(Node node) => collapsedNodes.containsKey(node);
 
+  /// Whether [node] is hidden by a collapsed ancestor.
   bool isNodeHidden(Node node) => hiddenBy.containsKey(node);
 
+  /// Whether [node] is visible in the current graph view.
   bool isNodeVisible(Graph graph, Node node) {
     return !hiddenBy.containsKey(node);
   }
 
+  /// Walks up the predecessor chain to find the nearest visible ancestor of [node].
   Node? findClosestVisibleAncestor(Graph graph, Node node) {
     var current = graph.predecessorsOf(node).firstOrNull;
 
@@ -117,6 +144,7 @@ class GraphViewController {
     }
   }
 
+  /// Expands a collapsed [node], revealing its children. Set [animate] to trigger a smooth transition.
   void expandNode(Graph graph, Node node, {animate = false}) {
     collapsedNodes.remove(node);
     hiddenBy.removeWhere((hiddenNode, hiddenBy) => hiddenBy == node);
@@ -130,6 +158,7 @@ class GraphViewController {
     forceRecalculation();
   }
 
+  /// Collapses [node], hiding all its descendants. Set [animate] to trigger a smooth transition.
   void collapseNode(Graph graph, Node node, {animate = false}) {
     if (graph.hasSuccessor(node)) {
       collapsedNodes[node] = true;
@@ -143,6 +172,7 @@ class GraphViewController {
     expandingNodes.clear();
   }
 
+  /// Toggles [node] between collapsed and expanded states.
   void toggleNodeExpanded(Graph graph, Node node, {animate = false}) {
     if (isNodeCollapsed(node)) {
       expandNode(graph, node, animate: animate);
@@ -151,6 +181,7 @@ class GraphViewController {
     }
   }
 
+  /// Returns edges that should fade out during the current collapse animation.
   List<Edge> getCollapsingEdges(Graph graph) {
     if (collapsedNode == null) return [];
 
@@ -159,6 +190,7 @@ class GraphViewController {
     }).toList();
   }
 
+  /// Returns edges that should fade in during the current expand animation.
   List<Edge> getExpandingEdges(Graph graph) {
     final expandingEdges = <Edge>[];
 
@@ -172,7 +204,7 @@ class GraphViewController {
     return expandingEdges;
   }
 
-  // Additional convenience methods for setting initial state
+  /// Pre-collapses the given [nodes] before the first layout pass.
   void setInitiallyCollapsedNodes(Graph graph, List<Node> nodes) {
     for (final node in nodes) {
       collapsedNodes[node] = true;
@@ -181,6 +213,7 @@ class GraphViewController {
     }
   }
 
+  /// Pre-collapses nodes matching the given [keys] before the first layout pass.
   void setInitiallyCollapsedByKeys(Graph graph, Set<ValueKey> keys) {
     for (final key in keys) {
       try {
@@ -194,12 +227,15 @@ class GraphViewController {
     }
   }
 
+  /// Whether [node] is currently being revealed by an expand animation.
   bool isNodeExpanding(Node node) => expandingNodes.containsKey(node);
 
+  /// Clears the collapsing animation state after the animation completes.
   void removeCollapsingNodes() {
     collapsedNode = null;
   }
 
+  /// Centers the view on the current [focusedNode] and clears it.
   void jumpToFocusedNode() {
     if (focusedNode != null) {
       final nodeCenter = Offset(
@@ -212,6 +248,8 @@ class GraphViewController {
   }
 }
 
+/// Manages the visible subset of a [Graph] based on collapse state,
+/// builds node widgets, and runs the layout algorithm.
 class GraphChildDelegate {
   final Graph graph;
   final Algorithm algorithm;
@@ -229,6 +267,7 @@ class GraphChildDelegate {
     this.centerGraph = false,
   });
 
+  /// Returns the visible graph including collapsing edges (for fade-out animation).
   Graph getVisibleGraph() {
     if (_cachedVisibleGraph != null && !_needsRecalculation) {
       return _cachedVisibleGraph!;
@@ -244,6 +283,7 @@ class GraphChildDelegate {
     return visibleGraph;
   }
 
+  /// Returns a graph containing only currently visible nodes and their edges.
   Graph getVisibleGraphOnly() {
     final visibleGraph = Graph();
     for (final edge in graph.edges) {
@@ -270,6 +310,7 @@ class GraphChildDelegate {
     return result;
   }
 
+  /// Executes the layout algorithm on the visible graph and returns the resulting size.
   Size runAlgorithm() {
     final visibleGraph = getVisibleGraphOnly();
 
@@ -295,6 +336,11 @@ class GraphChildDelegate {
   }
 }
 
+/// A widget that displays a [Graph] using a layout [Algorithm].
+///
+/// Use the default constructor for non-interactive graphs embedded in scrollable layouts.
+/// Use [GraphView.builder] for interactive pan/zoom with [InteractiveViewer], node
+/// collapse/expand, and programmatic navigation via [GraphViewController].
 class GraphView extends StatefulWidget {
   final Graph graph;
   final Algorithm algorithm;
