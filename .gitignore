@@ -73,3 +73,8 @@ build/
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
 AGENTS.md
+
+# Claude Code artifacts
+.claude/
+CLAUDE.md
+logs/
