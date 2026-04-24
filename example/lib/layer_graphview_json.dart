@@ -138,7 +138,6 @@ class _LayerGraphPageFromJsonState extends State<LayerGraphPageFromJson> {
                   ),
                 ),
                 Container(
-                  width: 100,
                   child: Column(
                     children: [
                       Text('Alignment'),
