@@ -1,5 +1,7 @@
 part of graphview;
 
+/// Edge renderer for mindmap layouts that auto-detects orientation
+/// based on child position relative to the root.
 class MindmapEdgeRenderer extends TreeEdgeRenderer {
   MindmapEdgeRenderer(BuchheimWalkerConfiguration configuration)
       : super(configuration);

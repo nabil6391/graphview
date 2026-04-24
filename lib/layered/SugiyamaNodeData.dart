@@ -1,5 +1,6 @@
 part of graphview;
 
+/// Internal data attached to each node during [SugiyamaAlgorithm] execution.
 class SugiyamaNodeData {
   Set<Node> reversed = {};
   bool isDummy = false;

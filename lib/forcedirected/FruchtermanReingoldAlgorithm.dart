@@ -1,5 +1,10 @@
 part of graphview;
 
+/// Force-directed graph layout using the Fruchterman-Reingold algorithm.
+///
+/// Simulates attractive forces along edges and repulsive forces between all nodes,
+/// iterating until the layout converges or the maximum iteration count is reached.
+/// Best suited for arbitrary undirected or directed graphs without a tree structure.
 class FruchtermanReingoldAlgorithm implements Algorithm {
   static const double DEFAULT_TICK_FACTOR = 0.1;
   static const double CONVERGENCE_THRESHOLD = 1.0;

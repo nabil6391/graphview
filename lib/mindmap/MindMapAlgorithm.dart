@@ -1,11 +1,23 @@
 part of graphview;
 
-enum MindmapSide { LEFT, RIGHT, ROOT }
+/// Which side of the root a subtree is placed on in a mindmap layout.
+enum MindmapSide {
+  /// Subtree placed to the left of the root.
+  LEFT,
+  /// Subtree placed to the right of the root.
+  RIGHT,
+  /// The root node itself.
+  ROOT
+}
 
 class _SideData {
   MindmapSide side = MindmapSide.ROOT;
 }
 
+/// A mindmap layout that distributes children alternately to the left and right of the root.
+///
+/// Extends [BuchheimWalkerAlgorithm] for spacing calculations, then repositions
+/// subtrees horizontally around a central root node.
 class MindmapAlgorithm extends BuchheimWalkerAlgorithm {
   final Map<Node, _SideData> _side = {};
 

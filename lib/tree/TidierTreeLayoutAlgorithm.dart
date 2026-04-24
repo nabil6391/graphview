@@ -1,5 +1,6 @@
 part of graphview;
 
+/// Internal data attached to each node during [TidierTreeLayoutAlgorithm] execution.
 class TidierTreeNodeData {
   int mod = 0;
   Node? thread;
@@ -14,6 +15,8 @@ class TidierTreeNodeData {
   TidierTreeNodeData();
 }
 
+/// An improved tree layout algorithm that produces tidier drawings
+/// with better spacing than [BuchheimWalkerAlgorithm] for complex hierarchies.
 class TidierTreeLayoutAlgorithm extends Algorithm {
   late BuchheimWalkerConfiguration config;
   final Map<Node, TidierTreeNodeData> nodeData = {};

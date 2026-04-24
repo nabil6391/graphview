@@ -1,5 +1,6 @@
 part of graphview;
 
+/// Internal data attached to each node during tree layout computation.
 class TreeLayoutNodeData {
   Rectangle? bounds;
   int depth = 0;
@@ -10,6 +11,8 @@ class TreeLayoutNodeData {
   TreeLayoutNodeData();
 }
 
+/// Positions tree nodes using polar coordinates where depth determines
+/// the radius and sibling order determines the angle.
 class RadialTreeLayoutAlgorithm extends Algorithm {
   late BuchheimWalkerConfiguration config;
   final Map<Node, TreeLayoutNodeData> nodeData = {};

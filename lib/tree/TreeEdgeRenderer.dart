@@ -1,5 +1,9 @@
 part of graphview;
 
+/// Renders edges as curved or straight connections for tree-based layouts.
+///
+/// Supports all four orientations and produces paths that follow the
+/// tree hierarchy visually (parent-to-child connections).
 class TreeEdgeRenderer extends EdgeRenderer {
   BuchheimWalkerConfiguration configuration;
 

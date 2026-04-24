@@ -1,5 +1,11 @@
 part of graphview;
 
+/// Hierarchical/layered graph layout using the Sugiyama framework.
+///
+/// Implements a 5-phase approach: cycle removal, layer assignment,
+/// node ordering (crossing minimization), coordinate assignment, and
+/// edge denormalization. Handles arbitrary directed graphs by temporarily
+/// reversing edges that create cycles.
 class SugiyamaAlgorithm extends Algorithm {
   Map<Node, SugiyamaNodeData> nodeData = {};
   Map<Edge, SugiyamaEdgeData> edgeData = {};

@@ -1,5 +1,10 @@
 part of graphview;
 
+/// Positions nodes in a tree layout using Buchheim-Walker's algorithm.
+///
+/// Produces compact, aesthetically pleasing tree drawings with O(n) time complexity.
+/// Requires an acyclic graph; throws if cycles are detected.
+/// Supports four orientations via [BuchheimWalkerConfiguration].
 class BuchheimWalkerAlgorithm extends Algorithm {
   Map<Node, BuchheimWalkerNodeData> nodeData = {};
   double minNodeHeight = double.infinity;

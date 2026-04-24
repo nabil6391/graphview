@@ -1,5 +1,6 @@
 part of graphview;
 
+/// Configuration for the [FruchtermanReingoldAlgorithm] force-directed layout.
 class FruchtermanReingoldConfiguration {
   static const int DEFAULT_ITERATIONS = 100;
   static const double DEFAULT_REPULSION_RATE = 0.2;
@@ -11,15 +12,34 @@ class FruchtermanReingoldConfiguration {
   static const double DEFAULT_LERP_FACTOR = 0.05;
   static const double DEFAULT_MOVEMENT_THRESHOLD = 0.6;
 
+  /// Maximum number of simulation iterations.
   int iterations;
+
+  /// Strength of the repulsive force between nodes.
   double repulsionRate;
+
+  /// Percentage of graph area used for repulsion calculation.
   double repulsionPercentage;
+
+  /// Strength of the attractive force along edges.
   double attractionRate;
+
+  /// Percentage of graph area used for attraction calculation.
   double attractionPercentage;
+
+  /// Padding between node clusters in logical pixels.
   int clusterPadding;
+
+  /// Minimum distance threshold to avoid division by zero in repulsion.
   double epsilon;
+
+  /// Interpolation factor for smooth position transitions (0.0 to 1.0).
   double lerpFactor;
+
+  /// Minimum movement threshold below which the simulation stops early.
   double movementThreshold;
+
+  /// Whether to randomize initial node positions before simulation.
   bool shuffleNodes = true;
 
   FruchtermanReingoldConfiguration({

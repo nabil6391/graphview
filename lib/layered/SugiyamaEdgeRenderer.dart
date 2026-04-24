@@ -1,5 +1,7 @@
 part of graphview;
 
+/// Renders edges for [SugiyamaAlgorithm] layouts with support for
+/// bend points, dummy nodes, and configurable bend point shapes.
 class SugiyamaEdgeRenderer extends ArrowEdgeRenderer {
   Map<Node, SugiyamaNodeData> nodeData;
   Map<Edge, SugiyamaEdgeData> edgeData;

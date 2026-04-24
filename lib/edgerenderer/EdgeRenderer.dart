@@ -1,14 +1,22 @@
 part of graphview;
 
+/// Abstract base class for rendering edges between nodes on a canvas.
+///
+/// Provides shared utilities for line styling ([drawStyledLine], [drawStyledPath]),
+/// self-loop path construction ([buildSelfLoopPath]), and node position lookups.
 abstract class EdgeRenderer {
   Map<Node, Offset>? _animatedPositions;
 
+  /// Sets animated positions used during collapse/expand transitions.
   void setAnimatedPositions(Map<Node, Offset> positions) => _animatedPositions = positions;
 
+  /// Returns the current position of [node], using animated position if available.
   Offset getNodePosition(Node node) => _animatedPositions?[node] ?? node.position;
 
+  /// Renders a single [edge] on the [canvas] using the given [paint].
   void renderEdge(Canvas canvas, Edge edge, Paint paint);
 
+  /// Returns the center point of [node] based on its position and size.
   Offset getNodeCenter(Node node) {
     final nodePosition = getNodePosition(node);
     return Offset(
@@ -199,10 +207,17 @@ abstract class EdgeRenderer {
   }
 }
 
+/// Result of building a self-loop edge path, containing geometry for arrow rendering.
 class LoopRenderResult {
+  /// The cubic Bezier path forming the loop arc.
   final Path path;
+
+  /// The position where the arrowhead base starts.
   final Offset arrowBase;
+
+  /// The position of the arrowhead tip.
   final Offset arrowTip;
 
+  /// Creates a loop render result with the given [path], [arrowBase], and [arrowTip].
   const LoopRenderResult(this.path, this.arrowBase, this.arrowTip);
 }
